@@ -1,5 +1,11 @@
 # HexMapMadeInUnity2019ECS
-
+##Versions
+Unity2019.1.12f1
+Entities 0.1.1
+Jobs 0.1.1
+Burst 1.1.2
+Hybrid Renderer 0.1.1
+Mathematics 1.1.0
 
 # 自动生成地图系统
 ECS的世界由许许多多的系统来操控，在进入主世界的时候会创建这些系统，如下图所示：
