@@ -6,27 +6,36 @@ using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
 
-//[DisableAutoCreation]
+[DisableAutoCreation]
 public class CreateHexMapSystem : JobComponentSystem
 {
     private EntityQuery hexCells;
     private EntityQuery hexMesh;
-    public bool bIfNewMap = false;
+
+    private Entity meshEntity;
+    private HexMeshTag hexMeshTag;
+
     //private NativeArray<Vector3> verticesAsNativeArray;
     //private NativeArray<int> trianglesAsNativeArray;
     protected override void OnCreate()
     {
         hexCells = GetEntityQuery(new EntityQueryDesc
         {
-            All = new[] { ComponentType.ReadOnly<HexCellData>(), ComponentType.ReadOnly<Translation>() },
+            All = new[]
+            {
+                ComponentType.ReadOnly<HexCellData>(), ComponentType.ReadOnly<Translation>()
+
+            },
         });
         hexMesh = GetEntityQuery(typeof(HexMeshTag), typeof(RenderMesh));
+        meshEntity = hexMesh.GetSingletonEntity();
+        hexMeshTag = EntityManager.GetComponentData<HexMeshTag>(meshEntity);
         //verticesAsNativeArray = new NativeArray<Vector3>(HexMetrics.totalVertices, Allocator.TempJob);
         //trianglesAsNativeArray = new NativeArray<int>(HexMetrics.totalVertices, Allocator.TempJob);
     }
 
     [BurstCompile]
-    struct CopySimPointsToVerticesJob : IJobForEachWithEntity<Translation> {
+    private struct CopySimPointsToVerticesJob : IJobForEachWithEntity<Translation> {
         public NativeArray<Vector3> Vertices;
         public NativeArray<int> Triangles;
         public void Execute(Entity entity, int index, [ReadOnly]ref Translation position)
@@ -54,7 +63,8 @@ public class CreateHexMapSystem : JobComponentSystem
 
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
-        if (bIfNewMap)
+        Debug.Log(hexMeshTag.bIfNewMap);
+        if (hexMeshTag.bIfNewMap)
         {
             var verticesAsNativeArray = new NativeArray<Vector3>(HexMetrics.totalVertices, Allocator.TempJob);
             var trianglesAsNativeArray = new NativeArray<int>(HexMetrics.totalVertices, Allocator.TempJob);
@@ -64,7 +74,8 @@ public class CreateHexMapSystem : JobComponentSystem
                 Triangles = trianglesAsNativeArray,
             }.Schedule(hexCells, inputDeps);
             copyToSimPointsJob.Complete();
-            var meshEntity = hexMesh.GetSingletonEntity();
+
+            Debug.Log(hexMeshTag.bIfNewMap);
             //Debug.Log(meshEntity);//Entity(1:1)
             var renderMesh = EntityManager.GetSharedComponentData<RenderMesh>(meshEntity);
             //Debug.Log(renderMesh);//Unity.Rendering.RenderMesh
@@ -73,6 +84,7 @@ public class CreateHexMapSystem : JobComponentSystem
             //Debug.Log(newVertexArray.Length);
             for (int i = 0; i < 36; i++)
             {
+                Debug.Log(i);
                 Debug.Log(verticesAsNativeArray[i]);
             }
             renderMesh.mesh.vertices = newVertexArray;
@@ -94,7 +106,8 @@ public class CreateHexMapSystem : JobComponentSystem
             //meshColider.HexMeshCollider.sharedMesh = renderMesh.mesh;
             verticesAsNativeArray.Dispose();
             trianglesAsNativeArray.Dispose();
-            bIfNewMap = false;
+            hexMeshTag.bIfNewMap = false;
+            Debug.Log(hexMeshTag.bIfNewMap);
             return copyToSimPointsJob;
         }
 

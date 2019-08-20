@@ -20,7 +20,10 @@ using UnityEngine;
 //    }
 //}
 
-public struct HexMeshTag : IComponentData { }
+public struct HexMeshTag : IComponentData
+{
+    public bool bIfNewMap;
+}
 
 [RequiresEntityConversion]
 public class HexMapEntity : MonoBehaviour, IConvertGameObjectToEntity
@@ -30,6 +33,7 @@ public class HexMapEntity : MonoBehaviour, IConvertGameObjectToEntity
     public MeshRenderer MeshRenderer;
     public MeshFilter MeshFilter;
     public Material Material;
+    public bool bIfNewMap = true;
 
     void Awake()
     {
@@ -44,8 +48,11 @@ public class HexMapEntity : MonoBehaviour, IConvertGameObjectToEntity
 
     public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
     {
-        dstManager.AddComponent(entity, typeof(HexMeshTag));
-        dstManager.AddComponent(entity, typeof(Parent));
+        dstManager.AddComponentData(entity, new HexMeshTag
+        {
+            bIfNewMap=bIfNewMap
+        });
+        //dstManager.AddComponent(entity, typeof(Parent));
         //dstManager.SetSharedComponentData(entity, new RenderMesh
         //{
         //    mesh=HexMesh,

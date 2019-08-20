@@ -3,15 +3,20 @@ using System.Collections.Generic;
 using Unity.Entities;
 using UnityEngine;
 
+/// <summary>
+/// C:保存创建者数据
+/// </summary>
 [Serializable]
-public struct MapData : IComponentData {
+public struct CreaterData : IComponentData {
     public int Width;
     public int Height;
     public Entity Prefab;
     public Color Color;
-    public bool bIsNewMap;
 }
 
+/// <summary>
+/// E:创建者实体
+/// </summary>
 [RequiresEntityConversion]
 public class CreaterEntity : MonoBehaviour, IDeclareReferencedPrefabs, IConvertGameObjectToEntity
 {
@@ -38,19 +43,28 @@ public class CreaterEntity : MonoBehaviour, IDeclareReferencedPrefabs, IConvertG
     /// <summary>
     /// 是否生成新的地图
     /// </summary>
-    public bool bCreatNewMap = true;
+    //public bool bCreatNewMap = true;
 
 
     public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
     {
         HexMetrics.totalVertices = MapWidth * MapHeight * 18;
-        dstManager.AddComponentData(entity, new MapData
+        dstManager.AddComponentData(entity, new CreaterData
         {
             Width=MapWidth,
             Height=MapHeight,
             Prefab = conversionSystem.GetPrimaryEntity(HexCellPrefab),
             Color=defaultColor,
-            bIsNewMap=bCreatNewMap
+        });
+
+        dstManager.AddComponentData(entity, new SwitchCreateCellData
+        {
+            bIfNewMap=true
+        });
+
+        dstManager.AddComponentData(entity, new SwitchRotateData
+        {
+             bIfStartRotateSystem = false
         });
     }
 
