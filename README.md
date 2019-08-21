@@ -6,7 +6,18 @@
  - Burst 1.1.2
  - Hybrid Renderer 0.1.1
  - Mathematics 1.1.0
+## What's this system for?
 
+I'm tring to develop a auto create map system which can create Infinite map.Wherever players go,there always a perfect new map for them.
+Like the MagaCity,but much bigger than it,Player is alway in the center of the current little map,long before the player reach the edge of the map new mesh will be automatically created by the map system and send the data to the Server which updates the map database.
+If the Server map data changed,other players also be noticed.
+The system also automatically predict where the player may go,then create new map mesh or update from the Server database if there're datas for the direction the player may go.
+And there is always culling map for less memory usage like the MagaCity did.Alway save resources for other system.
+So I want to use the ECS for this system,I think it would be awesome if I did this.The lists is for mesh vertices.
+
+If you can help me,please check this out!Star and Fork!
+
+I really need some help,thank you very much!
 # 自动生成地图系统
 ECS的世界由许许多多的系统来操控，在进入主世界的时候会创建这些系统，如下图所示：
 
