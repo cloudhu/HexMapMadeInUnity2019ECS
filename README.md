@@ -8,18 +8,29 @@
  - Mathematics 1.1.0
 ## What's this system for?
 
-I'm tring to develop a auto create map system which can create Infinite map.Wherever players go,there always a perfect new map for them.
-Like the MagaCity,but much bigger than it,Player is alway in the center of the current little map,long before the player reach the edge of the map new mesh will be automatically created by the map system and send the data to the Server which updates the map database.
-If the Server map data changed,other players also be noticed.
-The system also automatically predict where the player may go,then create new map mesh or update from the Server database if there're datas for the direction the player may go.
-And there is always culling map for less memory usage like the MagaCity did.Alway save resources for other system.
-So I want to use the ECS for this system,I think it would be awesome if I did this.The lists is for mesh vertices.
+ - I'm tring to develop a auto create map system which can create Infinite map.
+ - Wherever players go,there always a perfect new map for them.
+ - Like the MagaCity,but much bigger than it,Player is alway in the center of the current little map,long before the player reach the edge of the map new mesh will be automatically created by the map system and send the data to the Server which updates the map database.
+ - If the Server map data changed,other players also be noticed.
+ - The system also automatically predict where the player may go,then create new map mesh or update from the Server database if there're datas for the direction the player may go.
+ - And there is always culling map for less memory usage like the MagaCity did.Alway save resources for other system.
+ - So I want to use the ECS for this system,I think it would be awesome if I did this.The lists is for mesh vertices and triangles.
 
-If you can help me,please check this out!Star and Fork!
+ - If you can help me,please check this out! Star and Fork!
 
-I really need some help,thank you very much!
-# 自动生成地图系统
-ECS的世界由许许多多的系统来操控，在进入主世界的时候会创建这些系统，如下图所示：
+ - I really need some help,thank you very much!
+# 自动生成地图系统:这个系统是做什么的?
+
+ECS的世界由许许多多的系统来操控，在进入主世界的时候会创建这些系统!
+- 我试图开发一个自动创建地图系统，可以创建无限地图。
+- 无论玩家走到哪里，总是有一个完美的新地图等待他们去探索。
+- 和MagaCity一样，但比MagaCity大得多的是，玩家始终处于当前小地图的中心，远在玩家到达地图边缘之前，地图系统就会自动创建新的网格，并将数据发送到更新地图数据库的服务器。
+- 如果服务器地图数据改变，其他玩家也会被服务器通知到。
+- 系统还自动预测玩家可能去的地方，然后创建新的地图网格或从服务器数据库更新，如果服务器上有玩家可能去的方向的地图数据。
+- 总是有地图裁剪，以减少内存使用，像MagaCity所做的。总是为其他系统节省资源。
+- 所以我想用ECS来做这个系统，我想如果我这样做了会很棒。列表用于网格顶点和三角。
+- 如果你能帮我，请一起参与进来，点星和叉!
+- 我真的需要一些帮助，非常感谢!
 
 上一篇中PlayerInputSystem负责处理玩家的操作，与之对应的组件有UserCommand（用户命令），TargetPosition（目标位置）和MoveSpeed（移动速度）。原本想一起看看源码，加一点注释进去，算是走马观花，画蛇添足。不过，这样做实在没有太多营养价值，如果大家有兴趣，自行看下源码吧。这一篇想写一点创造性的东西，例如生动生成地图系统。
 ### AutoCreateMapSystem
