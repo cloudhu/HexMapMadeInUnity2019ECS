@@ -85,7 +85,7 @@ public class CreateHexMapSystem : JobComponentSystem
             copyToVerticesJob.Complete();
             //var buffer= EntityManager.AddBuffer<HexMeshData>(meshEntity);
             //Todo:this is too slow,should do it in a Job with Burst
-            var NewVertices = new NativeList<Vector3>(HexMetrics.HexCelllCount*18, Allocator.TempJob);
+            var Vertices = new NativeList<Vector3>(HexMetrics.HexCelllCount*18, Allocator.TempJob);
             var Triangles = new NativeList<int>(HexMetrics.HexCelllCount * 18, Allocator.TempJob);
 
             for (int i = 0; i < vertices.Length; i++)
@@ -93,10 +93,10 @@ public class CreateHexMapSystem : JobComponentSystem
                 Vector3 center = vertices[i];
                 for (int j = 0; j < 6; j++)
                 {
-                    int verticesIndex = NewVertices.Length;
-                    NewVertices.Add(center);
-                    NewVertices.Add(center + HexMetrics.corners[j]);
-                    NewVertices.Add(center + HexMetrics.corners[j + 1]);
+                    int verticesIndex = Vertices.Length;
+                    Vertices.Add(center);
+                    Vertices.Add(center + HexMetrics.corners[j]);
+                    Vertices.Add(center + HexMetrics.corners[j + 1]);
                     Triangles.Add(verticesIndex);
                     Triangles.Add(verticesIndex + 1);
                     Triangles.Add(verticesIndex + 2);
@@ -108,14 +108,14 @@ public class CreateHexMapSystem : JobComponentSystem
             //var newVertexArray = new Vector3[verticesAsNativeArray.Length];
             //verticesAsNativeArray.CopyTo(newVertexArray);
 
-            renderMesh.mesh.vertices = NewVertices.ToArray();
+            renderMesh.mesh.vertices = Vertices.ToArray();
             renderMesh.mesh.triangles = Triangles.ToArray();
             renderMesh.mesh.RecalculateNormals();
             //目前ECS还没有物理引擎支持，所以MeshCollider无效！Todo：添加物理特性
             //var meshColider = EntityManager.GetSharedComponentData<MeshColliderData>(meshEntity);
             //meshColider.HexMeshCollider.sharedMesh = renderMesh.mesh;
             vertices.Dispose();
-            NewVertices.Dispose();
+            Vertices.Dispose();
             Triangles.Dispose();
             hexMeshTag.bIfNewMap = false;
             bIfNewMap = false;

@@ -163,11 +163,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8618edee7cc9cc84584bc86a8c3550c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HexMeshCollider: {fileID: 0}
   HexMesh: {fileID: 0}
   MeshRenderer: {fileID: 0}
   MeshFilter: {fileID: 0}
   Material: {fileID: 2100000, guid: 6a3f5c7892e4b478e9e745026e6fe9f7, type: 2}
+  bIfNewMap: 1
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -377,7 +377,6 @@ MonoBehaviour:
   MapWidth: 6
   MapHeight: 6
   defaultColor: {r: 1, g: 1, b: 1, a: 1}
-  bCreatNewMap: 1
 --- !u!114 &1221268531
 MonoBehaviour:
   m_ObjectHideFlags: 0

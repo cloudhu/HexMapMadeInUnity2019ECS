@@ -15,7 +15,6 @@ public struct HexCellData : IComponentData {
     public int Z;
     public Color color;
 
-    public float RadiansPerSecond;
 }
 
 /// <summary>
@@ -24,13 +23,6 @@ public struct HexCellData : IComponentData {
 public struct SwitchCreateCellData : IComponentData
 {
     public bool bIfNewMap;
-}
-
-/// <summary>
-/// 开关旋转,暂时没有什么卵用,Rotation根本不工作
-/// </summary>
-public struct SwitchRotateData : IComponentData {
-    public bool bIfStartRotateSystem;
 }
 
 /// <summary>

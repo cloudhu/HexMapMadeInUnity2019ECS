@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using Unity.Burst;
+﻿using Unity.Burst;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -10,6 +9,7 @@ using UnityEngine;
 /// <summary>
 /// S:这里暂时只做旋转，后面会变色等
 /// </summary>
+[DisableAutoCreation]
 public class HexCellSystem : JobComponentSystem {
     EntityQuery m_Group;//查询到特定组件的实体，将其放入这个组中
 
@@ -52,14 +52,14 @@ public class HexCellSystem : JobComponentSystem {
             var chunkRotationSpeeds = chunk.GetNativeArray(RotationSpeedType);
             for (var i = 0; i < chunk.Count; i++)
             {
-                var rotation = chunkRotations[i];
-                var rotationSpeed = chunkRotationSpeeds[i];
+                //var rotation = chunkRotations[i];
+                //var rotationSpeed = chunkRotationSpeeds[i];
 
-                chunkRotations[i] = new Rotation
-                {
-                    Value = math.mul(math.normalize(rotation.Value),
-                        quaternion.AxisAngle(math.up(), rotationSpeed.RadiansPerSecond * DeltaTime))
-                };
+                //chunkRotations[i] = new Rotation
+                //{
+                //    Value = math.mul(math.normalize(rotation.Value),
+                //        quaternion.AxisAngle(math.up(), rotationSpeed.RadiansPerSecond * DeltaTime))
+                //};
             }
         }
     }

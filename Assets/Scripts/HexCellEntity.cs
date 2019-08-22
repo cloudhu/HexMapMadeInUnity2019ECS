@@ -22,10 +22,6 @@ public class HexCellEntity : MonoBehaviour,IConvertGameObjectToEntity {
     /// </summary>
     public Color Color;
 
-    /// <summary>
-    /// 每秒旋转速度，暂时让其旋转，后面更改成其他功能
-    /// </summary>
-    public float DegreesPerSecond = 360.0F;
 
     public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
     {
@@ -36,7 +32,6 @@ public class HexCellEntity : MonoBehaviour,IConvertGameObjectToEntity {
             Y=this.Y,
             Z=this.Z,
             color=Color,
-            RadiansPerSecond= math.radians(DegreesPerSecond)
 
         });
 

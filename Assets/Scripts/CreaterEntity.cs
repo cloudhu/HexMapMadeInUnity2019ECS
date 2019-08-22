@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Unity.Entities;
 using UnityEngine;
 
@@ -10,7 +9,6 @@ using UnityEngine;
 public struct CreaterData : IComponentData {
     public int Width;
     public int Height;
-    public Entity Prefab;
     public Color Color;
 }
 
@@ -18,12 +16,8 @@ public struct CreaterData : IComponentData {
 /// E:创建者实体
 /// </summary>
 [RequiresEntityConversion]
-public class CreaterEntity : MonoBehaviour, IDeclareReferencedPrefabs, IConvertGameObjectToEntity
+public class CreaterEntity : MonoBehaviour, IConvertGameObjectToEntity
 {
-    /// <summary>
-    /// 六边形单元预设
-    /// </summary>
-    public GameObject HexCellPrefab;
 
     /// <summary>
     /// 地图宽度（以六边形为基本单位）
@@ -53,7 +47,6 @@ public class CreaterEntity : MonoBehaviour, IDeclareReferencedPrefabs, IConvertG
         {
             Width=MapWidth,
             Height=MapHeight,
-            Prefab = conversionSystem.GetPrimaryEntity(HexCellPrefab),
             Color=defaultColor
         });
 
@@ -62,15 +55,6 @@ public class CreaterEntity : MonoBehaviour, IDeclareReferencedPrefabs, IConvertG
             bIfNewMap=true
         });
 
-        dstManager.AddComponentData(entity, new SwitchRotateData
-        {
-             bIfStartRotateSystem = false
-        });
-        //dstManager.AddComponent<HexMeshData>(entity);
     }
 
-    public void DeclareReferencedPrefabs(List<GameObject> referencedPrefabs)
-    {
-        referencedPrefabs.Add(HexCellPrefab);
-    }
 }
