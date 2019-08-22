@@ -48,13 +48,13 @@ public class CreaterEntity : MonoBehaviour, IDeclareReferencedPrefabs, IConvertG
 
     public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
     {
-        HexMetrics.totalVertices = MapWidth * MapHeight * 18;
+        HexMetrics.HexCelllCount = MapWidth * MapHeight;
         dstManager.AddComponentData(entity, new CreaterData
         {
             Width=MapWidth,
             Height=MapHeight,
             Prefab = conversionSystem.GetPrimaryEntity(HexCellPrefab),
-            Color=defaultColor,
+            Color=defaultColor
         });
 
         dstManager.AddComponentData(entity, new SwitchCreateCellData
@@ -66,6 +66,7 @@ public class CreaterEntity : MonoBehaviour, IDeclareReferencedPrefabs, IConvertG
         {
              bIfStartRotateSystem = false
         });
+        //dstManager.AddComponent<HexMeshData>(entity);
     }
 
     public void DeclareReferencedPrefabs(List<GameObject> referencedPrefabs)

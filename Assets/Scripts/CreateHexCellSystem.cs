@@ -5,6 +5,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
+using UnityEngine;
 
 /// <summary>
 /// 创建六边形单元系统
@@ -12,10 +13,22 @@ using Unity.Transforms;
 public class CreateHexCellSystem : JobComponentSystem {
 
     BeginInitializationEntityCommandBufferSystem m_EntityCommandBufferSystem;
+
+    /// <summary>
+    /// 新地图开关
+    /// </summary>
     bool bIfNewMap = true;
+    private CreateHexMapSystem createHexMapSystem;
+    /// <summary>
+    /// 实体原型
+    /// </summary>
+    //private EntityArchetype m_simPointArchetype;
     protected override void OnCreate()
     {
         m_EntityCommandBufferSystem = World.GetOrCreateSystem<BeginInitializationEntityCommandBufferSystem>();
+        //m_simPointArchetype = EntityManager.CreateArchetype(
+        //    typeof(VertexData),
+        //    typeof(Translation));
     }
 
     /// <summary>
@@ -23,18 +36,22 @@ public class CreateHexCellSystem : JobComponentSystem {
     /// </summary>
     struct SpawnJob : IJobForEachWithEntity<CreaterData,SwitchCreateCellData> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
+
+        //public NativeArray<float3> Vertices;
         [BurstCompile]
         public void Execute(Entity entity, int index, [ReadOnly]ref CreaterData  createrData,ref SwitchCreateCellData switchCreateCell)
         {
 
             if (switchCreateCell.bIfNewMap)
             {
+                //int cellIndex = 0;
                 for (int z = 0; z < createrData.Height; z++)
                 {
                     for (int x = 0; x < createrData.Width; x++)
                     {
                         //1.实例化
                         var instance = CommandBuffer.Instantiate(index, createrData.Prefab);
+                        //cellIndex++;
                         //2.计算阵列坐标
                         float _x = (x + z * 0.5f - z / 2) * (HexMetrics.innerRadius * 2f);
                         float _z = z * (HexMetrics.outerRadius * 1.5f);
@@ -53,12 +70,22 @@ public class CreateHexCellSystem : JobComponentSystem {
                             color = createrData.Color,
 
                         });
+                        float3 center = new float3(_x, 0F, _z);
                         //5.设置位置
                         CommandBuffer.SetComponent(index, instance, new Translation
                         {
-                            Value = new float3(_x, 0F, _z)
+                            Value = center
 
                         });
+                        //6.保存中心顶点
+                        //Vector3 newCenter = new Vector3
+                        //{
+                        //    x = _x,
+                        //    y = 0F,
+                        //    z = _z
+                        //};
+                        //Vertices[cellIndex] = center;
+
                     }
                 }
                 CommandBuffer.SetComponent(index, entity, new SwitchCreateCellData
@@ -72,6 +99,7 @@ public class CreateHexCellSystem : JobComponentSystem {
                     bIfStartRotateSystem=true
 
                 });
+                //保存生成的Mesh数据
 
             }
 
@@ -86,25 +114,38 @@ public class CreateHexCellSystem : JobComponentSystem {
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
 
-
-        var job = new SpawnJob
-        {
-            CommandBuffer = m_EntityCommandBufferSystem.CreateCommandBuffer().ToConcurrent(),
-
-        }.Schedule(this, inputDeps);
-
-        m_EntityCommandBufferSystem.AddJobHandleForProducer(job);
-        job.Complete();
         if (bIfNewMap)
         {
-            World.CreateSystem<CreateHexMapSystem>(); //not working
+            //var vertices = new NativeArray<float3>(HexMetrics.HexCelllCount, Allocator.TempJob);
+            var job = new SpawnJob
+            {
+                CommandBuffer = m_EntityCommandBufferSystem.CreateCommandBuffer().ToConcurrent()
+                //Vertices=vertices
+
+            }.Schedule(this, inputDeps);
+
+            m_EntityCommandBufferSystem.AddJobHandleForProducer(job);
+            job.Complete();
+            //for (int i = 0; i < vertices.Length; i++)
+            //{
+            //    Debug.Log(vertices[i]);
+
+            //}
+            createHexMapSystem =World.CreateSystem<CreateHexMapSystem>(); //not working Fixed:CreateSystem需要构造函数才能生效
+            createHexMapSystem.bIfNewMap = true;
             //var hexMesh = GetEntityQuery(typeof(HexMeshTag), typeof(RenderMesh));
             //var meshEntity = hexMesh.GetSingletonEntity();
             //var hexMeshTag = EntityManager.GetComponentData<HexMeshTag>(meshEntity);
             //hexMeshTag.bIfNewMap = true;
+
             bIfNewMap = false;
+            //vertices.Dispose();
+            return job;
         }
-        return job;
+        else
+            createHexMapSystem.Update();
+
+        return inputDeps;
 
     }
 }

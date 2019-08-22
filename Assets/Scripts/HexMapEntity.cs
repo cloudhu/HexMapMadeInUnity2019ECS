@@ -52,6 +52,7 @@ public class HexMapEntity : MonoBehaviour, IConvertGameObjectToEntity
         {
             bIfNewMap=bIfNewMap
         });
+
         //dstManager.AddComponent(entity, typeof(Parent));
         //dstManager.SetSharedComponentData(entity, new RenderMesh
         //{

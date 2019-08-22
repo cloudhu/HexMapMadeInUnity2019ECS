@@ -8,7 +8,7 @@ public static class HexMetrics
     /// <summary>
     /// 总的顶点数
     /// </summary>
-    public static int totalVertices = 36;
+    public static int HexCelllCount = 0;
 
     /// <summary>
     /// 六边形外半径=六边形边长
