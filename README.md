@@ -32,8 +32,9 @@ ECS的世界由许许多多的系统来操控，在进入主世界的时候会�
 - 如果你能帮我，请一起参与进来，点星和叉!
 - 我真的需要一些帮助，非常感谢!
 
+##日志Wiki
 
-
+[Wiki日志](https://github.com/cloudhu/HexMapMadeInUnity2019ECS/wiki)
 ## 作者的话
 ![Alt](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9hdmF0YXIuY3Nkbi5uZXQvNy83L0IvMV9yYWxmX2h4MTYzY29tLmpwZw)
 >  <font color=#FF0000 size=3 face="微软雅黑" >**如果喜欢我的文章可以点赞支持一下，谢谢鼓励！如果有什么疑问可以给我留言，有错漏的地方请批评指证！**</font>
