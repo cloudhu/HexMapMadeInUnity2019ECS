@@ -3,10 +3,9 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
-using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
-using UnityEngine.Rendering;
+using Random = Unity.Mathematics.Random;
 
 /// <summary>
 /// 创建六边形单元系统
@@ -43,7 +42,8 @@ public class CreateHexCellSystem : JobComponentSystem {
             //三行代码，我们成功干掉一个预设
             if (switchCreateCell.bIfNewMap)
             {
-                
+                Random random= new Random(1208905299U);
+
                 for (int z = 0; z < createrData.Height; z++)
                 {
                     for (int x = 0; x < createrData.Width; x++)
@@ -68,7 +68,7 @@ public class CreateHexCellSystem : JobComponentSystem {
                             X = x - z / 2,
                             Y = 0,
                             Z = z,
-                            color = createrData.Color,
+                            color = new Color(random.NextFloat(), random.NextFloat(), random.NextFloat())
 
                         });
 
@@ -120,7 +120,12 @@ public class CreateHexCellSystem : JobComponentSystem {
             return job;
         }
         else
-            createHexMapSystem.Update();
+        {
+            if (createHexMapSystem.bIfNewMap)
+            {
+                createHexMapSystem.Update();
+            }
+        }
 
         return inputDeps;
 

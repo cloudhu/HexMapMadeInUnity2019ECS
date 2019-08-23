@@ -41,14 +41,14 @@ public struct SwitchCreateCellData : IComponentData
 /// 总感觉这又是一个鸡肋,没有List方便
 /// </summary>
 //[InternalBufferCapacity(HexMetrics.HexCelllCount)]
-public struct HexMeshData : IBufferElementData {
-    // These implicit conversions are optional, but can help reduce typing.
-    public static implicit operator float3(HexMeshData e) { return e.Value; }
-    public static implicit operator HexMeshData(float3 e) { return new HexMeshData { Value = e }; }
+//public struct HexMeshData : IBufferElementData {
+//    // These implicit conversions are optional, but can help reduce typing.
+//    public static implicit operator float3(HexMeshData e) { return e.Value; }
+//    public static implicit operator HexMeshData(float3 e) { return new HexMeshData { Value = e }; }
 
-    // Actual value each buffer element will store.
-    public float3 Value;
-}
+//    // Actual value each buffer element will store.
+//    public float3 Value;
+//}
 
 /// <summary>
 /// 用来储存顶点数据

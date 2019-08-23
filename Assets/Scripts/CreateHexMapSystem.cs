@@ -2,7 +2,6 @@
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
@@ -13,11 +12,9 @@ public class CreateHexMapSystem : JobComponentSystem
     private EntityQuery hexCells;
     private EntityQuery hexMesh;
 
-
     private Entity meshEntity;
     private HexMeshTag hexMeshTag;
     public bool bIfNewMap=false;
-    //private NativeArray<Entity> vertexEntities;
 
     /// <summary>
     /// 构造函数,被World.CreateSystem调用
@@ -37,13 +34,7 @@ public class CreateHexMapSystem : JobComponentSystem
 
             },
         });
-        /// <summary>
-        /// 顶点实体原型
-        /// </summary>
-        //EntityArchetype vertexEntityArchetype;
-        //vertexEntityArchetype = EntityManager.CreateArchetype(typeof(VertexData));
-        //vertexEntities = new NativeArray<Entity>(HexMetrics.HexCelllCount*18, Allocator.TempJob);
-        //EntityManager.CreateEntity(vertexEntityArchetype, vertexEntities);
+
         hexMesh = GetEntityQuery(typeof(HexMeshTag), typeof(RenderMesh));
         
         meshEntity = hexMesh.GetSingletonEntity();
@@ -53,15 +44,16 @@ public class CreateHexMapSystem : JobComponentSystem
     }
 
     /// <summary>
-    /// 把所有六边形单元中心点作为所有顶点的起始点
+    /// 把所有六边形单元实体的数据传递出去
     /// </summary>
     [BurstCompile]
-    private struct CopyHexCellCenterPositionsToVerticesJob : IJobForEachWithEntity<Translation> {
+    private struct GetHexCellDataForRenderMeshJob : IJobForEachWithEntity<Translation, HexCellData> {
         public NativeArray<Vector3> Vertices;
-        public void Execute(Entity entity, int index, [ReadOnly]ref Translation position)
+        public NativeArray<Color> Colors;
+        public void Execute(Entity entity, int index, [ReadOnly]ref Translation position,[ReadOnly]ref HexCellData hexCellData)
         {
             var center = position.Value;
-
+            Colors[index] = hexCellData.color;
             Vertices[index] = new Vector3
             {
                 x = center.x,
@@ -74,56 +66,60 @@ public class CreateHexMapSystem : JobComponentSystem
 
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
-        if (bIfNewMap)
+
+        var vertices = new NativeArray<Vector3>(HexMetrics.HexCelllCount, Allocator.TempJob);
+        var colors = new NativeArray<Color>(HexMetrics.HexCelllCount, Allocator.TempJob);
+        var getDataJob = new GetHexCellDataForRenderMeshJob
         {
-            var vertices = new NativeArray<Vector3>(HexMetrics.HexCelllCount, Allocator.TempJob);
-            var copyToVerticesJob = new CopyHexCellCenterPositionsToVerticesJob
-            {
-                Vertices = vertices
+            Vertices = vertices,
+            Colors=colors
 
-            }.Schedule(hexCells, inputDeps);
-            copyToVerticesJob.Complete();
-            //var buffer= EntityManager.AddBuffer<HexMeshData>(meshEntity);
-            //Todo:this is too slow,should do it in a Job with Burst
-            var Vertices = new NativeList<Vector3>(HexMetrics.HexCelllCount*18, Allocator.TempJob);
-            var Triangles = new NativeList<int>(HexMetrics.HexCelllCount * 18, Allocator.TempJob);
+        }.Schedule(hexCells, inputDeps);
+        getDataJob.Complete();
+        
+        var Vertices = new NativeList<Vector3>(HexMetrics.HexCelllCount*18, Allocator.TempJob);
+        var Triangles = new NativeList<int>(HexMetrics.HexCelllCount * 18, Allocator.TempJob);
+        var Colors= new NativeList<Color>(HexMetrics.HexCelllCount*18, Allocator.TempJob);
 
-            for (int i = 0; i < vertices.Length; i++)
+        for (int i = 0; i < vertices.Length; i++)
+        {//Todo:this is too slow,should do it in a Job with Burst
+            Vector3 center = vertices[i];
+            Color color = colors[i];
+
+            for (int j = 0; j < 6; j++)
             {
-                Vector3 center = vertices[i];
-                for (int j = 0; j < 6; j++)
-                {
-                    int verticesIndex = Vertices.Length;
-                    Vertices.Add(center);
-                    Vertices.Add(center + HexMetrics.corners[j]);
-                    Vertices.Add(center + HexMetrics.corners[j + 1]);
-                    Triangles.Add(verticesIndex);
-                    Triangles.Add(verticesIndex + 1);
-                    Triangles.Add(verticesIndex + 2);
-                }
+                int verticesIndex = Vertices.Length;
+                Vertices.Add(center);
+                Vertices.Add(center + HexMetrics.corners[j]);
+                Vertices.Add(center + HexMetrics.corners[j + 1]);
+                Triangles.Add(verticesIndex);
+                Triangles.Add(verticesIndex + 1);
+                Triangles.Add(verticesIndex + 2);
+                Colors.Add(color);
+                Colors.Add(color);
+                Colors.Add(color);
             }
-
-            var renderMesh = EntityManager.GetSharedComponentData<RenderMesh>(meshEntity);
-
-            //var newVertexArray = new Vector3[verticesAsNativeArray.Length];
-            //verticesAsNativeArray.CopyTo(newVertexArray);
-
-            renderMesh.mesh.vertices = Vertices.ToArray();
-            renderMesh.mesh.triangles = Triangles.ToArray();
-            renderMesh.mesh.RecalculateNormals();
-            //目前ECS还没有物理引擎支持，所以MeshCollider无效！Todo：添加物理特性
-            //var meshColider = EntityManager.GetSharedComponentData<MeshColliderData>(meshEntity);
-            //meshColider.HexMeshCollider.sharedMesh = renderMesh.mesh;
-            vertices.Dispose();
-            Vertices.Dispose();
-            Triangles.Dispose();
-            hexMeshTag.bIfNewMap = false;
-            bIfNewMap = false;
-
-            return copyToVerticesJob;
         }
 
-        return inputDeps;
+        var renderMesh = EntityManager.GetSharedComponentData<RenderMesh>(meshEntity);
+
+        renderMesh.mesh.vertices = Vertices.ToArray();
+        renderMesh.mesh.triangles = Triangles.ToArray();
+        renderMesh.mesh.colors = Colors.ToArray();
+        renderMesh.mesh.RecalculateNormals();
+        //目前ECS还没有物理引擎支持，所以MeshCollider无效！Todo：添加物理特性
+        //var meshColider = EntityManager.GetSharedComponentData<MeshColliderData>(meshEntity);
+        //meshColider.HexMeshCollider.sharedMesh = renderMesh.mesh;
+        vertices.Dispose();
+        colors.Dispose();
+        Vertices.Dispose();
+        Triangles.Dispose();
+        Colors.Dispose();
+        hexMeshTag.bIfNewMap = false;
+        bIfNewMap = false;
+
+        return getDataJob;
+
     }
 
     protected override void OnStopRunning()
