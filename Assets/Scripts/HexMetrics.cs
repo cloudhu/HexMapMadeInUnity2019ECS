@@ -6,9 +6,26 @@
 public static class HexMetrics
 {
     /// <summary>
+    /// 方向，N=北，S=南，E=东，W=西
+    /// </summary>
+    public enum HexDirection {
+        NE, E, SE, SW, W, NW
+    }
+
+    /// <summary>
     /// 总的顶点数
     /// </summary>
     public static int HexCelllCount = 0;
+
+    /// <summary>
+    /// 地图宽度（以单元为单位）
+    /// </summary>
+    public static int MapWidth = 0;
+
+    /// <summary>
+    /// 每个单元的顶点数量
+    /// </summary>
+    public const int CellVerticesCount = 18;
 
     /// <summary>
     /// 六边形外半径=六边形边长

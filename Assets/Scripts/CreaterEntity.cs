@@ -43,6 +43,7 @@ public class CreaterEntity : MonoBehaviour, IConvertGameObjectToEntity
     public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
     {
         HexMetrics.HexCelllCount = MapWidth * MapHeight;
+        HexMetrics.MapWidth = MapWidth;
         dstManager.AddComponentData(entity, new CreaterData
         {
             Width=MapWidth,

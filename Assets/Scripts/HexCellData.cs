@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -14,7 +12,6 @@ public struct HexCellData : IComponentData {
     public int Y;
     public int Z;
     public Color color;
-
 }
 
 /// <summary>
@@ -23,6 +20,14 @@ public struct HexCellData : IComponentData {
 public struct SwitchCreateCellData : IComponentData
 {
     public bool bIfNewMap;
+}
+
+/// <summary>
+/// 用来储存顶点数据
+/// </summary>
+public struct VertexData : IComponentData
+{
+    public float3 Value;
 }
 
 /// <summary>
@@ -49,12 +54,56 @@ public struct SwitchCreateCellData : IComponentData
 //    // Actual value each buffer element will store.
 //    public float3 Value;
 //}
-
 /// <summary>
-/// 用来储存顶点数据
+/// Sad:明明一个组件搞定，偏偏用了六个
+/// 因为这里无法使用数据或列表
+/// 东北
 /// </summary>
-public struct VertexData : IComponentData
-{
-    public float3 Value;
-}
+//public struct NeighborNE : IComponentData {
 
+//    public Entity NE;
+
+//}
+
+///// <summary>
+///// 相邻：东
+///// </summary>
+//public struct NeighborE : IComponentData {
+
+//    public Entity E;
+
+//}
+
+///// <summary>
+///// 东南
+///// </summary>
+//public struct NeighborSE : IComponentData {
+
+//    public Entity SE;
+
+//}
+
+///// <summary>
+///// 西南
+///// </summary>
+//public struct NeighborSW : IComponentData {
+
+//    public Entity SW;
+
+//}
+
+///// <summary>
+///// 西
+///// </summary>
+//public struct NeighborW : IComponentData {
+
+//    public Entity W;
+//}
+
+///// <summary>
+///// 西北
+///// </summary>
+//public struct NeighborNW : IComponentData {
+
+//    public Entity NW;
+//}
