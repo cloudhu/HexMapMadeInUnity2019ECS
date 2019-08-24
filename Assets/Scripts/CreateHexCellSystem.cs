@@ -35,7 +35,7 @@ public class CreateHexCellSystem : JobComponentSystem {
         [BurstCompile]
         public void Execute(Entity entity, int index, [ReadOnly]ref CreaterData  createrData,ref SwitchCreateCellData switchCreateCell)
         {
-            NativeArray<Entity> entities = new NativeArray<Entity>(createrData.Height* createrData.Width, Allocator.Temp);
+            //NativeArray<Entity> entities = new NativeArray<Entity>(createrData.Height* createrData.Width, Allocator.Temp);
 
             //代码生成预设，这样可以优化性能
             Entity hexCellPrefab = CommandBuffer.CreateEntity(index);
@@ -54,14 +54,14 @@ public class CreateHexCellSystem : JobComponentSystem {
             {
                 Random random= new Random(1208905299U);
 
-                for (int z = 0,i=0; z < createrData.Height; z++)
+                for (int z = 0; z < createrData.Height; z++)
                 {
                     for (int x = 0; x < createrData.Width; x++)
                     {
                         
                         //1.实例化
                         var instance = CommandBuffer.Instantiate(index, hexCellPrefab);
-                        entities[i] = instance;
+                        //entities[i] = instance;
                         
                         //2.计算阵列坐标
                         float _x = (x + z * 0.5f - z / 2) * (HexMetrics.innerRadius * 2f);
@@ -177,7 +177,7 @@ public class CreateHexCellSystem : JobComponentSystem {
 
                 //摧毁使用完的预设，节约内存资源
                 CommandBuffer.DestroyEntity(index, hexCellPrefab);
-                entities.Dispose();
+                //entities.Dispose();
             }
 
         }

@@ -76,15 +76,25 @@ public class CreateHexMapSystem : JobComponentSystem
 
         }.Schedule(hexCells, inputDeps);
         getDataJob.Complete();
-        
-        var Vertices = new NativeList<Vector3>(HexMetrics.HexCelllCount* HexMetrics.CellVerticesCount, Allocator.TempJob);
-        var Triangles = new NativeList<int>(HexMetrics.HexCelllCount * HexMetrics.CellVerticesCount, Allocator.TempJob);
-        var Colors= new NativeList<Color>(HexMetrics.HexCelllCount* HexMetrics.CellVerticesCount, Allocator.TempJob);
+        int totalCount = HexMetrics.HexCelllCount * HexMetrics.CellVerticesCount;
+        var Vertices = new NativeList<Vector3>(totalCount, Allocator.TempJob);
+        var Triangles = new NativeList<int>(totalCount, Allocator.TempJob);
+        var Colors= new NativeList<Color>(totalCount, Allocator.TempJob);
         int width = HexMetrics.MapWidth;
         int height= HexMetrics.HexCelllCount/HexMetrics.MapWidth;
+
         for (int i = 0; i < vertices.Length; i++)
         {//Todo:this is too slow,should do it in a Job with Burst
-            Vector3 center = vertices[i];
+            ////把最后一个放到第0顺位，后面的依此类推
+            Vector3 center;
+            if (i+1== vertices.Length)
+            {
+                center = vertices[0];
+            }
+            else
+            {
+                center = vertices[i+1];
+            }
             //添加顶点和三角
             for (int j = 0; j < 6; j++)
             {
@@ -113,17 +123,13 @@ public class CreateHexMapSystem : JobComponentSystem
             //添加颜色：自身
             Color color = colors[i];
             //邻居的颜色
-            Color neighbor;
+            Color neighbor=color;
             //0=东北：NE
-            if (currHeight == (height - 1))
-            {
-                neighbor = color;
-            }
-            else
+            if (currHeight != (height - 1))
             {
                 if (ifEven)//偶数行
                 {
-                    neighbor=colors[i + width];
+                    neighbor = colors[i + width];
                 }
                 else
                 {
@@ -138,22 +144,26 @@ public class CreateHexMapSystem : JobComponentSystem
                 }
             }
 
+            //if (i == 0)
+            //{
+            //    Debug.Log("HexCellColor：" + color + " |  NE Direction Color：" + neighbor);
+            //}
             Colors.Add(color);
             Colors.Add(neighbor);
             Colors.Add(neighbor);
             //颜色混合1 东：E
             if (ifEnd)
             {
-                //如果在地图边缘位置，没有东邻居
+                //如果在地图行尾，没有东邻居
                 neighbor = color;
             }
             else
             {
                 neighbor = (colors[i+1]);
             }
-            //if (i == 5)
+            //if (i == 0)
             //{
-            //    Debug.Log(color + "  E:  " + neighbor);
+            //    Debug.Log("HexCellColor：" + color + " |  E Direction Color：" + neighbor);
             //}
             Colors.Add(color);
             Colors.Add(neighbor);
@@ -181,9 +191,9 @@ public class CreateHexMapSystem : JobComponentSystem
                     }
                 }
             }
-            //if (i == 5)
+            //if (i == 0)
             //{
-            //    Debug.Log(color + "  SE:  " + neighbor);
+            //    Debug.Log("HexCellColor：" + color + " |  SE Direction Color：" + neighbor);
             //}
             Colors.Add(color);
             Colors.Add(neighbor);
@@ -201,7 +211,10 @@ public class CreateHexMapSystem : JobComponentSystem
                 else
                     neighbor = (colors[i - width]);
             }
-
+            //if (i == 0)
+            //{
+            //    Debug.Log("HexCellColor：" + color + " |  SW Direction Color：" + neighbor);
+            //}
             Colors.Add(color);
             Colors.Add(neighbor);
             Colors.Add(neighbor);
@@ -215,6 +228,10 @@ public class CreateHexMapSystem : JobComponentSystem
             {
                 neighbor = (colors[i - 1]);
             }
+            //if (i == 0)
+            //{
+            //    Debug.Log("HexCellColor：" + color + " |  W Direction Color：" + neighbor);
+            //}
             Colors.Add(color);
             Colors.Add(neighbor);
             Colors.Add(neighbor);
@@ -241,10 +258,14 @@ public class CreateHexMapSystem : JobComponentSystem
                     neighbor = (colors[i + width]);
                 }
             }
-
+            //if (i == 0)
+            //{
+            //    Debug.Log("HexCellColor：" + color + " |  NW Direction Color：" + neighbor);
+            //}
             Colors.Add(color);
             Colors.Add(neighbor);
             Colors.Add(neighbor);
+
         }
 
         var renderMesh = EntityManager.GetSharedComponentData<RenderMesh>(meshEntity);
