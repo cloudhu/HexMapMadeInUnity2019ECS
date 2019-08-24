@@ -66,8 +66,9 @@ public class CreateHexMapSystem : JobComponentSystem
 
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
-
+        ///六边形单元顶点集合
         var vertices = new NativeArray<Vector3>(HexMetrics.HexCelllCount, Allocator.TempJob);
+        //六边形单元的颜色集合
         var colors = new NativeArray<Color>(HexMetrics.HexCelllCount, Allocator.TempJob);
         var getDataJob = new GetHexCellDataForRenderMeshJob
         {
@@ -76,6 +77,7 @@ public class CreateHexMapSystem : JobComponentSystem
 
         }.Schedule(hexCells, inputDeps);
         getDataJob.Complete();
+        //所有六边形单元的总顶点数
         int totalCount = HexMetrics.HexCelllCount * HexMetrics.CellVerticesCount;
         var Vertices = new NativeList<Vector3>(totalCount, Allocator.TempJob);
         var Triangles = new NativeList<int>(totalCount, Allocator.TempJob);
@@ -95,17 +97,9 @@ public class CreateHexMapSystem : JobComponentSystem
             {
                 center = vertices[i+1];
             }
-            //添加顶点和三角
-            for (int j = 0; j < 6; j++)
-            {
-                int verticesIndex = Vertices.Length;
-                Vertices.Add(center);
-                Vertices.Add(center + HexMetrics.corners[j]);
-                Vertices.Add(center + HexMetrics.corners[j + 1]);
-                Triangles.Add(verticesIndex);
-                Triangles.Add(verticesIndex + 1);
-                Triangles.Add(verticesIndex + 2);
-            }
+            //添加颜色：自身中心区域颜色
+            Color color = colors[i];
+
             //The codes below is redundancy,there must be a better way to do this
             //Todo:代码冗余，需要改进
             //得到当前单元周边六个单元的颜色，并添加到列表中
@@ -120,10 +114,11 @@ public class CreateHexMapSystem : JobComponentSystem
             //是否处于行首
             bool ifStart = i == currHeight * width;
             //Debug.Log("当前单元："+i+"处于行首："+ifStart+" |处于行尾："+ifEnd+" |当前行数："+currHeight+"是偶数行:"+ifEven);
-            //添加颜色：自身
-            Color color = colors[i];
+
             //邻居的颜色
             Color neighbor=color;
+            //保存需要混合的颜色
+            Color[] blendColors = new Color[6];
             //0=东北：NE
             if (currHeight != (height - 1))
             {
@@ -144,13 +139,7 @@ public class CreateHexMapSystem : JobComponentSystem
                 }
             }
 
-            //if (i == 0)
-            //{
-            //    Debug.Log("HexCellColor：" + color + " |  NE Direction Color：" + neighbor);
-            //}
-            Colors.Add(color);
-            Colors.Add(neighbor);
-            Colors.Add(neighbor);
+            blendColors[0] = neighbor;
             //颜色混合1 东：E
             if (ifEnd)
             {
@@ -161,13 +150,8 @@ public class CreateHexMapSystem : JobComponentSystem
             {
                 neighbor = (colors[i+1]);
             }
-            //if (i == 0)
-            //{
-            //    Debug.Log("HexCellColor：" + color + " |  E Direction Color：" + neighbor);
-            //}
-            Colors.Add(color);
-            Colors.Add(neighbor);
-            Colors.Add(neighbor);
+
+            blendColors[1] = neighbor;
             //东南2：SE
             if (i<width)
             {
@@ -191,13 +175,7 @@ public class CreateHexMapSystem : JobComponentSystem
                     }
                 }
             }
-            //if (i == 0)
-            //{
-            //    Debug.Log("HexCellColor：" + color + " |  SE Direction Color：" + neighbor);
-            //}
-            Colors.Add(color);
-            Colors.Add(neighbor);
-            Colors.Add(neighbor);
+            blendColors[2] = neighbor;
             //西南3：SW
             if (i < width) neighbor = color;
             else
@@ -211,13 +189,7 @@ public class CreateHexMapSystem : JobComponentSystem
                 else
                     neighbor = (colors[i - width]);
             }
-            //if (i == 0)
-            //{
-            //    Debug.Log("HexCellColor：" + color + " |  SW Direction Color：" + neighbor);
-            //}
-            Colors.Add(color);
-            Colors.Add(neighbor);
-            Colors.Add(neighbor);
+            blendColors[3] = neighbor;
             //西4：W
             if (ifStart)
             {
@@ -228,13 +200,7 @@ public class CreateHexMapSystem : JobComponentSystem
             {
                 neighbor = (colors[i - 1]);
             }
-            //if (i == 0)
-            //{
-            //    Debug.Log("HexCellColor：" + color + " |  W Direction Color：" + neighbor);
-            //}
-            Colors.Add(color);
-            Colors.Add(neighbor);
-            Colors.Add(neighbor);
+            blendColors[4] = neighbor;
             //5西北：NW
             if (currHeight == (height - 1))
             {
@@ -258,16 +224,112 @@ public class CreateHexMapSystem : JobComponentSystem
                     neighbor = (colors[i + width]);
                 }
             }
-            //if (i == 0)
-            //{
-            //    Debug.Log("HexCellColor：" + color + " |  NW Direction Color：" + neighbor);
-            //}
-            Colors.Add(color);
-            Colors.Add(neighbor);
-            Colors.Add(neighbor);
+            blendColors[5] = neighbor;
 
+            //添加顶点、三角和颜色
+            for (int j = 0; j < 6; j++)
+            {
+                Vector3 V1 = (center + HexMetrics.SolidCorners[j]);
+                Vector3 V2 = (center + HexMetrics.SolidCorners[j + 1]);
+                int vertexIndex = Vertices.Length;
+                //添加中心区域的3个顶点
+                Vertices.Add(center);
+                Vertices.Add(V1);
+                Vertices.Add(V2);
+                Colors.Add(color);
+                Colors.Add(color);
+                Colors.Add(color);
+                //添加中心区域的三角
+                Triangles.Add(vertexIndex);
+                Triangles.Add(vertexIndex + 1);
+                Triangles.Add(vertexIndex + 2);
+
+                if (j<=2)
+                {
+                    if (blendColors[j]==color)
+                    {//如果没有相邻的单元，则跳过循环
+                        continue;
+                    }
+                    Color bridgeColor = ((color + blendColors[j]) * 0.5F);
+                    vertexIndex += 3;
+                    //添加外围桥接区域的4个顶点
+                    Vector3 bridge = (HexMetrics.GetBridge(j));
+                    Vector3 V3 = (V1 + bridge);
+                    Vector3 V4 = (V2 + bridge);
+                    Vertices.Add(V1);
+                    Vertices.Add(V2);
+                    Vertices.Add(V3);
+                    Vertices.Add(V4);
+                    //添加外围区域的三角
+                    Triangles.Add(vertexIndex);
+                    Triangles.Add(vertexIndex + 2);
+                    Triangles.Add(vertexIndex + 1);
+                    Triangles.Add(vertexIndex + 1);
+                    Triangles.Add(vertexIndex + 2);
+                    Triangles.Add(vertexIndex + 3);
+                    //添加桥的颜色
+                    Colors.Add(color);
+                    Colors.Add(color);
+                    Colors.Add(bridgeColor);
+                    Colors.Add(bridgeColor);
+                    //添加外圈区域三向颜色混合
+                    //int prev = (j - 1) < 0 ? 5 :(j - 1);
+                    int next = (j + 1) > 5 ? 0 : (j + 1);
+                    if (j<=1 && blendColors[next] != color)
+                    {
+                        //填充桥三角
+                        vertexIndex += 4;
+                        //添加桥三角的3个顶点
+                        Vertices.Add(V2);
+                        Vertices.Add(V4);
+                        Vector3 V5 = (V2 + HexMetrics.GetBridge(next));
+                        Vertices.Add(V5);
+                        //添加桥洞区域的三角
+                        Triangles.Add(vertexIndex);
+                        Triangles.Add(vertexIndex + 1);
+                        Triangles.Add(vertexIndex + 2);
+                        Colors.Add(color);
+                        Colors.Add((color + blendColors[next] + blendColors[j]) / 3F);
+                        Colors.Add(bridgeColor);
+                    }
+                }
+                //添加外圈区域三向颜色混合
+                //int prev = (j - 1) < 0 ? 5 : j;
+                //int next = (j + 1) > 5 ? 0 : j;
+
+                ////填充桥左边三角
+                //vertexIndex += 4;
+                ////添加桥三角的3个顶点
+                //Vertices.Add(V1);
+                //Vertices.Add(center+ HexMetrics.Corners[j]);
+                //Vertices.Add(V3);
+
+                ////添加桥洞区域的三角
+                //Triangles.Add(vertexIndex);
+                //Triangles.Add(vertexIndex + 1);
+                //Triangles.Add(vertexIndex + 2);
+                //Colors.Add(color);
+                //Colors.Add((color + blendColors[prev] + blendColors[j]) / 3F);
+                //Colors.Add(bridgeColor);
+                ////填充桥右边三角
+                //vertexIndex += 3;
+                ////添加桥洞三角的3个顶点
+                //Vertices.Add(V2);
+                //Vertices.Add(V4);
+                //Vertices.Add(center + HexMetrics.Corners[j+1]);
+
+                ////添加桥洞区域的三角
+                //Triangles.Add(vertexIndex);
+                //Triangles.Add(vertexIndex + 1);
+                //Triangles.Add(vertexIndex + 2);
+                //Colors.Add(color);
+                //Colors.Add(bridgeColor);
+                //Colors.Add((color + blendColors[next] + blendColors[j]) / 3F);
+
+            }
         }
 
+        Debug.Log(Vertices.Length/36);
         var renderMesh = EntityManager.GetSharedComponentData<RenderMesh>(meshEntity);
 
         renderMesh.mesh.vertices = Vertices.ToArray();

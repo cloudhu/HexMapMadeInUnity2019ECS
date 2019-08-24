@@ -64,8 +64,8 @@ public class CreateHexCellSystem : JobComponentSystem {
                         //entities[i] = instance;
                         
                         //2.计算阵列坐标
-                        float _x = (x + z * 0.5f - z / 2) * (HexMetrics.innerRadius * 2f);
-                        float _z = z * (HexMetrics.outerRadius * 1.5f);
+                        float _x = (x + z * 0.5f - z / 2) * (HexMetrics.InnerRadius * 2f);
+                        float _z = z * (HexMetrics.OuterRadius * 1.5f);
 
                         //3.设置父组件 
                         //CommandBuffer.SetComponent(index, instance, new Parent
