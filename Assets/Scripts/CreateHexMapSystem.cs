@@ -293,38 +293,6 @@ public class CreateHexMapSystem : JobComponentSystem
                         Colors.Add(bridgeColor);
                     }
                 }
-                //添加外圈区域三向颜色混合
-                //int prev = (j - 1) < 0 ? 5 : j;
-                //int next = (j + 1) > 5 ? 0 : j;
-
-                ////填充桥左边三角
-                //vertexIndex += 4;
-                ////添加桥三角的3个顶点
-                //Vertices.Add(V1);
-                //Vertices.Add(center+ HexMetrics.Corners[j]);
-                //Vertices.Add(V3);
-
-                ////添加桥洞区域的三角
-                //Triangles.Add(vertexIndex);
-                //Triangles.Add(vertexIndex + 1);
-                //Triangles.Add(vertexIndex + 2);
-                //Colors.Add(color);
-                //Colors.Add((color + blendColors[prev] + blendColors[j]) / 3F);
-                //Colors.Add(bridgeColor);
-                ////填充桥右边三角
-                //vertexIndex += 3;
-                ////添加桥洞三角的3个顶点
-                //Vertices.Add(V2);
-                //Vertices.Add(V4);
-                //Vertices.Add(center + HexMetrics.Corners[j+1]);
-
-                ////添加桥洞区域的三角
-                //Triangles.Add(vertexIndex);
-                //Triangles.Add(vertexIndex + 1);
-                //Triangles.Add(vertexIndex + 2);
-                //Colors.Add(color);
-                //Colors.Add(bridgeColor);
-                //Colors.Add((color + blendColors[next] + blendColors[j]) / 3F);
 
             }
         }

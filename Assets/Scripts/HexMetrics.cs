@@ -25,7 +25,7 @@ public static class HexMetrics
     /// <summary>
     /// 每个单元的顶点数量
     /// </summary>
-    public const int CellVerticesCount = 31;//78;
+    public const int CellVerticesCount = 42;//78;
 
     /// <summary>
     /// 六边形外半径=六边形边长

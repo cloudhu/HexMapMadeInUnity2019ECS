@@ -33,10 +33,10 @@ public struct VertexData : IComponentData
 /// <summary>
 /// 这是个坑,列表根本不能使用,替代方案是创建更多的实体来记录数据
 /// </summary>
-//public struct HexMeshData : IComponentData {
-//    //public float3[] Vertices;ArgumentException: HexMeshData contains a field of UnityEngine.float3[], which is neither primitive nor blittable.
-//    //public Vector3[] Vertices;//ArgumentException: HexMeshData contains a field of UnityEngine.Vector3[], which is neither primitive nor blittable.
-//    public NativeList<float3> Vertices;//ArgumentException: HexMeshData contains a field of Unity.Collections.LowLevel.Unsafe.DisposeSentinel, which is neither primitive nor blittable.
+//public struct ColorBuffer : IComponentData {
+//    //public float3[] Vertices;ArgumentException: ColorBuffer contains a field of UnityEngine.float3[], which is neither primitive nor blittable.
+//    //public Vector3[] Vertices;//ArgumentException: ColorBuffer contains a field of UnityEngine.Vector3[], which is neither primitive nor blittable.
+//    public NativeList<float3> Vertices;//ArgumentException: ColorBuffer contains a field of Unity.Collections.LowLevel.Unsafe.DisposeSentinel, which is neither primitive nor blittable.
 //}
 
 /// <summary>
@@ -46,10 +46,10 @@ public struct VertexData : IComponentData
 /// 总感觉这又是一个鸡肋,没有List方便
 /// </summary>
 //[InternalBufferCapacity(HexMetrics.HexCelllCount)]
-//public struct HexMeshData : IBufferElementData {
+//public struct ColorBuffer : IBufferElementData {
 //    // These implicit conversions are optional, but can help reduce typing.
-//    public static implicit operator float3(HexMeshData e) { return e.Value; }
-//    public static implicit operator HexMeshData(float3 e) { return new HexMeshData { Value = e }; }
+//    public static implicit operator float3(ColorBuffer e) { return e.Value; }
+//    public static implicit operator ColorBuffer(float3 e) { return new ColorBuffer { Value = e }; }
 
 //    // Actual value each buffer element will store.
 //    public float3 Value;
