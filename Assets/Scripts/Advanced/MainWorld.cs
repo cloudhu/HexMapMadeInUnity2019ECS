@@ -14,7 +14,7 @@ public class MainWorld : MonoBehaviour
     /// <summary>
     /// 地图材质
     /// </summary>
-    public Material material;
+    //public Material material;
     /// <summary>
     /// 地图宽度（以六边形为基本单位）
     /// </summary>
@@ -36,9 +36,10 @@ public class MainWorld : MonoBehaviour
     private World m_HexMapWorld;
     private CellSpawnSystem m_CellSpawnSystem;
     private EntityManager m_EntityManager;
-    private Entity m_Mesh;
+    //private Entity m_Mesh;
     private Entity m_Builder;
-
+    private Mesh m_Mesh;
+    private MeshCollider m_MeshCollider;
     #region Mono
 
     //Make this single
@@ -79,28 +80,67 @@ public class MainWorld : MonoBehaviour
         SetupMap(MapWidth, MapHeight, defaultColor);
 
         //4.Create Mesh entity for map and setup RenderMesh
-        EntityArchetype hexMeshArchetype = m_EntityManager.CreateArchetype(typeof(RenderMesh), typeof(MapMesh));
-        m_Mesh = m_EntityManager.CreateEntity(hexMeshArchetype);
-        m_EntityManager.SetSharedComponentData(m_Mesh, new RenderMesh
-        {
-            mesh=new Mesh(),
-            material = this.material,
-            castShadows = UnityEngine.Rendering.ShadowCastingMode.On,
-            receiveShadows = true
-        });
-        //m_EntityManager.AddBuffer<ColorBuffer>(m_Mesh);
-        //m_EntityManager.AddBuffer<VertexBuffer>(m_Mesh);
-        //m_EntityManager.AddBuffer<TriangleBuffer>(m_Mesh);
-        //5.Store the cell count for use
-        HexMetrics.HexCelllCount = MapWidth * MapHeight;
-        HexMetrics.MapWidth = MapWidth;
-        //6.Create System to spawn cells
+        GetComponent<MeshFilter>().mesh = m_Mesh = new Mesh();
+        m_Mesh.name = "Hex Mesh";
+        m_MeshCollider=gameObject.AddComponent<MeshCollider>();
+        //5.Create System to spawn cells
         m_CellSpawnSystem = m_HexMapWorld.CreateSystem<CellSpawnSystem>();
     }
 
     #endregion
 
     #region Public Function公共方法
+
+    public void RenderMesh()
+    {
+        int totalCount = HexMetrics.HexCelllCount * HexMetrics.CellVerticesCount;
+        NativeList<Vector3> Vertices = new NativeList<Vector3>(totalCount, Allocator.Temp);
+        NativeList<int> Triangles = new NativeList<int>(totalCount, Allocator.Temp);
+        NativeList<Color> Colors = new NativeList<Color>(totalCount, Allocator.Temp);
+        //暴力获取所有实体，如果有系统外的实体就糟糕了，Todo：只获取Cell单元实体
+        NativeArray<Entity> entities= m_EntityManager.GetAllEntities();
+        for (int i = 0; i < entities.Length; i++)
+        {
+            //0.取出实体，如果实体的索引为m_Builder则跳过
+
+            int index = i;
+            if ((index + 1)>=entities.Length)
+            {
+                index = 0;
+            }
+            Entity entity = entities[index+1];
+
+            if (entity.Index==m_Builder.Index)
+            {
+                continue;
+            }
+            DynamicBuffer<ColorBuffer> colorBuffer = m_EntityManager.GetBuffer<ColorBuffer>(entity);
+            DynamicBuffer<VertexBuffer> vertexBuffer = m_EntityManager.GetBuffer<VertexBuffer>(entity);
+            if (colorBuffer.Length > 0)
+            {
+                for (int j = 0; j < colorBuffer.Length; j++)
+                {
+                    Triangles.Add(Vertices.Length);
+                    Colors.Add(colorBuffer[j]);
+                    Vertices.Add(vertexBuffer[j]);
+                }
+            }
+            //if (m_EntityManager.HasComponent<ColorBuffer>(entity))
+            //{
+            //not work for DynamicBuffer
+            //}
+        }
+
+        m_Mesh.vertices = Vertices.ToArray();
+        m_Mesh.triangles = Triangles.ToArray();
+        m_Mesh.colors = Colors.ToArray();
+        m_Mesh.RecalculateNormals();
+        m_Mesh.RecalculateBounds();
+        m_MeshCollider.sharedMesh = m_Mesh;
+        Vertices.Dispose();
+        Triangles.Dispose();
+        Colors.Dispose();
+    }
 
     /// <summary>
     /// 设置地图
@@ -110,7 +150,9 @@ public class MainWorld : MonoBehaviour
     /// <param name="color">颜色</param>
     public void SetupMap(int width, int height, Color color)
     {
-
+        //Store the cell count for use
+        HexMetrics.HexCelllCount = width * height;
+        HexMetrics.MapWidth = width;
         m_EntityManager.SetComponentData(m_Builder, new Data
         {
             Width = width,
@@ -139,14 +181,19 @@ public class MainWorld : MonoBehaviour
         return m_Builder;
     }
 
-    public Entity GetMeshEntity()
-    {
-        return m_Mesh;
-    }
+    //public Entity GetMeshEntity()
+    //{
+    //    return m_Mesh;
+    //}
 
-    public DynamicBuffer<ColorBuff> GetColorBuff()
+    public void GetColorBuff(ref NativeArray<Color> colors)
     {
-        return m_EntityManager.GetBuffer<ColorBuff>(m_Builder);
+        DynamicBuffer<ColorBuff> buffs = m_EntityManager.GetBuffer<ColorBuff>(m_Builder);
+
+        for (int i = 0; i < buffs.Length; i++)
+        {
+            colors[i] = buffs[i].Value;
+        }
     }
 
     //public DynamicBuffer<ColorBuffer> GetColorBuffer()

@@ -268,8 +268,8 @@ public class CreateHexMapSystem : JobComponentSystem
                     Triangles.Add(vertexIndex + 2);
                     Triangles.Add(vertexIndex + 3);
                     //添加桥的颜色
-                    Colors.Add(color);
-                    Colors.Add(color);
+                    Colors.Add(bridgeColor);
+                    Colors.Add(bridgeColor);
                     Colors.Add(bridgeColor);
                     Colors.Add(bridgeColor);
                     //添加外圈区域三向颜色混合
@@ -288,9 +288,9 @@ public class CreateHexMapSystem : JobComponentSystem
                         Triangles.Add(vertexIndex);
                         Triangles.Add(vertexIndex + 1);
                         Triangles.Add(vertexIndex + 2);
-                        Colors.Add(color);
                         Colors.Add((color + blendColors[next] + blendColors[j]) / 3F);
-                        Colors.Add(bridgeColor);
+                        Colors.Add((color + blendColors[next] + blendColors[j]) / 3F);
+                        Colors.Add((color + blendColors[next] + blendColors[j]) / 3F);
                     }
                 }
 

@@ -41,7 +41,7 @@ public class CellSpawnSystem : JobComponentSystem {
                 Entity hexCellPrefab = CommandBuffer.CreateEntity(index);
                 CommandBuffer.AddComponent<Cell>(index, hexCellPrefab);
                 DynamicBuffer<ColorBuff> buff= CommandBuffer.AddBuffer<ColorBuff>(index, entity);
-                buff.Clear();
+                //buff.Clear();
                 //There is no need for Translation for now
                 //CommandBuffer.AddComponent<Translation>(index, hexCellPrefab);
                 Random random = new Random(1208905299U);
@@ -114,6 +114,7 @@ public class CellSpawnSystem : JobComponentSystem {
         }.Schedule(this, inputDeps);
 
         m_EntityCommandBufferSystem.AddJobHandleForProducer(job);
+        job.Complete();
         if (job.IsCompleted)
         {
             if (bIfSystemCreated)

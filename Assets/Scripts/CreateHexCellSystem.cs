@@ -10,7 +10,7 @@ using Random = Unity.Mathematics.Random;
 /// <summary>
 /// 创建六边形单元系统
 /// </summary>
-//[DisableAutoCreation]
+[DisableAutoCreation]
 public class CreateHexCellSystem : JobComponentSystem {
 
     BeginInitializationEntityCommandBufferSystem m_EntityCommandBufferSystem;

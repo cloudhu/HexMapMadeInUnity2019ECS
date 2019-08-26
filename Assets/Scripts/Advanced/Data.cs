@@ -58,29 +58,29 @@ public struct ColorBuff : IBufferElementData {
     public Color Value;
 }
 
-//public struct ColorBuffer : IBufferElementData {
-//    // These implicit conversions are optional, but can help reduce typing.
-//    public static implicit operator Color(ColorBuffer e) { return e.Value; }
-//    public static implicit operator ColorBuffer(Color e) { return new ColorBuffer { Value = e }; }
+public struct ColorBuffer : IBufferElementData {
+    // These implicit conversions are optional, but can help reduce typing.
+    public static implicit operator Color(ColorBuffer e) { return e.Value; }
+    public static implicit operator ColorBuffer(Color e) { return new ColorBuffer { Value = e }; }
 
-//    // Actual value each buffer element will store.
-//    public Color Value;
-//}
+    // Actual value each buffer element will store.
+    public Color Value;
+}
 
-//public struct VertexBuffer : IBufferElementData {
-//    // These implicit conversions are optional, but can help reduce typing.
-//    public static implicit operator Vector3(VertexBuffer e) { return e.Value; }
-//    public static implicit operator VertexBuffer(Vector3 e) { return new VertexBuffer { Value = e }; }
+public struct VertexBuffer : IBufferElementData {
+    // These implicit conversions are optional, but can help reduce typing.
+    public static implicit operator Vector3(VertexBuffer e) { return e.Value; }
+    public static implicit operator VertexBuffer(Vector3 e) { return new VertexBuffer { Value = e }; }
 
-//    // Actual value each buffer element will store.
-//    public Vector3 Value;
-//}
+    // Actual value each buffer element will store.
+    public Vector3 Value;
+}
 
-//public struct TriangleBuffer : IBufferElementData {
-//    // These implicit conversions are optional, but can help reduce typing.
-//    public static implicit operator int(TriangleBuffer e) { return e.Value; }
-//    public static implicit operator TriangleBuffer(int e) { return new TriangleBuffer { Value = e }; }
+public struct TriangleBuffer : IBufferElementData {
+    // These implicit conversions are optional, but can help reduce typing.
+    public static implicit operator int(TriangleBuffer e) { return e.Value; }
+    public static implicit operator TriangleBuffer(int e) { return new TriangleBuffer { Value = e }; }
 
-//    // Actual value each buffer element will store.
-//    public int Value;
-//}
+    // Actual value each buffer element will store.
+    public int Value;
+}

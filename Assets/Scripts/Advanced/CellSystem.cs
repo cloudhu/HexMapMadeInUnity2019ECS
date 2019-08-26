@@ -20,7 +20,6 @@ public class CellSystem : JobComponentSystem {
     /// </summary>
     bool bSwitcher = true;
 
-    private HexMapSystem hexMapSystem;
 
     protected override void OnCreate()
     {
@@ -30,24 +29,21 @@ public class CellSystem : JobComponentSystem {
     /// <summary>
     /// 循环创建六边形单元，使其生成对应长宽的阵列
     /// </summary>
-    struct SpawnJob : IJobForEachWithEntity<Cell> {
+    struct CalculateJob : IJobForEachWithEntity<Cell> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
-        //public DynamicBuffer<ColorBuffer> Colors;
-        //public DynamicBuffer<VertexBuffer> Vertices;
-        //public DynamicBuffer<TriangleBuffer> Triangles;
         [ReadOnly] public int CellCount;
         [ReadOnly] public int Width;
-        [ReadOnly] public DynamicBuffer<ColorBuff> buff;
+        [ReadOnly] public NativeArray<Color> buff;
         [BurstCompile]
         public void Execute(Entity entity, int index, ref Cell cellData)
         {
-
             if (cellData.Switcher)
             {
-
+                DynamicBuffer<ColorBuffer> colorBuffer = CommandBuffer.AddBuffer<ColorBuffer>(index, entity);
+                DynamicBuffer<VertexBuffer> vertexBuffer = CommandBuffer.AddBuffer<VertexBuffer>(index, entity);
                 //0.代码生成预设，这样可以优化性能
-                Entity vertexPrefab = CommandBuffer.CreateEntity(index);
-                CommandBuffer.AddComponent<Vertex>(index, vertexPrefab);
+                //Entity vertexPrefab = CommandBuffer.CreateEntity(index);
+                //CommandBuffer.AddComponent<Vertex>(index, vertexPrefab);
                 //暂时不需要Translation
                 //CommandBuffer.AddComponent<Translation>(index, hexCellPrefab);
                 //1.获取当前单元的位置和颜色数据
@@ -70,13 +66,13 @@ public class CellSystem : JobComponentSystem {
                 //是否最后一行
                 bool isLastRow = (currHeight == (height - 1));
 
-                int vertexIndex = index;
+                //int vertexIndex = index;
                 //0=东北：NE
                 if (!isLastRow)
                 {
                     if (ifEven)//偶数行
                     {
-                        neighbor = buff[index + Width].Value;
+                        neighbor = buff[index + Width];
                         
                     }
                     else
@@ -87,7 +83,7 @@ public class CellSystem : JobComponentSystem {
                         }
                         else
                         {
-                            neighbor = (buff[index + Width + 1].Value);
+                            neighbor = (buff[index + Width + 1]);
                         }
                     }
                 }
@@ -101,29 +97,29 @@ public class CellSystem : JobComponentSystem {
                 }
                 else
                 {
-                    neighbor = (buff[index + 1].Value);
+                    neighbor = (buff[index + 1]);
                 }
 
                 blendColors[1] = neighbor;
                 //东南2：SE
                 if (index < Width)
                 {
-                    vertexIndex = index * 33;
+                    //vertexIndex = index * 33;
                     neighbor = color;
                 }
                 else
                 {
-                    if (isLastRow)
-                    {
-                        vertexIndex = index * 42 - ( index- (currHeight - 1)*Width - 1) * 9 - (currHeight / 2) * 32;
-                    }
-                    else
-                    {
-                        vertexIndex = index * 42 - (Width - 1) * 9 - (currHeight / 2) * 32;
-                    }
+                    //if (isLastRow)
+                    //{
+                    //    vertexIndex = index * 42 - ( index- (currHeight - 1)*Width - 1) * 9 - (currHeight / 2) * 32;
+                    //}
+                    //else
+                    //{
+                    //    vertexIndex = index * 42 - (Width - 1) * 9 - (currHeight / 2) * 32;
+                    //}
                     if (ifEven)
                     {
-                        neighbor = (buff[index - Width].Value);
+                        neighbor = (buff[index - Width]);
                     }
                     else
                     {
@@ -134,7 +130,7 @@ public class CellSystem : JobComponentSystem {
                         else
                         {
 
-                            neighbor = (buff[index - Width + 1].Value);
+                            neighbor = (buff[index - Width + 1]);
                         }
                     }
                 }
@@ -147,10 +143,10 @@ public class CellSystem : JobComponentSystem {
                     {
                         if (ifStart) neighbor = color;
                         else
-                            neighbor = (buff[index - Width - 1].Value);
+                            neighbor = (buff[index - Width - 1]);
                     }
                     else
-                        neighbor = (buff[index - Width].Value);
+                        neighbor = (buff[index - Width]);
                 }
                 blendColors[3] = neighbor;
                 //西4：W
@@ -161,7 +157,7 @@ public class CellSystem : JobComponentSystem {
                 }
                 else
                 {
-                    neighbor = (buff[index - 1].Value);
+                    neighbor = (buff[index - 1]);
                 }
                 blendColors[4] = neighbor;
                 //5西北：NW
@@ -179,12 +175,12 @@ public class CellSystem : JobComponentSystem {
                         }
                         else
                         {
-                            neighbor = (buff[index + Width - 1].Value);
+                            neighbor = (buff[index + Width - 1]);
                         }
                     }
                     else
                     {
-                        neighbor = (buff[index + Width].Value);
+                        neighbor = (buff[index + Width]);
                     }
                 }
                 blendColors[5] = neighbor;
@@ -193,35 +189,18 @@ public class CellSystem : JobComponentSystem {
                 for (int j = 0; j < 6; j++)
                 {
                     //1.添加中心区域的3个顶点
-                    var vertex = CommandBuffer.Instantiate(index, vertexPrefab);
+
                     Vector3 V1 = (center + HexMetrics.SolidCorners[j]);
                     Vector3 V2 = (center + HexMetrics.SolidCorners[j + 1]);
-                    CommandBuffer.SetComponent<Vertex>(index, vertex, new Vertex
-                    {
-                        Vector=center,
-                        Color=color,
-                        Triangle=vertexIndex,
-                        Switcher=true
-                    });
-                    vertexIndex++;
-                    var vertex1 = CommandBuffer.Instantiate(index, vertexPrefab);
-                    CommandBuffer.SetComponent<Vertex>(index, vertex1, new Vertex
-                    {
-                        Vector = V1,
-                        Color = color,
-                        Triangle = vertexIndex,
-                        Switcher = true
-                    });
-                    vertexIndex++;
-                    var vertex2 = CommandBuffer.Instantiate(index, vertexPrefab);
-                    CommandBuffer.SetComponent<Vertex>(index, vertex2, new Vertex
-                    {
-                        Vector = V2,
-                        Color = color,
-                        Triangle = vertexIndex,
-                        Switcher = true
-                    });
-                    vertexIndex++;
+
+                    colorBuffer.Add(color);
+                    vertexBuffer.Add(center);
+
+                    colorBuffer.Add(color);
+                    vertexBuffer.Add(V1);
+
+                    colorBuffer.Add(color);
+                    vertexBuffer.Add(V2);
                     if (j <= 2)
                     {
                         if (blendColors[j] == color)
@@ -233,93 +212,38 @@ public class CellSystem : JobComponentSystem {
                         Vector3 bridge = (HexMetrics.GetBridge(j));
                         Vector3 V3 = (V1 + bridge);
                         Vector3 V4 = (V2 + bridge);
-                        var vertex3 = CommandBuffer.Instantiate(index, vertexPrefab);
-                        CommandBuffer.SetComponent<Vertex>(index, vertex3, new Vertex
-                        {
-                            Vector = V1,
-                            Color = color,
-                            Triangle = vertexIndex,
-                            Switcher = true
-                        });
-                        vertexIndex++;
-                        var vertex4 = CommandBuffer.Instantiate(index, vertexPrefab);
-                        CommandBuffer.SetComponent<Vertex>(index, vertex4, new Vertex
-                        {
-                            Vector = V3,
-                            Color = color,
-                            Triangle = vertexIndex,
-                            Switcher = true
-                        });
-                        vertexIndex++;
-                        var vertex5 = CommandBuffer.Instantiate(index, vertexPrefab);
-                        CommandBuffer.SetComponent<Vertex>(index, vertex5, new Vertex
-                        {
-                            Vector = V2,
-                            Color = bridgeColor,
-                            Triangle = vertexIndex,
-                            Switcher = true
-                        });
-                        vertexIndex++;
-                        var vertex6 = CommandBuffer.Instantiate(index, vertexPrefab);
-                        CommandBuffer.SetComponent<Vertex>(index, vertex6, new Vertex
-                        {
-                            Vector = V2,
-                            Color = neighbor,
-                            Triangle = vertexIndex,
-                            Switcher = true
-                        });
-                        vertexIndex++;
-                        var vertex7 = CommandBuffer.Instantiate(index, vertexPrefab);
-                        CommandBuffer.SetComponent<Vertex>(index, vertex7, new Vertex
-                        {
-                            Vector = V3,
-                            Color = neighbor,
-                            Triangle = vertexIndex,
-                            Switcher = true
-                        });
-                        vertexIndex++;
-                        var vertex8 = CommandBuffer.Instantiate(index, vertexPrefab);
-                        CommandBuffer.SetComponent<Vertex>(index, vertex8, new Vertex
-                        {
-                            Vector = V4,
-                            Color = bridgeColor,
-                            Triangle = vertexIndex,
-                            Switcher = true
-                        });
-                        vertexIndex++;
+
+                        colorBuffer.Add(color);
+                        vertexBuffer.Add(V1);
+
+                        colorBuffer.Add(color);
+                        vertexBuffer.Add(V3);
+
+                        colorBuffer.Add(bridgeColor);
+                        vertexBuffer.Add(V2);
+
+                        colorBuffer.Add(neighbor);
+                        vertexBuffer.Add(V3);
+
+                        colorBuffer.Add(neighbor);
+                        vertexBuffer.Add(V4);
+
+                        colorBuffer.Add(bridgeColor);
+                        vertexBuffer.Add(V2);
                         //添加外圈区域三向颜色混合
                         int next = (j + 1) > 5 ? 0 : (j + 1);
                         if (j <= 1 && blendColors[next] != color)
                         {
                             //填充桥三角
-                            var vertex9 = CommandBuffer.Instantiate(index, vertexPrefab);
-                            CommandBuffer.SetComponent<Vertex>(index, vertex9, new Vertex
-                            {
-                                Vector = V2,
-                                Color = color,
-                                Triangle = vertexIndex,
-                                Switcher = true
-                            });
-                            vertexIndex++;
+
+                            colorBuffer.Add(color);
+                            vertexBuffer.Add(V2);
                             //添加桥三角的3个顶点
-                            var vertex10 = CommandBuffer.Instantiate(index, vertexPrefab);
-                            CommandBuffer.SetComponent<Vertex>(index, vertex10, new Vertex
-                            {
-                                Vector = V4,
-                                Color = (color + blendColors[next] + blendColors[j]) / 3F,
-                                Triangle = vertexIndex,
-                                Switcher = true
-                            });
-                            vertexIndex++;
-                            var vertex11 = CommandBuffer.Instantiate(index, vertexPrefab);
-                            CommandBuffer.SetComponent<Vertex>(index, vertex11, new Vertex
-                            {
-                                Vector = (V2 + HexMetrics.GetBridge(next)),
-                                Color = bridgeColor,
-                                Triangle = vertexIndex,
-                                Switcher = true
-                            });
-                            vertexIndex++;
+
+                            colorBuffer.Add((color + blendColors[next] + blendColors[j]) / 3F);
+                            vertexBuffer.Add(V4);
+                            colorBuffer.Add(bridgeColor);
+                            vertexBuffer.Add(V2 + HexMetrics.GetBridge(next));
                         }
                     }
 
@@ -335,6 +259,7 @@ public class CellSystem : JobComponentSystem {
             }
 
         }
+        
     }
 
     /// <summary>
@@ -344,26 +269,24 @@ public class CellSystem : JobComponentSystem {
     /// <returns>任务句柄</returns>
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
-        var job = new SpawnJob
+        NativeArray<Color> colors = new NativeArray<Color>(HexMetrics.HexCelllCount, Allocator.TempJob);
+        MainWorld.Instance.GetColorBuff(ref colors);
+        var job = new CalculateJob
         {
             CommandBuffer = m_EntityCommandBufferSystem.CreateCommandBuffer().ToConcurrent(),
             CellCount= HexMetrics.HexCelllCount,
             Width = HexMetrics.MapWidth,
-            buff =MainWorld.Instance.GetColorBuff()
+            buff = colors
         }.Schedule(this, inputDeps);
         m_EntityCommandBufferSystem.AddJobHandleForProducer(job);
         job.Complete();
+        colors.Dispose();
         if (job.IsCompleted)
         {
-
             if (bSwitcher)
             {
-                hexMapSystem = MainWorld.Instance.GetWorld().GetOrCreateSystem<HexMapSystem>();
-                bSwitcher = false;
-            }
-            else
-            {
-                hexMapSystem.Update();
+                MainWorld.Instance.RenderMesh();
+               bSwitcher = false;
             }
         }
         return job;
