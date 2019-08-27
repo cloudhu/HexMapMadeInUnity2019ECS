@@ -25,7 +25,7 @@ public class HexMapEditor : MonoBehaviour {
     void Update()
     {
         lastClickTime += Time.deltaTime;
-        if (Input.GetMouseButtonDown(0))//&& !EventSystem.current.IsPointerOverGameObject()
+        if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())//
         {
             if (lastClickTime > 0.5f)//防止点击太频繁，系统反应不过来
             {
