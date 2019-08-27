@@ -33,8 +33,8 @@ ECS的世界由许许多多的系统来操控，在进入主世界的时候会�
 - 我真的需要一些帮助，非常感谢!
 
 ## Architecture Diagram | 架构图
-
-Coming soon
+![HexMap架构](https://img-blog.csdnimg.cn/2019082713043676.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMwMTM3MjQ1,size_16,color_FFFFFF,t_70)
+Player Coming soon
 
 ### 日志 | Wiki
 
@@ -45,19 +45,7 @@ Coming soon
 > <font color=#008000 size=3 face="微软雅黑"> **如果有技术难题需要讨论，可以加入开发者联盟：566189328（付费群）为您提供有限的技术支持，以及，心灵鸡汤！**</font>
 >  <font color=#0000FF size=3 face="微软雅黑">**当然，不需要技术支持也欢迎加入进来，随时可以请我喝咖啡、茶和果汁！**(￣┰￣*)</font>
 # ECS系列目录
-## [ECS官方示例1：ForEach](https://blog.csdn.net/qq_30137245/article/details/98959135)
-## [ECS官方案例2：IJobForEach](https://blog.csdn.net/qq_30137245/article/details/99049676)
-## [ECS官方案例3：IJobChunk](https://blog.csdn.net/qq_30137245/article/details/99068336)
-## [ECS官方案例4：SubScene](https://blog.csdn.net/qq_30137245/article/details/99071697)
-## [ECS官方案例5：SpawnFromMonoBehaviour](https://blog.csdn.net/qq_30137245/article/details/99078586)
-## [ECS官方案例6：SpawnFromEntity](https://blog.csdn.net/qq_30137245/article/details/99083411)
-## [ECS官方案例7：SpawnAndRemove](https://blog.csdn.net/qq_30137245/article/details/99101996)
-## [ECS进阶：FixedTimestepWorkaround](https://blog.csdn.net/qq_30137245/article/details/99166229)
-## [ECS进阶：Boids](https://blog.csdn.net/qq_30137245/article/details/99281187)
-## [ECS进阶：场景切换器](https://blog.csdn.net/qq_30137245/article/details/99299167)
-## [ECS进阶：MegaCity0](https://blog.csdn.net/qq_30137245/article/details/99399378)
-## [ECS进阶：MegaCity1](https://blog.csdn.net/qq_30137245/article/details/99542443)
-## [UnityMMO资源整合&服务器部署](https://blog.csdn.net/qq_30137245/article/details/99305502)
-## [UnityMMO选人流程](https://blog.csdn.net/qq_30137245/article/details/99578650)
-## [UnityMMO主世界](https://blog.csdn.net/qq_30137245/article/details/99619769)
-## [UnityMMO网络同步](https://blog.csdn.net/qq_30137245/article/details/99674348)
+## [ECS and HexMap：自动生成地图系统](https://blog.csdn.net/qq_30137245/article/details/99691025)
+## [ECS and HexMap：利用RenderMesh绘制六边形](https://blog.csdn.net/qq_30137245/article/details/100022537)
+## [ECS and HexMap：利用RenderMesh为六边形涂色](https://blog.csdn.net/qq_30137245/article/details/100034513)
+## [ECS and HexMap：六边形单元的颜色混合](https://blog.csdn.net/qq_30137245/article/details/100048406)
