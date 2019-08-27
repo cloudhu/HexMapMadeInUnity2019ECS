@@ -6,7 +6,7 @@ using UnityEngine;
 using Random = Unity.Mathematics.Random;
 
 /// <summary>
-/// 六边形单元系统
+/// 六边形单元生成系统
 /// </summary>
 [DisableAutoCreation]
 [UpdateInGroup(typeof(SimulationSystemGroup))]
@@ -32,10 +32,9 @@ public class CellSpawnSystem : JobComponentSystem {
             //0.代码生成预设，这样可以优化性能
             Entity hexCellPrefab = CommandBuffer.CreateEntity(index);
             CommandBuffer.AddComponent<Cell>(index, hexCellPrefab);
-            //DynamicBuffer is kind of sucks here,add it is good,after finished this job get it otherplace is always report error:not added it,indeed I added it,what's wrong?
-            //DynamicBuffer<ColorBuff> buff= CommandBuffer.AddBuffer<ColorBuff>(index, entity);
             //There is no need for Translation for now
             //CommandBuffer.AddComponent<Translation>(Index, hexCellPrefab);
+
             //1.添加颜色数组，这个数组以后从服务器获取，然后传到这里来处理
             Random random = new Random(1208905299U);
             int Width = createrData.Width;
@@ -64,9 +63,6 @@ public class CellSpawnSystem : JobComponentSystem {
                     //    Value = entity
                     //注释：似乎没有必要设置父类
                     //});
-                    //add the color to DynamicBuffer
-                    //Color color = new Color(random.NextFloat(), random.NextFloat(), random.NextFloat());
-                    //buff.Add(color);
 
                     //4.计算当前单元所在六个方向的邻居单元颜色
                     Color[] blendColors = new Color[6];
@@ -212,7 +208,6 @@ public class CellSpawnSystem : JobComponentSystem {
 
                     //});
                     CommandBuffer.AddComponent<OnCreateTag>(index,instance);
-                    //CommandBuffer.AddComponent<SwitcherTag>(index, instance);
                     i++;
                 }
             }

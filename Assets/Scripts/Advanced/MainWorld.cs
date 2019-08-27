@@ -27,7 +27,7 @@ public class MainWorld : MonoBehaviour
     /// <summary>
     /// 地图颜色
     /// </summary>
-    [SerializeField] private Color defaultColor = Color.white;
+    //[SerializeField] private Color defaultColor = Color.white;
 
     //单例模式
     public static MainWorld Instance = null;
@@ -76,7 +76,7 @@ public class MainWorld : MonoBehaviour
         EntityArchetype builderArchetype = m_EntityManager.CreateArchetype(typeof(Data),typeof(OnCreateTag));
         m_Builder = m_EntityManager.CreateEntity(builderArchetype);
         //3.Setup Map;  Todo:get map data from server and SetupMap,now we just use default data
-        SetupMap(MapWidth, MapHeight, defaultColor);
+        SetupMap(MapWidth, MapHeight);
 
         //4.Create Mesh entity for map and setup RenderMesh
         GetComponent<MeshFilter>().mesh = m_Mesh = new Mesh();
@@ -152,8 +152,7 @@ public class MainWorld : MonoBehaviour
     /// </summary>
     /// <param name="width">宽</param>
     /// <param name="height">高</param>
-    /// <param name="color">颜色</param>
-    public void SetupMap(int width, int height, Color color)
+    public void SetupMap(int width, int height)
     {
         //Store the cell count for use
         HexMetrics.HexCelllCount = width * height;
@@ -163,6 +162,7 @@ public class MainWorld : MonoBehaviour
             Width = width,
             Height = height
         });
+        m_EntityManager.AddComponent<OnCreateTag>(m_Builder);
     }
 
     public World GetWorld()
@@ -184,21 +184,6 @@ public class MainWorld : MonoBehaviour
     {
         return m_Builder;
     }
-
-    //public void GetColorBuff(ref NativeArray<Color> colors)
-    //{
-    //    Debug.Log("GetColorBuff");
-    //    DynamicBuffer<ColorBuff> buffs = m_EntityManager.GetBuffer<ColorBuff>(m_Builder);
-
-    //    for (int i = 0; i < buffs.Length; i++)
-    //    {
-    //        colors[i] = buffs[i].Value;
-    //    }
-
-    //    buffs.Clear();
-        
-    //    m_EntityManager.RemoveComponent<OnCreateTag>(m_Builder);
-    //}
 
     #endregion
 

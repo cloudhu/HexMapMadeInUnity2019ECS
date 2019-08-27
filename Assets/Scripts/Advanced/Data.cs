@@ -19,25 +19,7 @@ public struct OnCreateTag : IComponentData { }
 /// <summary>
 /// 开关
 /// </summary>
-public struct SwitcherTag : IComponentData { }
-
-/// <summary>
-/// 地图网格数据
-/// </summary>
-public struct MapMesh : IComponentData {
-
-}
-
-/// <summary>
-/// 顶点数据
-/// </summary>
-public struct Vertex : IComponentData
-{
-    public Vector3 Vector;
-    public Color Color;
-    public int Triangle;
-    public bool Switcher;
-}
+public struct UpdateTag : IComponentData { }
 
 /// <summary>
 /// 单元数据
@@ -55,23 +37,6 @@ public struct Cell : IComponentData
     public Color NW;
 }
 
-//public struct ColorBuffer : IBufferElementData {
-//    // These implicit conversions are optional, but can help reduce typing.
-//    public static implicit operator float3(ColorBuffer e) { return e.Value; }
-//    public static implicit operator ColorBuffer(float3 e) { return new ColorBuffer { Value = e }; }
-
-//    // Actual value each buffer element will store.
-//    public float3 Value;
-//}
-
-public struct ColorBuff : IBufferElementData {
-    // These implicit conversions are optional, but can help reduce typing.
-    public static implicit operator Color(ColorBuff e) { return e.Value; }
-    public static implicit operator ColorBuff(Color e) { return new ColorBuff { Value = e }; }
-
-    // Actual value each buffer element will store.
-    public Color Value;
-}
 
 public struct ColorBuffer : IBufferElementData {
     // These implicit conversions are optional, but can help reduce typing.
