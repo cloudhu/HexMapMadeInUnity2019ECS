@@ -50,10 +50,7 @@ public class CreaterEntity : MonoBehaviour, IConvertGameObjectToEntity
             Height=MapHeight,
             Color=defaultColor
         });
-        dstManager.AddComponentData(entity, new SwitchCreateCellData
-        {
-            bIfNewMap=true
-        });
+        dstManager.AddComponent<SwitchCreateCellData>(entity);
 
     }
 

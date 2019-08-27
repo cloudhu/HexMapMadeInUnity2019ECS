@@ -297,7 +297,7 @@ public class CreateHexMapSystem : JobComponentSystem
             }
         }
 
-        Debug.Log(Vertices.Length/36);
+        Debug.Log(Vertices.Length/ HexMetrics.HexCelllCount);
         var renderMesh = EntityManager.GetSharedComponentData<RenderMesh>(meshEntity);
 
         renderMesh.mesh.vertices = Vertices.ToArray();

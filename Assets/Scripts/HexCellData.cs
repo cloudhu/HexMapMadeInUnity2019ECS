@@ -17,10 +17,7 @@ public struct HexCellData : IComponentData {
 /// <summary>
 /// 如果想生成新的地图,使用这个开关
 /// </summary>
-public struct SwitchCreateCellData : IComponentData
-{
-    public bool bIfNewMap;
-}
+public struct SwitchCreateCellData : IComponentData { }
 
 /// <summary>
 /// 用来储存顶点数据

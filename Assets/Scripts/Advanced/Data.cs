@@ -9,8 +9,17 @@ public struct Data   : IComponentData
 {
     public int Width;
     public int Height;
-    public bool BIfNewMap;
 }
+
+/// <summary>
+/// 正在创建标签
+/// </summary>
+public struct OnCreateTag : IComponentData { }
+
+/// <summary>
+/// 开关
+/// </summary>
+public struct SwitcherTag : IComponentData { }
 
 /// <summary>
 /// 地图网格数据
@@ -35,9 +44,15 @@ public struct Vertex : IComponentData
 /// </summary>
 public struct Cell : IComponentData
 {
+    public int Index;
     public Vector3 Position;
     public Color Color;
-    public bool Switcher;
+    public Color NE;
+    public Color E;
+    public Color SE;
+    public Color SW;
+    public Color W;
+    public Color NW;
 }
 
 //public struct ColorBuffer : IBufferElementData {

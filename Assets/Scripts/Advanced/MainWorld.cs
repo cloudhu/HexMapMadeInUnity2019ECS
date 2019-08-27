@@ -1,9 +1,6 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Rendering;
-using Unity.Transforms;
 using UnityEngine;
 
 /// <summary>
@@ -15,6 +12,7 @@ public class MainWorld : MonoBehaviour
     /// 地图材质
     /// </summary>
     //public Material material;
+
     /// <summary>
     /// 地图宽度（以六边形为基本单位）
     /// </summary>
@@ -40,6 +38,7 @@ public class MainWorld : MonoBehaviour
     private Entity m_Builder;
     private Mesh m_Mesh;
     private MeshCollider m_MeshCollider;
+
     #region Mono
 
     //Make this single
@@ -74,7 +73,7 @@ public class MainWorld : MonoBehaviour
         //1.get the entity Manager
         m_EntityManager = m_HexMapWorld.EntityManager;
         //2.Create Builder Entity;
-        EntityArchetype builderArchetype = m_EntityManager.CreateArchetype(typeof(Data));
+        EntityArchetype builderArchetype = m_EntityManager.CreateArchetype(typeof(Data),typeof(OnCreateTag));
         m_Builder = m_EntityManager.CreateEntity(builderArchetype);
         //3.Setup Map;  Todo:get map data from server and SetupMap,now we just use default data
         SetupMap(MapWidth, MapHeight, defaultColor);
@@ -91,26 +90,33 @@ public class MainWorld : MonoBehaviour
 
     #region Public Function公共方法
 
+    /// <summary>
+    /// 渲染地图
+    /// </summary>
     public void RenderMesh()
     {
+
+        //暴力获取所有实体，如果有系统外的实体就糟糕了，Todo：只获取Cell单元实体
+        NativeArray<Entity> entities = m_EntityManager.GetAllEntities();
+        if (entities.Length < HexMetrics.HexCelllCount) return;
+        StartCoroutine(RenderHexMap());
+    }
+
+    IEnumerator RenderHexMap()
+    {
+        yield return new WaitForSeconds(0.02f);
+        NativeArray<Entity> entities = m_EntityManager.GetAllEntities();
         int totalCount = HexMetrics.HexCelllCount * HexMetrics.CellVerticesCount;
         NativeList<Vector3> Vertices = new NativeList<Vector3>(totalCount, Allocator.Temp);
         NativeList<int> Triangles = new NativeList<int>(totalCount, Allocator.Temp);
         NativeList<Color> Colors = new NativeList<Color>(totalCount, Allocator.Temp);
-        //暴力获取所有实体，如果有系统外的实体就糟糕了，Todo：只获取Cell单元实体
-        NativeArray<Entity> entities= m_EntityManager.GetAllEntities();
+
         for (int i = 0; i < entities.Length; i++)
         {
             //0.取出实体，如果实体的索引为m_Builder则跳过
-
-            int index = i;
-            if ((index + 1)>=entities.Length)
-            {
-                index = 0;
-            }
-            Entity entity = entities[index+1];
-
-            if (entity.Index==m_Builder.Index)
+            Entity entity = entities[i];
+            if (m_EntityManager.HasComponent<OnCreateTag>(entity)) continue;
+            if (entity.Index == m_Builder.Index)
             {
                 continue;
             }
@@ -125,10 +131,9 @@ public class MainWorld : MonoBehaviour
                     Vertices.Add(vertexBuffer[j]);
                 }
             }
-            //if (m_EntityManager.HasComponent<ColorBuffer>(entity))
-            //{
-            //not work for DynamicBuffer
-            //}
+
+            colorBuffer.Clear();
+            vertexBuffer.Clear();
         }
 
         m_Mesh.vertices = Vertices.ToArray();
@@ -140,7 +145,7 @@ public class MainWorld : MonoBehaviour
         Vertices.Dispose();
         Triangles.Dispose();
         Colors.Dispose();
-    }
+    } 
 
     /// <summary>
     /// 设置地图
@@ -156,8 +161,7 @@ public class MainWorld : MonoBehaviour
         m_EntityManager.SetComponentData(m_Builder, new Data
         {
             Width = width,
-            Height = height,
-            BIfNewMap = true
+            Height = height
         });
     }
 
@@ -181,33 +185,21 @@ public class MainWorld : MonoBehaviour
         return m_Builder;
     }
 
-    //public Entity GetMeshEntity()
+    //public void GetColorBuff(ref NativeArray<Color> colors)
     //{
-    //    return m_Mesh;
+    //    Debug.Log("GetColorBuff");
+    //    DynamicBuffer<ColorBuff> buffs = m_EntityManager.GetBuffer<ColorBuff>(m_Builder);
+
+    //    for (int i = 0; i < buffs.Length; i++)
+    //    {
+    //        colors[i] = buffs[i].Value;
+    //    }
+
+    //    buffs.Clear();
+        
+    //    m_EntityManager.RemoveComponent<OnCreateTag>(m_Builder);
     //}
 
-    public void GetColorBuff(ref NativeArray<Color> colors)
-    {
-        DynamicBuffer<ColorBuff> buffs = m_EntityManager.GetBuffer<ColorBuff>(m_Builder);
-
-        for (int i = 0; i < buffs.Length; i++)
-        {
-            colors[i] = buffs[i].Value;
-        }
-    }
-
-    //public DynamicBuffer<ColorBuffer> GetColorBuffer()
-    //{
-    //    return m_EntityManager.GetBuffer<ColorBuffer>(m_Mesh);
-    //}
-    //public DynamicBuffer<VertexBuffer> GetVertexBuffer()
-    //{
-    //    return m_EntityManager.GetBuffer<VertexBuffer>(m_Mesh);
-    //}
-    //public DynamicBuffer<TriangleBuffer> GetTriangleBuffer()
-    //{
-    //    return m_EntityManager.GetBuffer<TriangleBuffer>(m_Mesh);
-    //}
     #endregion
 
 }

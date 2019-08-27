@@ -8,9 +8,22 @@ public static class HexMetrics
     /// <summary>
     /// 方向，N=北，S=南，E=东，W=西
     /// </summary>
-    //public enum HexDirection {
-    //    NE, E, SE, SW, W, NW
-    //}
+    public enum HexDirection {
+        NE=0, E=1, SE=2, SW=3, W=4, NW=5
+    }
+
+    /// <summary>
+    /// 六边形单元的六个方向
+    /// </summary>
+    public readonly static HexDirection[] hexDirections =
+    {
+        HexDirection.NE,
+        HexDirection.E,
+        HexDirection.SE,
+        HexDirection.SW,
+        HexDirection.W,
+        HexDirection.NW
+    };
 
     /// <summary>
     /// 总的顶点数

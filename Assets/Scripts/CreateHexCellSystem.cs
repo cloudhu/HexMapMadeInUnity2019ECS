@@ -40,59 +40,51 @@ public class CreateHexCellSystem : JobComponentSystem {
             Entity hexCellPrefab = CommandBuffer.CreateEntity(index);
             CommandBuffer.AddComponent<HexCellData>(index, hexCellPrefab);
             CommandBuffer.AddComponent< Translation >(index, hexCellPrefab);
+            Random random= new Random(1208905299U);
 
-            if (switchCreateCell.bIfNewMap)
+            for (int z = 0; z < createrData.Height; z++)
             {
-                Random random= new Random(1208905299U);
-
-                for (int z = 0; z < createrData.Height; z++)
+                for (int x = 0; x < createrData.Width; x++)
                 {
-                    for (int x = 0; x < createrData.Width; x++)
+                    
+                    //1.实例化
+                    var instance = CommandBuffer.Instantiate(index, hexCellPrefab);
+                    //entities[i] = instance;
+                    
+                    //2.计算阵列坐标
+                    float _x = (x + z * 0.5f - z / 2) * (HexMetrics.InnerRadius * 2f);
+                    float _z = z * (HexMetrics.OuterRadius * 1.5f);
+
+                    //3.设置父组件 
+                    //CommandBuffer.SetComponent(Index, instance, new Parent
+                    //{
+                    //    Value = entity
+                    //注释：似乎没有必要设置父类
+                    //});
+
+                    //4.设置每个单元的数据
+                    CommandBuffer.SetComponent(index, instance, new HexCellData
                     {
-                        
-                        //1.实例化
-                        var instance = CommandBuffer.Instantiate(index, hexCellPrefab);
-                        //entities[i] = instance;
-                        
-                        //2.计算阵列坐标
-                        float _x = (x + z * 0.5f - z / 2) * (HexMetrics.InnerRadius * 2f);
-                        float _z = z * (HexMetrics.OuterRadius * 1.5f);
+                        X = x - z / 2,
+                        Y = 0,
+                        Z = z,
+                        color = new Color(random.NextFloat(), random.NextFloat(), random.NextFloat()),
 
-                        //3.设置父组件 
-                        //CommandBuffer.SetComponent(index, instance, new Parent
-                        //{
-                        //    Value = entity
-                        //注释：似乎没有必要设置父类
-                        //});
+                    });
 
-                        //4.设置每个单元的数据
-                        CommandBuffer.SetComponent(index, instance, new HexCellData
-                        {
-                            X = x - z / 2,
-                            Y = 0,
-                            Z = z,
-                            color = new Color(random.NextFloat(), random.NextFloat(), random.NextFloat()),
+                    //5.设置位置
+                    CommandBuffer.SetComponent(index, instance, new Translation
+                    {
+                        Value = new float3(_x, 0F, _z)
 
-                        });
-
-                        //5.设置位置
-                        CommandBuffer.SetComponent(index, instance, new Translation
-                        {
-                            Value = new float3(_x, 0F, _z)
-
-                        });
-                        
-                    }
+                    });
+                    
                 }
-                CommandBuffer.SetComponent(index, entity, new SwitchCreateCellData
-                {
-                    bIfNewMap=false
-
-                });
-
-                //摧毁使用完的预设，节约内存资源
-                CommandBuffer.DestroyEntity(index, hexCellPrefab);
             }
+
+            //摧毁使用完的预设，节约内存资源
+            CommandBuffer.DestroyEntity(index, hexCellPrefab);
+            CommandBuffer.RemoveComponent<SwitchCreateCellData>(index, entity);
 
         }
     }
