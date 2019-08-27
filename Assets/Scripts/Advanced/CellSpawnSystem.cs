@@ -9,7 +9,7 @@ using Random = Unity.Mathematics.Random;
 /// 六边形单元生成系统
 /// </summary>
 [DisableAutoCreation]
-[UpdateInGroup(typeof(SimulationSystemGroup))]
+[UpdateInGroup(typeof(InitializationSystemGroup))]
 public class CellSpawnSystem : JobComponentSystem {
 
     BeginInitializationEntityCommandBufferSystem m_EntityCommandBufferSystem;
@@ -23,11 +23,11 @@ public class CellSpawnSystem : JobComponentSystem {
     /// <summary>
     /// 循环创建六边形单元，使其生成对应长宽的阵列
     /// </summary>
-    struct SpawnJob : IJobForEachWithEntity<Data,OnCreateTag> {
+    struct SpawnJob : IJobForEachWithEntity<Data,NewDataTag> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
         
         [BurstCompile]
-        public void Execute(Entity entity, int index, [ReadOnly]ref Data createrData,[ReadOnly]ref OnCreateTag tag)
+        public void Execute(Entity entity, int index, [ReadOnly]ref Data createrData,[ReadOnly]ref NewDataTag tag)
         {
             //0.代码生成预设，这样可以优化性能
             Entity hexCellPrefab = CommandBuffer.CreateEntity(index);
@@ -66,10 +66,12 @@ public class CellSpawnSystem : JobComponentSystem {
 
                     //4.计算当前单元所在六个方向的邻居单元颜色
                     Color[] blendColors = new Color[6];
+                    int[] directions = new int[6];
                     //当前单元的颜色
                     Color color = Colors[i];
                     //邻居单元的颜色
                     Color neighbor = color;
+                    int direction = 0;
                     //判断当前单元所在行数是否为偶数
                     bool ifEven = (z & 1) == 0;
                     //当前单元是否处于行尾
@@ -84,23 +86,23 @@ public class CellSpawnSystem : JobComponentSystem {
                     {
                         if (ifEven)//偶数行
                         {
+                            
                             neighbor = Colors[i + Width];
-
+                            direction = i + Width;
                         }
                         else
                         {
-                            if (ifEnd)//最末尾没有相邻的单元
-                            {
-                                neighbor = color;
-                            }
-                            else
+                            if (!ifEnd)//最末尾没有相邻的单元
                             {
                                 neighbor = (Colors[i + Width + 1]);
+                                direction = i + Width + 1;
                             }
                         }
                     }
 
+                    directions[0] = direction;
                     blendColors[0] = neighbor;
+                    direction = 0;
                     //颜色混合1 东：E
                     if (ifEnd)
                     {
@@ -110,34 +112,33 @@ public class CellSpawnSystem : JobComponentSystem {
                     else
                     {
                         neighbor = (Colors[i + 1]);
+                        direction = i + 1;
                     }
 
+                    directions[1] = direction;
                     blendColors[1] = neighbor;
+                    direction = 0;
                     //东南2：SE
-                    if (i < Width)
-                    {
-                        neighbor = color;
-                    }
-                    else
+                    neighbor = color;
+                    if(i>=Width)
                     {
                         if (ifEven)
                         {
                             neighbor = (Colors[i - Width]);
+                            direction = i - Width;
                         }
                         else
                         {
-                            if (ifEnd)
+                            if (!ifEnd)
                             {
-                                neighbor = color;
-                            }
-                            else
-                            {
-
                                 neighbor = (Colors[i - Width + 1]);
+                                direction = i - Width + 1;
                             }
                         }
                     }
                     blendColors[2] = neighbor;
+                    directions[2] = direction;
+                    direction = 0;
                     //西南3：SW
                     if (i < Width) neighbor = color;
                     else
@@ -146,12 +147,22 @@ public class CellSpawnSystem : JobComponentSystem {
                         {
                             if (ifStart) neighbor = color;
                             else
+                            {
                                 neighbor = (Colors[i - Width - 1]);
+                                direction = i - Width - 1;
+                            }
+ 
                         }
                         else
+                        {
                             neighbor = (Colors[i - Width]);
+                            direction = i - Width;
+                        }
                     }
+
+                    directions[3] = direction;
                     blendColors[3] = neighbor;
+                    direction = 0;
                     //西4：W
                     if (ifStart)
                     {
@@ -161,8 +172,11 @@ public class CellSpawnSystem : JobComponentSystem {
                     else
                     {
                         neighbor = (Colors[i - 1]);
+                        direction = i - 1;
                     }
                     blendColors[4] = neighbor;
+                    directions[4] = direction;
+                    direction = 0;
                     //5西北：NW
                     if (isLastRow)
                     {
@@ -179,13 +193,17 @@ public class CellSpawnSystem : JobComponentSystem {
                             else
                             {
                                 neighbor = (Colors[i + Width - 1]);
+                                direction = i + Width - 1;
                             }
                         }
                         else
                         {
                             neighbor = (Colors[i + Width]);
+                            direction = i + Width;
                         }
                     }
+
+                    directions[5] = direction;
                     blendColors[5] = neighbor;
                     //5.设置每个六边形单元的数据
                     CommandBuffer.SetComponent(index, instance, new Cell
@@ -198,7 +216,13 @@ public class CellSpawnSystem : JobComponentSystem {
                         SE=blendColors[2],
                         SW=blendColors[3],
                         W=blendColors[4],
-                        NW= blendColors[5]
+                        NW= blendColors[5],
+                        NEIndex=directions[0],
+                        EIndex = directions[1],
+                        SEIndex = directions[2],
+                        SWIndex = directions[3],
+                        WIndex = directions[4],
+                        NWIndex = directions[5]
                     });
 
                     //6.设置位置,目前来看，没有必要使用Translation
@@ -207,14 +231,14 @@ public class CellSpawnSystem : JobComponentSystem {
                     //    Value = new float3(_x, 0F, _z)
 
                     //});
-                    CommandBuffer.AddComponent<OnCreateTag>(index,instance);
+                    CommandBuffer.AddComponent<NewDataTag>(index,instance);
                     i++;
                 }
             }
 
             //7.摧毁使用完的预设，节约内存资源
             CommandBuffer.DestroyEntity(index, hexCellPrefab);
-            CommandBuffer.RemoveComponent<OnCreateTag>(index,entity);
+            CommandBuffer.RemoveComponent<NewDataTag>(index,entity);
             Colors.Dispose();
         }
     }

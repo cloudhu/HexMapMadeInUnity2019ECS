@@ -38,7 +38,9 @@ public class MainWorld : MonoBehaviour
     private Entity m_Builder;
     private Mesh m_Mesh;
     private MeshCollider m_MeshCollider;
-
+    //上一次点击的单元索引
+    private int m_PrevClickCell = -1;
+    private Color m_PrevSelect=Color.black;
     #region Mono
 
     //Make this single
@@ -73,7 +75,7 @@ public class MainWorld : MonoBehaviour
         //1.get the entity Manager
         m_EntityManager = m_HexMapWorld.EntityManager;
         //2.Create Builder Entity;
-        EntityArchetype builderArchetype = m_EntityManager.CreateArchetype(typeof(Data),typeof(OnCreateTag));
+        EntityArchetype builderArchetype = m_EntityManager.CreateArchetype(typeof(Data),typeof(NewDataTag));
         m_Builder = m_EntityManager.CreateEntity(builderArchetype);
         //3.Setup Map;  Todo:get map data from server and SetupMap,now we just use default data
         SetupMap(MapWidth, MapHeight);
@@ -115,13 +117,11 @@ public class MainWorld : MonoBehaviour
         {
             //0.取出实体，如果实体的索引为m_Builder则跳过
             Entity entity = entities[i];
-            if (m_EntityManager.HasComponent<OnCreateTag>(entity)) continue;
-            if (entity.Index == m_Builder.Index)
-            {
-                continue;
-            }
+            if (m_EntityManager.HasComponent<NewDataTag>(entity)) continue;
+            if (!m_EntityManager.HasComponent<Cell>(entity)) continue;
             DynamicBuffer<ColorBuffer> colorBuffer = m_EntityManager.GetBuffer<ColorBuffer>(entity);
             DynamicBuffer<VertexBuffer> vertexBuffer = m_EntityManager.GetBuffer<VertexBuffer>(entity);
+
             if (colorBuffer.Length > 0)
             {
                 for (int j = 0; j < colorBuffer.Length; j++)
@@ -136,12 +136,18 @@ public class MainWorld : MonoBehaviour
             vertexBuffer.Clear();
         }
 
-        m_Mesh.vertices = Vertices.ToArray();
-        m_Mesh.triangles = Triangles.ToArray();
-        m_Mesh.colors = Colors.ToArray();
-        m_Mesh.RecalculateNormals();
-        m_Mesh.RecalculateBounds();
-        m_MeshCollider.sharedMesh = m_Mesh;
+        //Debug.Log("-----------------------------------------------------------------------------------------");
+        //Debug.Log("Vertices=" +Vertices.Length + "----Triangles="+ Triangles.Length+ "----Colors="+ Colors.Length);
+        //Debug.Log(Vertices.Length/ HexMetrics.HexCelllCount);
+        if (Vertices.Length>1)
+        {
+            m_Mesh.vertices = Vertices.ToArray();
+            m_Mesh.triangles = Triangles.ToArray();
+            m_Mesh.colors = Colors.ToArray();
+            m_Mesh.RecalculateNormals();
+            m_Mesh.RecalculateBounds();
+            m_MeshCollider.sharedMesh = m_Mesh;
+        }
         Vertices.Dispose();
         Triangles.Dispose();
         Colors.Dispose();
@@ -157,12 +163,58 @@ public class MainWorld : MonoBehaviour
         //Store the cell count for use
         HexMetrics.HexCelllCount = width * height;
         HexMetrics.MapWidth = width;
+        MapWidth = width;
+        MapHeight = height;
         m_EntityManager.SetComponentData(m_Builder, new Data
         {
             Width = width,
             Height = height
         });
-        m_EntityManager.AddComponent<OnCreateTag>(m_Builder);
+        m_EntityManager.AddComponent<NewDataTag>(m_Builder);
+    }
+
+    /// <summary>
+    /// 染色指定位置的六边形单元
+    /// </summary>
+    /// <param name="position">位置</param>
+    /// <param name="color">颜色</param>
+    public void ColorCell(Vector3 position, Color color)
+    {
+        position = transform.InverseTransformPoint(position);
+        HexCoordinates coordinates = HexCoordinates.FromPosition(position);
+        int index = coordinates.X + coordinates.Z * MapWidth + coordinates.Z / 2;
+        if (index==m_PrevClickCell && color==m_PrevSelect)
+        {//避免玩家重复操作
+            return;
+        }
+
+        m_PrevClickCell = index;
+        m_PrevSelect = color;
+        StartCoroutine(UpdateCellColor(index,color));
+    }
+
+    /// <summary>
+    /// 更新单元的颜色
+    /// </summary>
+    /// <param name="cellIndex">单元索引</param>
+    /// <param name="color">颜色</param>
+    /// <returns></returns>
+    IEnumerator UpdateCellColor(int cellIndex,Color color)
+    {
+        yield return null;
+        NativeArray<Entity> entities = m_EntityManager.GetAllEntities();
+        if (entities.Length < HexMetrics.HexCelllCount) yield break;
+        for (int i = 0; i < entities.Length; i++)
+        {
+            Entity entity = entities[i];
+            if (!m_EntityManager.HasComponent<Cell>(entity)) continue;
+            m_EntityManager.AddComponentData(entity,new UpdateData
+            {
+                CellIndex=cellIndex,
+                NewColor=color,
+                Width=MapWidth
+            });
+        }
     }
 
     public World GetWorld()

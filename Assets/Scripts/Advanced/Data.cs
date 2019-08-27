@@ -12,14 +12,28 @@ public struct Data   : IComponentData
 }
 
 /// <summary>
-/// 正在创建标签
+/// 新数据标签
 /// </summary>
-public struct OnCreateTag : IComponentData { }
+public struct NewDataTag : IComponentData { }
 
 /// <summary>
-/// 开关
+/// 单元的更新数据
 /// </summary>
-public struct UpdateTag : IComponentData { }
+public struct UpdateData : IComponentData
+{
+    /// <summary>
+    /// 单元的索引
+    /// </summary>
+    public int CellIndex;
+    /// <summary>
+    /// 新的颜色
+    /// </summary>
+    public Color NewColor;
+    /// <summary>
+    /// 宽度
+    /// </summary>
+    public int Width;
+}
 
 /// <summary>
 /// 单元数据
@@ -35,6 +49,12 @@ public struct Cell : IComponentData
     public Color SW;
     public Color W;
     public Color NW;
+    public int NEIndex;
+    public int EIndex;
+    public int SEIndex;
+    public int SWIndex;
+    public int WIndex;
+    public int NWIndex;
 }
 
 

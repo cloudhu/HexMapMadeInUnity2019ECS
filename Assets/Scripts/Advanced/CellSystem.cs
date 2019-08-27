@@ -8,7 +8,7 @@ using UnityEngine;
 /// 六边形单元系统
 /// </summary>
 //[DisableAutoCreation]
-[UpdateAfter(typeof(SimulationSystemGroup))]
+[UpdateInGroup(typeof(InitializationSystemGroup))]
 public class CellSystem : JobComponentSystem {
 
     BeginInitializationEntityCommandBufferSystem m_EntityCommandBufferSystem;
@@ -21,16 +21,17 @@ public class CellSystem : JobComponentSystem {
     /// <summary>
     /// 循环创建六边形单元，使其生成对应长宽的阵列
     /// </summary>
-    struct CalculateJob : IJobForEachWithEntity<Cell,OnCreateTag> {
+    struct CalculateJob : IJobForEachWithEntity<Cell,NewDataTag> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
         [BurstCompile]
-        public void Execute(Entity entity, int index,[ReadOnly] ref Cell cellData,[ReadOnly]ref OnCreateTag tag)
+        public void Execute(Entity entity, int index,[ReadOnly] ref Cell cellData,[ReadOnly]ref NewDataTag tag)
         {
             //0.获取单元索引，Execute的index不可靠，添加动态缓存
             int cellIndex = cellData.Index;
             DynamicBuffer<ColorBuffer> colorBuffer = CommandBuffer.AddBuffer<ColorBuffer>(index, entity);
             DynamicBuffer<VertexBuffer> vertexBuffer = CommandBuffer.AddBuffer<VertexBuffer>(index, entity);
-
+            colorBuffer.Clear();
+            vertexBuffer.Clear();
             //1.获取当前单元的位置和颜色数据
             Vector3 center = cellData.Position;
             Color color = cellData.Color;
@@ -42,6 +43,10 @@ public class CellSystem : JobComponentSystem {
             blendColors[3] = cellData.SW;
             blendColors[4] = cellData.W;
             blendColors[5] = cellData.NW;
+            int[] directions = new int[3];
+            directions[0] = cellData.NEIndex;
+            directions[1] = cellData.EIndex;
+            directions[2] = cellData.SEIndex;
 
             //添加六边形单元六个方向的顶点、三角和颜色
             for (int j = 0; j < 6; j++)
@@ -61,7 +66,7 @@ public class CellSystem : JobComponentSystem {
                 vertexBuffer.Add(V2);
                 if (j <= 2)
                 {
-                    if (neighbor == color)
+                    if (directions[j] == 0)
                     {//如果没有相邻的单元，则跳过循环
                         continue;
                     }
@@ -89,8 +94,8 @@ public class CellSystem : JobComponentSystem {
                     colorBuffer.Add(bridgeColor);
                     vertexBuffer.Add(V2);
                     //添加外圈区域三向颜色混合
-                    int next = (j + 1) > 5 ? 0 : (j + 1);
-                    if (j <= 1 && blendColors[next] != color)
+                    int next = (j + 1);
+                    if (j <= 1 && directions[next] != 0)
                     {
                         //填充桥三角
                         Color triangleColor = (color + blendColors[next] + neighbor) / 3F;
@@ -108,7 +113,7 @@ public class CellSystem : JobComponentSystem {
             }
             //4.turn off cell system or just destory the cell,which is better I do not know for now
             //CommandBuffer.DestroyEntity(index, entity);
-            CommandBuffer.RemoveComponent<OnCreateTag>(index,entity);
+            CommandBuffer.RemoveComponent<NewDataTag>(index,entity);
         }
         
     }
@@ -130,7 +135,6 @@ public class CellSystem : JobComponentSystem {
 
         if (job.IsCompleted)
         {
-            Debug.Log("JobIsCompleted");
             MainWorld.Instance.RenderMesh();
         }
 

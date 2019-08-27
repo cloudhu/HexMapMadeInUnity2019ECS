@@ -105,7 +105,7 @@ public class CreateHexMapSystem : JobComponentSystem
             //得到当前单元周边六个单元的颜色，并添加到列表中
 
             //当前单元所在行数
-            int currHeight = i==0?0:(i / width);
+            int currHeight = (i / width);
             
             //判断当前所在行是否为偶数
             bool ifEven = (currHeight & 1) == 0;
