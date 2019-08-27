@@ -33,7 +33,7 @@ ECS的世界由许许多多的系统来操控，在进入主世界的时候会�
 - 我真的需要一些帮助，非常感谢!
 
 ## Architecture Diagram | 架构图
-![HexMap架构](https://img-blog.csdnimg.cn/2019082713043676.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMwMTM3MjQ1,size_16,color_FFFFFF,t_70)
+![HexMap架构](https://img-blog.csdnimg.cn/20190827131150695.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMwMTM3MjQ1,size_16,color_FFFFFF,t_70)
 Player Coming soon
 
 ### 日志 | Wiki
