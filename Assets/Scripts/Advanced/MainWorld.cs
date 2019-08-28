@@ -40,7 +40,10 @@ public class MainWorld : MonoBehaviour
     private MeshCollider m_MeshCollider;
     //上一次点击的单元索引
     private int m_PrevClickCell = -1;
+    //上一次选择的颜色
     private Color m_PrevSelect=Color.black;
+    //上一次设置的海拔
+    private int m_PrevElevation = 0;
     #region Mono
 
     //Make this single
@@ -83,6 +86,7 @@ public class MainWorld : MonoBehaviour
         //4.Create Mesh entity for map and setup RenderMesh
         GetComponent<MeshFilter>().mesh = m_Mesh = new Mesh();
         m_Mesh.name = "Hex Mesh";
+        m_Mesh.MarkDynamic();
         m_MeshCollider=gameObject.AddComponent<MeshCollider>();
         //5.Create System to spawn cells
         m_CellSpawnSystem = m_HexMapWorld.CreateSystem<CellSpawnSystem>();
@@ -136,16 +140,17 @@ public class MainWorld : MonoBehaviour
             vertexBuffer.Clear();
         }
 
-        //Debug.Log("-----------------------------------------------------------------------------------------");
-        //Debug.Log("Vertices=" +Vertices.Length + "----Triangles="+ Triangles.Length+ "----Colors="+ Colors.Length);
-        //Debug.Log(Vertices.Length/ HexMetrics.HexCelllCount);
+        Debug.Log("-----------------------------------------------------------------------------------------");
+        Debug.Log("Vertices=" +Vertices.Length + "----Triangles="+ Triangles.Length+ "----Colors="+ Colors.Length);
+        Debug.Log(Vertices.Length/ HexMetrics.HexCelllCount);
         if (Vertices.Length>1)
         {
+            m_Mesh.Clear();
             m_Mesh.vertices = Vertices.ToArray();
             m_Mesh.triangles = Triangles.ToArray();
             m_Mesh.colors = Colors.ToArray();
             m_Mesh.RecalculateNormals();
-            m_Mesh.RecalculateBounds();
+            m_Mesh.Optimize();
             m_MeshCollider.sharedMesh = m_Mesh;
         }
         Vertices.Dispose();
@@ -178,19 +183,20 @@ public class MainWorld : MonoBehaviour
     /// </summary>
     /// <param name="position">位置</param>
     /// <param name="color">颜色</param>
-    public void ColorCell(Vector3 position, Color color)
+    public void ColorCell(Vector3 position, Color color, int activeElevation)
     {
         position = transform.InverseTransformPoint(position);
         HexCoordinates coordinates = HexCoordinates.FromPosition(position);
         int index = coordinates.X + coordinates.Z * MapWidth + coordinates.Z / 2;
-        if (index==m_PrevClickCell && color==m_PrevSelect)
+        if (index==m_PrevClickCell && color==m_PrevSelect && m_PrevElevation==activeElevation)
         {//避免玩家重复操作
             return;
         }
 
         m_PrevClickCell = index;
         m_PrevSelect = color;
-        StartCoroutine(UpdateCellColor(index,color));
+        m_PrevElevation = activeElevation;
+        StartCoroutine(UpdateCellColor(index,color,activeElevation));
     }
 
     /// <summary>
@@ -199,7 +205,7 @@ public class MainWorld : MonoBehaviour
     /// <param name="cellIndex">单元索引</param>
     /// <param name="color">颜色</param>
     /// <returns></returns>
-    IEnumerator UpdateCellColor(int cellIndex,Color color)
+    IEnumerator UpdateCellColor(int cellIndex,Color color,int elevation)
     {
         yield return null;
         NativeArray<Entity> entities = m_EntityManager.GetAllEntities();
@@ -212,7 +218,8 @@ public class MainWorld : MonoBehaviour
             {
                 CellIndex=cellIndex,
                 NewColor=color,
-                Width=MapWidth
+                Width=MapWidth,
+                Elevation=elevation
             });
         }
     }

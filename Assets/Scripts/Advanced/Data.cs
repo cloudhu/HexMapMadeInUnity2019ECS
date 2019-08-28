@@ -33,6 +33,10 @@ public struct UpdateData : IComponentData
     /// 宽度
     /// </summary>
     public int Width;
+    /// <summary>
+    /// 海拔
+    /// </summary>
+    public int Elevation;
 }
 
 /// <summary>
@@ -40,21 +44,43 @@ public struct UpdateData : IComponentData
 /// </summary>
 public struct Cell : IComponentData
 {
+    /// <summary>
+    /// 单元索引
+    /// </summary>
     public int Index;
+    /// <summary>
+    /// 位置
+    /// </summary>
     public Vector3 Position;
+    /// <summary>
+    /// 颜色
+    /// </summary>
     public Color Color;
+    //六个方向相邻单元的颜色
     public Color NE;
     public Color E;
     public Color SE;
     public Color SW;
     public Color W;
     public Color NW;
+    /// <summary>
+    /// 六个方向相邻单元的索引
+    /// </summary>
     public int NEIndex;
     public int EIndex;
     public int SEIndex;
     public int SWIndex;
     public int WIndex;
     public int NWIndex;
+    //海拔
+    public int Elevation;
+    //六个方向相邻单元的海拔
+    public int NEElevation;
+    public int EElevation;
+    public int SEElevation;
+    public int SWElevation;
+    public int WElevation;
+    public int NWElevation;
 }
 
 

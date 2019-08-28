@@ -35,20 +35,27 @@ public class UpdateCellSystem : JobComponentSystem {
             if (cellIndex< updateIndex + width + 2 && cellIndex> updateIndex - width-2)
             {
                 Color color = updata.NewColor;
+
                 //更新相邻单元的颜色
-                if (cellData.NEIndex == updateIndex) cellData.NE = color;
-                if (cellData.EIndex == updateIndex) cellData.E = color;
-                if (cellData.SEIndex == updateIndex) cellData.SE = color;
-                if (cellData.SWIndex == updateIndex) cellData.SW = color;
-                if (cellData.WIndex == updateIndex) cellData.W = color;
-                if (cellData.NWIndex == updateIndex) cellData.NW = color;
+                if (cellData.NEIndex == updateIndex)
+                {
+                    cellData.NE = color;
+                    cellData.NEElevation = updata.Elevation;
+                }
+                if (cellData.EIndex == updateIndex){ cellData.E = color; cellData.EElevation = updata.Elevation; }
+                if (cellData.SEIndex == updateIndex) {cellData.SE = color; cellData.SEElevation = updata.Elevation; }
+                if (cellData.SWIndex == updateIndex){ cellData.SW = color; cellData.SWElevation = updata.Elevation; }
+                if (cellData.WIndex == updateIndex) {cellData.W = color; cellData.WElevation = updata.Elevation; }
+                if (cellData.NWIndex == updateIndex){ cellData.NW = color; cellData.NWElevation = updata.Elevation; }
                 if (cellIndex == updateIndex)//更新自身单元的颜色
                 {
                     cellData.Color = color;
+                    cellData.Position.y= updata.Elevation * HexMetrics.elevationStep;
+                    cellData.Elevation = updata.Elevation;
                 }
             }
 
-            //2.remove UpdateData after Update,therefor NewDataTag need to be added
+            //2.remove UpdateData after Update,therefor NewDataTag need to be added to active CellSystem
             CommandBuffer.RemoveComponent<UpdateData>(index, entity);
             CommandBuffer.AddComponent<NewDataTag>(index, entity);
 

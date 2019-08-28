@@ -7,6 +7,7 @@ public class HexMapEditor : MonoBehaviour {
 
     private Color activeColor;
     private float lastClickTime=0;
+    int activeElevation;
 
     void Awake()
     {
@@ -41,10 +42,14 @@ public class HexMapEditor : MonoBehaviour {
         RaycastHit hit;
         if (Physics.Raycast(inputRay, out hit))
         {
-            MainWorld.Instance.ColorCell(hit.point, activeColor);
+            MainWorld.Instance.ColorCell(hit.point, activeColor,activeElevation);
         }
     }
 
+    /// <summary>
+    /// 选择颜色
+    /// </summary>
+    /// <param name="index">颜色的索引</param>
     public void SelectColor(int index)
     {
         if (index>=colors.Length)
@@ -53,5 +58,14 @@ public class HexMapEditor : MonoBehaviour {
             return;
         }
         activeColor = colors[index];
+    }
+
+    /// <summary>
+    /// 设置海拔
+    /// </summary>
+    /// <param name="elevation">高度</param>
+    public void SetElevation(float elevation)
+    {
+        activeElevation = (int)elevation;
     }
 }

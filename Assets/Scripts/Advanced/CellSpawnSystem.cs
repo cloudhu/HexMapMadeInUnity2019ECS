@@ -40,9 +40,11 @@ public class CellSpawnSystem : JobComponentSystem {
             int Width = createrData.Width;
             int Height = createrData.Height;
             NativeArray<Color> Colors=new NativeArray<Color>(Height * Width, Allocator.Temp);
+            NativeArray<int> Elevations = new NativeArray<int>(Height * Width, Allocator.Temp);
             for (int i = 0; i < Height* Width; i++)
             {
                 Colors[i]= new Color(random.NextFloat(), random.NextFloat(), random.NextFloat());
+                Elevations[i]= random.NextInt(6);
             }
 
             for (int z = 0,i=0; z < Height; z++)
@@ -55,13 +57,14 @@ public class CellSpawnSystem : JobComponentSystem {
 
                     //3.计算阵列坐标
                     float _x = (x + z * 0.5f - z / 2) * (HexMetrics.InnerRadius * 2f);
+                    float _y = Elevations[i] * HexMetrics.elevationStep;
                     float _z = z * (HexMetrics.OuterRadius * 1.5f);
 
-                    //3.设置父组件 
+                    //?.设置父组件 注释：似乎没有必要设置父类
                     //CommandBuffer.SetComponent(Index, instance, new Parent
                     //{
                     //    Value = entity
-                    //注释：似乎没有必要设置父类
+                    //
                     //});
 
                     //4.计算当前单元所在六个方向的邻居单元颜色
@@ -210,7 +213,7 @@ public class CellSpawnSystem : JobComponentSystem {
                     {
                         Index=i,
                         Color = color,
-                        Position= new Vector3(_x, 0F, _z),
+                        Position= new Vector3(_x, _y, _z),
                         NE=blendColors[0],
                         E=blendColors[1],
                         SE=blendColors[2],
@@ -222,7 +225,14 @@ public class CellSpawnSystem : JobComponentSystem {
                         SEIndex = directions[2],
                         SWIndex = directions[3],
                         WIndex = directions[4],
-                        NWIndex = directions[5]
+                        NWIndex = directions[5],
+                        Elevation=Elevations[i],
+                        NEElevation=Elevations[directions[0]],
+                        EElevation = Elevations[directions[1]],
+                        SEElevation = Elevations[directions[2]],
+                        SWElevation = Elevations[directions[3]],
+                        WElevation = Elevations[directions[4]],
+                        NWElevation = Elevations[directions[5]]
                     });
 
                     //6.设置位置,目前来看，没有必要使用Translation
