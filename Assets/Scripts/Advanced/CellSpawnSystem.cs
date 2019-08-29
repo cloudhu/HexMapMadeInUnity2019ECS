@@ -32,15 +32,16 @@ public class CellSpawnSystem : JobComponentSystem {
             //0.代码生成预设，这样可以优化性能
             Entity hexCellPrefab = CommandBuffer.CreateEntity(index);
             CommandBuffer.AddComponent<Cell>(index, hexCellPrefab);
-            //There is no need for Translation for now
-            //CommandBuffer.AddComponent<Translation>(Index, hexCellPrefab);
 
             //1.添加颜色数组，这个数组以后从服务器获取，然后传到这里来处理
             Random random = new Random(1208905299U);
             int Width = createrData.Width;
             int Height = createrData.Height;
+            //保存单元颜色的原生数组
             NativeArray<Color> Colors=new NativeArray<Color>(Height * Width, Allocator.Temp);
+            //保存单元海拔的原生数组
             NativeArray<int> Elevations = new NativeArray<int>(Height * Width, Allocator.Temp);
+            //后面将从服务器获取这些数据，现在暂时随机生成
             for (int i = 0; i < Height* Width; i++)
             {
                 Colors[i]= new Color(random.NextFloat(), random.NextFloat(), random.NextFloat());
@@ -55,17 +56,10 @@ public class CellSpawnSystem : JobComponentSystem {
                     //2.实例化
                     var instance = CommandBuffer.Instantiate(index, hexCellPrefab);
 
-                    //3.计算阵列坐标
+                    //3.计算阵列对应的六边形单元坐标
                     float _x = (x + z * 0.5f - z / 2) * (HexMetrics.InnerRadius * 2f);
                     float _y = Elevations[i] * HexMetrics.elevationStep;
                     float _z = z * (HexMetrics.OuterRadius * 1.5f);
-
-                    //?.设置父组件 注释：似乎没有必要设置父类
-                    //CommandBuffer.SetComponent(Index, instance, new Parent
-                    //{
-                    //    Value = entity
-                    //
-                    //});
 
                     //4.计算当前单元所在六个方向的邻居单元颜色
                     Color[] blendColors = new Color[6];
@@ -234,13 +228,7 @@ public class CellSpawnSystem : JobComponentSystem {
                         WElevation = Elevations[directions[4]],
                         NWElevation = Elevations[directions[5]]
                     });
-
-                    //6.设置位置,目前来看，没有必要使用Translation
-                    //CommandBuffer.SetComponent(Index, instance, new Translation
-                    //{
-                    //    Value = new float3(_x, 0F, _z)
-
-                    //});
+                    //6.添加新数据标签NewDataTag组件，激活CellSystem来处理新的数据
                     CommandBuffer.AddComponent<NewDataTag>(index,instance);
                     i++;
                 }
@@ -250,6 +238,7 @@ public class CellSpawnSystem : JobComponentSystem {
             CommandBuffer.DestroyEntity(index, hexCellPrefab);
             CommandBuffer.RemoveComponent<NewDataTag>(index,entity);
             Colors.Dispose();
+            Elevations.Dispose();
         }
     }
 

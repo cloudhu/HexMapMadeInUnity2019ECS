@@ -72,7 +72,9 @@ public struct Cell : IComponentData
     public int SWIndex;
     public int WIndex;
     public int NWIndex;
-    //海拔
+    /// <summary>
+    /// 当前单元的海拔
+    /// </summary>
     public int Elevation;
     //六个方向相邻单元的海拔
     public int NEElevation;

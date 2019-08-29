@@ -122,7 +122,7 @@ public static class HexMetrics
     /// <summary>
     /// 每个斜坡上的阶梯数
     /// </summary>
-    public const int terracesPerSlope = 5;
+    public const int terracesPerSlope = 2;
 
     /// <summary>
     /// 阶梯步长
@@ -145,7 +145,7 @@ public static class HexMetrics
     /// <param name="a">向量a</param>
     /// <param name="b">向量b</param>
     /// <param name="step">步数</param>
-    /// <returns></returns>
+    /// <returns>渐变坡度</returns>
     public static Vector3 TerraceLerp(Vector3 a, Vector3 b, int step)
     {
         float h = step * HexMetrics.horizontalTerraceStepSize;
@@ -156,6 +156,13 @@ public static class HexMetrics
         return a;
     }
 
+    /// <summary>
+    /// 颜色插值
+    /// </summary>
+    /// <param name="a">颜色A</param>
+    /// <param name="b">颜色B</param>
+    /// <param name="step">步长</param>
+    /// <returns>渐变色</returns>
     public static Color TerraceLerp(Color a, Color b, int step)
     {
         float h = step * HexMetrics.horizontalTerraceStepSize;
@@ -169,7 +176,6 @@ public static class HexMetrics
     /// <returns>矩形桥</returns>
     public  static Vector3 GetBridge(int cellIndex)
     {
-        //return (Corners[cellIndex] + Corners[cellIndex + 1]) * 0.5f * BlendFactor;
         return (Corners[cellIndex] + Corners[cellIndex + 1]) * BlendFactor;
     }
 }
