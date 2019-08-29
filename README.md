@@ -1,4 +1,6 @@
 # HexMapMadeInUnity2019ECS
+### Inspired by [Unity Hex Map Tutorial](https://catlikecoding.com/unity/tutorials/hex-map/)
+### Special thanks to Jasper Flick for making such a fantastic website and sharing so many amazing tutorials!
 ## Versions
  - Unity2019.1.12f1
  - Entities 0.1.1
@@ -41,7 +43,7 @@ Player Coming soon
 [Wiki日志](https://github.com/cloudhu/HexMapMadeInUnity2019ECS/wiki)
 ## 作者的话
 ![Alt](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9hdmF0YXIuY3Nkbi5uZXQvNy83L0IvMV9yYWxmX2h4MTYzY29tLmpwZw)
->  <font color=#FF0000 size=3 face="微软雅黑" >**如果喜欢我的文章可以点赞支持一下，谢谢鼓励！如果有什么疑问可以给我留言，有错漏的地方请批评指证！**</font>
+>  <font color=#FF0000 size=3 face="微软雅黑" >**如果喜欢可以点赞支持一下，谢谢鼓励！如果有什么疑问可以给我留言，有错漏的地方请批评指证！**</font>
 > <font color=#008000 size=3 face="微软雅黑"> **如果有技术难题需要讨论，可以加入开发者联盟：566189328（付费群）为您提供有限的技术支持，以及，心灵鸡汤！**</font>
 >  <font color=#0000FF size=3 face="微软雅黑">**当然，不需要技术支持也欢迎加入进来，随时可以请我喝咖啡、茶和果汁！**(￣┰￣*)</font>
 # ECS系列目录
