@@ -19,7 +19,7 @@ public class CellSystem : JobComponentSystem {
     }
 
     /// <summary>
-    /// 循环创建六边形单元，使其生成对应长宽的阵列
+    /// 计算六边形单元的顶点和颜色
     /// </summary>
     struct CalculateJob : IJobForEachWithEntity<Cell,NewDataTag> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
@@ -141,7 +141,7 @@ public class CellSystem : JobComponentSystem {
             CommandBuffer.RemoveComponent<NewDataTag>(index,entity);
         }
 
-        //三角化桥面
+        //三角化桥面阶梯
         void TriangulateEdgeTerraces(Vector3 beginLeft, Vector3 beginRight, Color beginColor, Vector3 endLeft, Vector3 endRight, Color endColor,ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer)
         {
             Vector3 vertex3 = HexMetrics.TerraceLerp(beginLeft, endLeft, 1);
@@ -238,6 +238,7 @@ public class CellSystem : JobComponentSystem {
             /////////Last Step
             AddQuad(v3,c3,v4,c4,left,leftColor,right,rightColor, ref colorBuffer, ref vertexBuffer);
         }
+
         //三角化陡峭的阶梯
         void TriangulateCornerTerracesCliff(Vector3 begin, Color beginCellColor, Vector3 left, Color leftCellColor, Vector3 right, Color rightCellColor, ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer, int bottomElevation, int leftElevation, int rightElevation)
         {
