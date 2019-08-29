@@ -58,8 +58,13 @@ public class CellSystem : JobComponentSystem {
                 //1.添加中心区域的3个顶点
                 Vector3 vertex1 = (currCellCenter + HexMetrics.SolidCorners[j]);
                 Vector3 vertex2 = (currCellCenter + HexMetrics.SolidCorners[j + 1]);
-                AddTriangle(currCellCenter, currCellColor, vertex1, currCellColor, vertex2, currCellColor, ref colorBuffer, ref vertexBuffer);
-
+                EdgeVertices e = new EdgeVertices(vertex1, vertex2);
+                TriangulateEdgeFan(currCellCenter, e, currCellColor, ref colorBuffer, ref vertexBuffer);
+                //Vector3 e1 = Vector3.Lerp(vertex1, vertex2, 1f / 3f);
+                //Vector3 e2 = Vector3.Lerp(vertex1, vertex2, 2f / 3f);
+                //AddTriangle(currCellCenter, currCellColor, vertex1, currCellColor, e1, currCellColor, ref colorBuffer, ref vertexBuffer);
+                //AddTriangle(currCellCenter, currCellColor, e1, currCellColor, e2, currCellColor, ref colorBuffer, ref vertexBuffer);
+                //AddTriangle(currCellCenter, currCellColor, e2, currCellColor, vertex2, currCellColor, ref colorBuffer, ref vertexBuffer);
                 //Connection Between 2 cells
                 #region  Bridge=桥
                 //桥只连接前三个方向相邻的单元，从而避免重复连接
@@ -69,29 +74,36 @@ public class CellSystem : JobComponentSystem {
                     {//如果没有相邻的单元，则跳过循环
                         continue;
                     }
+                    //相邻单元的颜色
                     Color neighborColor = blendColors[j];
-                    //添加外围桥接区域的顶点
-                    Vector3 bridge = (HexMetrics.GetBridge(j));
-                    Vector3 vertex3 = (vertex1 + bridge);
-                    Vector3 vertex4 = (vertex2 + bridge);
-
                     //当前单元的海拔
                     int elevation = cellData.Elevation;
                     //邻居单元的海拔
                     int neighborElevation = elevations[j];
+                    //添加外围桥接区域的顶点
+                    Vector3 bridge = (HexMetrics.GetBridge(j));
+                    //Vector3 vertex3 = (vertex1 + bridge);
+                    //Vector3 vertex4 = (vertex2 + bridge);
+                    bridge.y=(neighborElevation-elevation) * HexMetrics.elevationStep;
+                    EdgeVertices e2 = new EdgeVertices(vertex1 + bridge, vertex2+ bridge);
                     //顶点3和顶点4在相邻单元上，海拔应与其同高
-                    vertex3.y = vertex4.y = neighborElevation * HexMetrics.elevationStep;
+                    //vertex3.y = vertex4.y = neighborElevation * HexMetrics.elevationStep;
+                    //Vector3 e3 = Vector3.Lerp(vertex3, vertex4, 1f / 3f);
+                    //Vector3 e4 = Vector3.Lerp(vertex3, vertex4, 2f / 3f);
 
                     #region 桥面
                     //判断当前单元与相邻单元的海拔高低差，如果是斜坡，则添加阶梯，平面和峭壁则无需阶梯
                     if (HexMetrics.GetEdgeType(elevation, neighborElevation) == HexMetrics.HexEdgeType.Slope)
                     {
-                        TriangulateEdgeTerraces(vertex1,vertex2,currCellColor,vertex3,vertex4,neighborColor,ref colorBuffer, ref vertexBuffer);
+                        TriangulateEdgeTerraces(e,e2,currCellColor,neighborColor,ref colorBuffer, ref vertexBuffer);
                     }
                     else
                     {
                         Color bridgeColor = (currCellColor + neighborColor) * 0.5f;
-                        AddQuad(vertex1, currCellColor,vertex2, bridgeColor, vertex3, bridgeColor, vertex4,neighborColor,ref colorBuffer,ref vertexBuffer);
+                        TriangulateEdgeStrip(e, currCellColor, e2, neighborColor, ref colorBuffer, ref vertexBuffer);
+                        //AddQuad(vertex1, currCellColor,e1, bridgeColor, vertex3, bridgeColor, e3,neighborColor,ref colorBuffer,ref vertexBuffer);
+                        //AddQuad(e1, currCellColor, e2, bridgeColor, e3, bridgeColor, e4, neighborColor, ref colorBuffer, ref vertexBuffer);
+                        //AddQuad(e2, currCellColor, vertex2, bridgeColor, e4, bridgeColor, vertex4, neighborColor, ref colorBuffer, ref vertexBuffer);
                     }
 
                     #endregion
@@ -112,20 +124,20 @@ public class CellSystem : JobComponentSystem {
                             if (elevation <= nextElevation)
                             {
                                 //当前单元海拔最低
-                                TriangulateCorner(vertex2, currCellColor, vertex4, neighborColor, vertex5, blendColors[next],ref colorBuffer,ref vertexBuffer,elevation, neighborElevation, nextElevation);
+                                TriangulateCorner(vertex2, currCellColor, e2.v4, neighborColor, vertex5, blendColors[next],ref colorBuffer,ref vertexBuffer,elevation, neighborElevation, nextElevation);
                             }
                             else
                             {
-                                TriangulateCorner(vertex5, blendColors[next], vertex2, currCellColor, vertex4, neighborColor, ref colorBuffer, ref vertexBuffer, nextElevation, elevation, neighborElevation);
+                                TriangulateCorner(vertex5, blendColors[next], vertex2, currCellColor, e2.v4, neighborColor, ref colorBuffer, ref vertexBuffer, nextElevation, elevation, neighborElevation);
                             }
                         }
                         else if (neighborElevation <= nextElevation)
                         {
-                            TriangulateCorner(vertex4, neighborColor, vertex5, blendColors[next], vertex2, currCellColor, ref colorBuffer, ref vertexBuffer, neighborElevation, nextElevation, elevation);
+                            TriangulateCorner(e2.v4, neighborColor, vertex5, blendColors[next], vertex2, currCellColor, ref colorBuffer, ref vertexBuffer, neighborElevation, nextElevation, elevation);
                         }
                         else
                         {
-                            TriangulateCorner(vertex5, blendColors[next], vertex2, currCellColor, vertex4, neighborColor, ref colorBuffer, ref vertexBuffer, nextElevation, elevation, neighborElevation);
+                            TriangulateCorner(vertex5, blendColors[next], vertex2, currCellColor, e2.v4, neighborColor, ref colorBuffer, ref vertexBuffer, nextElevation, elevation, neighborElevation);
                         }
 
                     }
@@ -142,26 +154,32 @@ public class CellSystem : JobComponentSystem {
         }
 
         //三角化桥面阶梯
-        void TriangulateEdgeTerraces(Vector3 beginLeft, Vector3 beginRight, Color beginColor, Vector3 endLeft, Vector3 endRight, Color endColor,ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer)
+        void TriangulateEdgeTerraces(EdgeVertices begin, EdgeVertices end, Color beginColor, Color endColor,ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer)
         {
-            Vector3 vertex3 = HexMetrics.TerraceLerp(beginLeft, endLeft, 1);
-            Vector3 vertex4 = HexMetrics.TerraceLerp(beginRight, endRight, 1);
+            EdgeVertices e2 = EdgeVertices.TerraceLerp(begin, end, 1);
+            //Vector3 vertex3 = HexMetrics.TerraceLerp(beginLeft, endLeft, 1);
+            //Vector3 vertex4 = HexMetrics.TerraceLerp(beginRight, endRight, 1);
             /////////////(First Step)/////////////////
             Color bridgeColor = HexMetrics.TerraceLerp(beginColor, endColor, 1);
-            AddQuad(beginLeft, beginColor, beginRight, beginColor,vertex3, bridgeColor, vertex4, bridgeColor, ref colorBuffer, ref vertexBuffer);
+            TriangulateEdgeStrip(begin, beginColor, e2, bridgeColor,ref colorBuffer,ref vertexBuffer);
+            //AddQuad(beginLeft, beginColor, beginRight, beginColor,vertex3, bridgeColor, vertex4, bridgeColor, ref colorBuffer, ref vertexBuffer);
             ///////////////////(Middle Steps)///////////////////
             for (int i = 2; i < HexMetrics.terraceSteps; i++)
             {
-                Vector3 stepVertex1 = vertex3;
-                Vector3 stepVertex2 = vertex4;
+                //Vector3 stepVertex1 = vertex3;
+                //Vector3 stepVertex2 = vertex4;
+                EdgeVertices e1 = e2;
                 Color c1 = bridgeColor;
-                vertex3 = HexMetrics.TerraceLerp(beginLeft, endLeft, i);
-                vertex4 = HexMetrics.TerraceLerp(beginRight, endRight, i);
+                e2 = EdgeVertices.TerraceLerp(begin, end, i);
+                //vertex3 = HexMetrics.TerraceLerp(beginLeft, endLeft, i);
+                //vertex4 = HexMetrics.TerraceLerp(beginRight, endRight, i);
                 bridgeColor = HexMetrics.TerraceLerp(beginColor, endColor, i);
-                AddQuad(stepVertex1, c1,stepVertex2, c1,vertex3, bridgeColor, vertex4, bridgeColor, ref colorBuffer, ref vertexBuffer);
+                TriangulateEdgeStrip(e1, c1, e2, bridgeColor, ref colorBuffer, ref vertexBuffer);
+                //AddQuad(stepVertex1, c1,stepVertex2, c1,vertex3, bridgeColor, vertex4, bridgeColor, ref colorBuffer, ref vertexBuffer);
             }
             ///////////////(Last Step)///////////////////
-            AddQuad(vertex3, bridgeColor, vertex4, bridgeColor, endLeft, endColor, endRight, endColor, ref colorBuffer, ref vertexBuffer);
+            //AddQuad(vertex3, bridgeColor, vertex4, bridgeColor, endLeft, endColor, endRight, endColor, ref colorBuffer, ref vertexBuffer);
+            TriangulateEdgeStrip(e2, bridgeColor, end, endColor, ref colorBuffer, ref vertexBuffer);
         }
 
         ///桥洞三角化
@@ -322,22 +340,66 @@ public class CellSystem : JobComponentSystem {
             vertexBuffer.Add(v3);
 
             colorBuffer.Add(c4);
-            vertexBuffer.Add(v4);
+            vertexBuffer.Add((v4));
         }
 
         //添加三角顶点与颜色
         void AddTriangle(Vector3 v1, Color bottomColor, Vector3 v2, Color leftColor, Vector3 v3,Color rightColor, ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer)
         {
             colorBuffer.Add(bottomColor);
-            vertexBuffer.Add(v1);
+            vertexBuffer.Add((v1));
 
             colorBuffer.Add(leftColor);
-            vertexBuffer.Add(v2);
+            vertexBuffer.Add((v2));
 
             colorBuffer.Add((bottomColor + leftColor + rightColor) / 3f);
-            vertexBuffer.Add(v3);
+            vertexBuffer.Add((v3));
         }
 
+        void TriangulateEdgeFan(Vector3 center, EdgeVertices edge, Color color, ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer)
+        {
+            AddTriangle(center,color, edge.v1,color, edge.v2,color,ref colorBuffer,ref vertexBuffer);
+            AddTriangle(center,color, edge.v2,color, edge.v3, color,ref colorBuffer, ref vertexBuffer);
+
+            AddTriangle(center,color, edge.v3, color,edge.v4,color, ref colorBuffer, ref vertexBuffer);
+        }
+
+        void TriangulateEdgeStrip(EdgeVertices e1, Color c1, EdgeVertices e2, Color c2,ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer)
+        {
+            AddQuad(e1.v1,c1, e1.v2,c2, e2.v1,c1, e2.v2,c2, ref colorBuffer, ref vertexBuffer);
+
+            AddQuad(e1.v2,c1 ,e1.v3,c2, e2.v2,c1, e2.v3,c2, ref colorBuffer, ref vertexBuffer);
+
+            AddQuad(e1.v3,c1, e1.v4,c2, e2.v3,c1, e2.v4,c2, ref colorBuffer, ref vertexBuffer);
+
+        }
+
+        /// <summary>
+        /// 边缘顶点
+        /// </summary>
+        public struct EdgeVertices {
+
+            public Vector3 v1, v2, v3, v4;
+
+            public EdgeVertices(Vector3 corner1, Vector3 corner2)
+            {
+                v1 = corner1;
+                v2 = Vector3.Lerp(corner1, corner2, 1f / 3f);
+                v3 = Vector3.Lerp(corner1, corner2, 2f / 3f);
+                v4 = corner2;
+            }
+
+            public static EdgeVertices TerraceLerp(
+                EdgeVertices a, EdgeVertices b, int step)
+            {
+                EdgeVertices result;
+                result.v1 = HexMetrics.TerraceLerp(a.v1, b.v1, step);
+                result.v2 = HexMetrics.TerraceLerp(a.v2, b.v2, step);
+                result.v3 = HexMetrics.TerraceLerp(a.v3, b.v3, step);
+                result.v4 = HexMetrics.TerraceLerp(a.v4, b.v4, step);
+                return result;
+            }
+        }
     }
 
 

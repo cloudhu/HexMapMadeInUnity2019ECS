@@ -25,33 +25,47 @@ public class MainWorld : MonoBehaviour
     [SerializeField] private int MapHeight = 6;
 
     /// <summary>
+    /// 噪声采样纹理图
+    /// </summary>
+    public Texture2D noiseSource;
+
+    /// <summary>
     /// 地图颜色
     /// </summary>
     //[SerializeField] private Color defaultColor = Color.white;
 
-    //单例模式
-    public static MainWorld Instance = null;
+    #region Private Var
+
     private World m_HexMapWorld;
     private CellSpawnSystem m_CellSpawnSystem;
     private EntityManager m_EntityManager;
-    //private Entity m_Mesh;
     private Entity m_Builder;
     private Mesh m_Mesh;
     private MeshCollider m_MeshCollider;
     //上一次点击的单元索引
     private int m_PrevClickCell = -1;
     //上一次选择的颜色
-    private Color m_PrevSelect=Color.black;
+    private Color m_PrevSelect = Color.black;
     //上一次设置的海拔
     private int m_PrevElevation = 0;
-    #region Mono
 
+    #endregion
+
+
+    #region Mono
+    //单例模式
+    public static MainWorld Instance = null;
     //Make this single
     private void Awake()
     {
         Instance = this;
         //初始化
         Initialize();
+    }
+
+    void OnEnable()
+    {
+        HexMetrics.noiseSource = noiseSource;
     }
 
     // Update is called once per frame
@@ -90,6 +104,8 @@ public class MainWorld : MonoBehaviour
         m_MeshCollider=gameObject.AddComponent<MeshCollider>();
         //5.Create System to spawn cells
         m_CellSpawnSystem = m_HexMapWorld.CreateSystem<CellSpawnSystem>();
+
+        HexMetrics.noiseSource = noiseSource;
     }
 
     #endregion
@@ -132,7 +148,9 @@ public class MainWorld : MonoBehaviour
                 {
                     Triangles.Add(Vertices.Length);
                     Colors.Add(colorBuffer[j]);
-                    Vertices.Add(vertexBuffer[j]);
+                    Vector3 vertex = Perturb(vertexBuffer[j]);
+                    vertex.y += (HexMetrics.SampleNoise(vertex).y * 2f - 1f) * HexMetrics.elevationPerturbStrength;
+                    Vertices.Add(vertex);
                 }
             }
 
@@ -156,7 +174,21 @@ public class MainWorld : MonoBehaviour
         Vertices.Dispose();
         Triangles.Dispose();
         Colors.Dispose();
-    } 
+    }
+
+    /// <summary>
+    /// 噪声干扰
+    /// </summary>
+    /// <param name="position">顶点位置</param>
+    /// <returns>被干扰的位置</returns>
+    Vector3 Perturb(Vector3 position)
+    {
+        Vector4 sample = HexMetrics.SampleNoise(position);
+        position.x += (sample.x * 2f - 1f) * HexMetrics.cellPerturbStrength;
+        position.y += (sample.y * 2f - 1f) * HexMetrics.cellPerturbStrength;
+        position.z += (sample.z * 2f - 1f) * HexMetrics.cellPerturbStrength;
+        return position;
+    }
 
     /// <summary>
     /// 设置地图
@@ -237,11 +269,6 @@ public class MainWorld : MonoBehaviour
     public CellSpawnSystem GetCellSpawnSystem()
     {
         return m_CellSpawnSystem;
-    }
-
-    public Entity GetBuilderEntity()
-    {
-        return m_Builder;
     }
 
     #endregion

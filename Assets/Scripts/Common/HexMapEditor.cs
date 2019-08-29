@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 
 public class HexMapEditor : MonoBehaviour {
 
-    public Color[] colors ;
+    public Color[] colors;
 
     private Color activeColor;
     private float lastClickTime=0;

@@ -240,6 +240,7 @@ public class CellSpawnSystem : JobComponentSystem {
             Colors.Dispose();
             Elevations.Dispose();
         }
+
     }
 
     /// <summary>

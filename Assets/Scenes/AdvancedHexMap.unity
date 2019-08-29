@@ -1251,6 +1251,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MapWidth: 6
   MapHeight: 6
+  noiseSource: {fileID: 2800000, guid: 14f238fab41d74a41aa3d8024cae0bac, type: 3}
 --- !u!4 &675462475
 Transform:
   m_ObjectHideFlags: 0
