@@ -155,13 +155,13 @@ public class CellSystem : JobComponentSystem {
                 Vector3 stepVertex1 = vertex3;
                 Vector3 stepVertex2 = vertex4;
                 Color c1 = bridgeColor;
-                vertex3 = HexMetrics.TerraceLerp(beginLeft, vertex3, i);
-                vertex4 = HexMetrics.TerraceLerp(beginRight, vertex4, i);
+                vertex3 = HexMetrics.TerraceLerp(beginLeft, endLeft, i);
+                vertex4 = HexMetrics.TerraceLerp(beginRight, endRight, i);
                 bridgeColor = HexMetrics.TerraceLerp(beginColor, endColor, i);
-                AddQuad(stepVertex1, c1,stepVertex2, c1,vertex3, beginColor, vertex4, bridgeColor, ref colorBuffer, ref vertexBuffer);
+                AddQuad(stepVertex1, c1,stepVertex2, c1,vertex3, bridgeColor, vertex4, bridgeColor, ref colorBuffer, ref vertexBuffer);
             }
             ///////////////(Last Step)///////////////////
-            AddQuad(vertex3, beginColor, vertex4, beginColor, endLeft, endColor, endRight, endColor, ref colorBuffer, ref vertexBuffer);
+            AddQuad(vertex3, bridgeColor, vertex4, bridgeColor, endLeft, endColor, endRight, endColor, ref colorBuffer, ref vertexBuffer);
         }
 
         ///桥洞三角化

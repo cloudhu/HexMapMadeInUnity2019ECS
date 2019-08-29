@@ -122,7 +122,7 @@ public static class HexMetrics
     /// <summary>
     /// 每个斜坡上的阶梯数
     /// </summary>
-    public const int terracesPerSlope = 2;
+    public const int terracesPerSlope = 5;
 
     /// <summary>
     /// 阶梯步长
