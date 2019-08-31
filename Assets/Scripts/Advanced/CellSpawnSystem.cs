@@ -32,25 +32,25 @@ public class CellSpawnSystem : JobComponentSystem {
             //0.代码生成预设，这样可以优化性能
             Entity hexCellPrefab = CommandBuffer.CreateEntity(index);
             CommandBuffer.AddComponent<Cell>(index, hexCellPrefab);
-
+            CommandBuffer.AddComponent<ChunkData>(index, hexCellPrefab);
             //1.添加颜色数组，这个数组以后从服务器获取，然后传到这里来处理
             Random random = new Random(1208905299U);
-            int Width = createrData.Width;
-            int Height = createrData.Height;
+            int cellCountX = createrData.CellCountX;
+            int cellCountZ = createrData.CellCountZ;
             //保存单元颜色的原生数组
-            NativeArray<Color> Colors=new NativeArray<Color>(Height * Width, Allocator.Temp);
+            NativeArray<Color> Colors=new NativeArray<Color>(cellCountZ * cellCountX, Allocator.Temp);
             //保存单元海拔的原生数组
-            NativeArray<int> Elevations = new NativeArray<int>(Height * Width, Allocator.Temp);
+            NativeArray<int> Elevations = new NativeArray<int>(cellCountZ * cellCountX, Allocator.Temp);
             //后面将从服务器获取这些数据，现在暂时随机生成
-            for (int i = 0; i < Height* Width; i++)
+            for (int i = 0; i < cellCountZ* cellCountX; i++)
             {
                 Colors[i]= new Color(random.NextFloat(), random.NextFloat(), random.NextFloat());
                 Elevations[i]= random.NextInt(6);
             }
 
-            for (int z = 0,i=0; z < Height; z++)
+            for (int z = 0,i=0; z < cellCountZ; z++)
             {
-                for (int x = 0; x < Width; x++)
+                for (int x = 0; x < cellCountX; x++)
                 {
 
                     //2.实例化
@@ -68,15 +68,15 @@ public class CellSpawnSystem : JobComponentSystem {
                     Color color = Colors[i];
                     //邻居单元的颜色
                     Color neighbor = color;
-                    int direction = 0;
+                    int direction = int.MinValue;
                     //判断当前单元所在行数是否为偶数
                     bool ifEven = (z & 1) == 0;
                     //当前单元是否处于行尾
-                    bool ifEnd = (i + 1) == (z + 1) * Width;
+                    bool ifEnd = (i + 1) == (z + 1) * cellCountX;
                     //是否处于行首
-                    bool ifStart = i == z * Width;
+                    bool ifStart = i == z * cellCountX;
                     //是否最后一行
-                    bool isLastRow = (z == (Height - 1));
+                    bool isLastRow = (z == (cellCountZ - 1));
 
                     //0=东北：NE
                     if (!isLastRow)//非最末行
@@ -84,22 +84,22 @@ public class CellSpawnSystem : JobComponentSystem {
                         if (ifEven)//偶数行
                         {
                             
-                            neighbor = Colors[i + Width];
-                            direction = i + Width;
+                            neighbor = Colors[i + cellCountX];
+                            direction = i + cellCountX;
                         }
                         else
                         {
                             if (!ifEnd)//最末尾没有相邻的单元
                             {
-                                neighbor = (Colors[i + Width + 1]);
-                                direction = i + Width + 1;
+                                neighbor = (Colors[i + cellCountX + 1]);
+                                direction = i + cellCountX + 1;
                             }
                         }
                     }
 
                     directions[0] = direction;
                     blendColors[0] = neighbor;
-                    direction = 0;
+                    direction = int.MinValue;
                     //颜色混合1 东：E
                     if (ifEnd)
                     {
@@ -114,30 +114,30 @@ public class CellSpawnSystem : JobComponentSystem {
 
                     directions[1] = direction;
                     blendColors[1] = neighbor;
-                    direction = 0;
+                    direction = int.MinValue;
                     //东南2：SE
                     neighbor = color;
-                    if(i>=Width)
+                    if(i>=cellCountX)
                     {
                         if (ifEven)
                         {
-                            neighbor = (Colors[i - Width]);
-                            direction = i - Width;
+                            neighbor = (Colors[i - cellCountX]);
+                            direction = i - cellCountX;
                         }
                         else
                         {
                             if (!ifEnd)
                             {
-                                neighbor = (Colors[i - Width + 1]);
-                                direction = i - Width + 1;
+                                neighbor = (Colors[i - cellCountX + 1]);
+                                direction = i - cellCountX + 1;
                             }
                         }
                     }
                     blendColors[2] = neighbor;
                     directions[2] = direction;
-                    direction = 0;
+                    direction = int.MinValue;
                     //西南3：SW
-                    if (i < Width) neighbor = color;
+                    if (i < cellCountX) neighbor = color;
                     else
                     {
                         if (ifEven)
@@ -145,21 +145,21 @@ public class CellSpawnSystem : JobComponentSystem {
                             if (ifStart) neighbor = color;
                             else
                             {
-                                neighbor = (Colors[i - Width - 1]);
-                                direction = i - Width - 1;
+                                neighbor = (Colors[i - cellCountX - 1]);
+                                direction = i - cellCountX - 1;
                             }
  
                         }
                         else
                         {
-                            neighbor = (Colors[i - Width]);
-                            direction = i - Width;
+                            neighbor = (Colors[i - cellCountX]);
+                            direction = i - cellCountX;
                         }
                     }
 
                     directions[3] = direction;
                     blendColors[3] = neighbor;
-                    direction = 0;
+                    direction = int.MinValue;
                     //西4：W
                     if (ifStart)
                     {
@@ -173,7 +173,7 @@ public class CellSpawnSystem : JobComponentSystem {
                     }
                     blendColors[4] = neighbor;
                     directions[4] = direction;
-                    direction = 0;
+                    direction = int.MinValue;
                     //5西北：NW
                     if (isLastRow)
                     {
@@ -189,14 +189,14 @@ public class CellSpawnSystem : JobComponentSystem {
                             }
                             else
                             {
-                                neighbor = (Colors[i + Width - 1]);
-                                direction = i + Width - 1;
+                                neighbor = (Colors[i + cellCountX - 1]);
+                                direction = i + cellCountX - 1;
                             }
                         }
                         else
                         {
-                            neighbor = (Colors[i + Width]);
-                            direction = i + Width;
+                            neighbor = (Colors[i + cellCountX]);
+                            direction = i + cellCountX;
                         }
                     }
 
@@ -221,12 +221,22 @@ public class CellSpawnSystem : JobComponentSystem {
                         WIndex = directions[4],
                         NWIndex = directions[5],
                         Elevation=Elevations[i],
-                        NEElevation=Elevations[directions[0]],
-                        EElevation = Elevations[directions[1]],
-                        SEElevation = Elevations[directions[2]],
-                        SWElevation = Elevations[directions[3]],
-                        WElevation = Elevations[directions[4]],
-                        NWElevation = Elevations[directions[5]]
+                        NEElevation=Elevations[directions[0]==int.MinValue?0: directions[0]],
+                        EElevation = Elevations[directions[1] == int.MinValue ? 0 : directions[1]],
+                        SEElevation = Elevations[directions[2] == int.MinValue ? 0 : directions[2]],
+                        SWElevation = Elevations[directions[3] == int.MinValue ? 0 : directions[3]],
+                        WElevation = Elevations[directions[4] == int.MinValue ? 0 : directions[4]],
+                        NWElevation = Elevations[directions[5] == int.MinValue ? 0 : directions[5]]
+                    });
+                    int chunkX = x / HexMetrics.chunkSizeX;
+                    int chunkZ = z / HexMetrics.chunkSizeZ;
+                    int localX = x - chunkX * HexMetrics.chunkSizeX;
+                    int localZ = z - chunkZ * HexMetrics.chunkSizeZ;
+                    CommandBuffer.SetComponent(index,instance,new ChunkData
+                    {
+                        ChunkId= chunkX + chunkZ * createrData.ChunkCountX,
+                        ChunkIndex= localX + localZ * HexMetrics.chunkSizeX,
+                        CellIndex=i
                     });
                     //6.添加新数据标签NewDataTag组件，激活CellSystem来处理新的数据
                     CommandBuffer.AddComponent<NewDataTag>(index,instance);

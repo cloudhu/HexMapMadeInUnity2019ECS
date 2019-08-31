@@ -5,6 +5,211 @@
 /// </summary>
 public static class HexMetrics
 {
+
+    #region Chunk单元块
+    /// <summary>
+    /// 单元块的大小:大的块更少draw calls，小块有利于裁剪，顶点数就会减少
+    /// 注:Unity中Mesh数组最大能存储65000个顶点
+    /// What is a good chunk size?
+    /// It depends.Using larger chunks means that you'll have fewer but larger meshes.
+    /// This leads to fewer draw calls. But smaller chunks work better with frustum
+    /// culling, which leads to fewer triangles being drawn.
+    /// The pragmatic approach is to just pick a size and fine-tune later.
+    /// </summary>
+    public const int chunkSizeX = 5, chunkSizeZ = 5;
+
+    #endregion
+
+    #region 噪声干扰
+
+    /// <summary>
+    /// 海拔干扰度
+    /// </summary>
+    public const float elevationPerturbStrength = 1.5f;
+
+    /// <summary>
+    /// 噪源
+    /// </summary>
+    public static Texture2D noiseSource;
+
+    /// <summary>
+    /// 噪声缩放
+    /// </summary>
+    public const float noiseScale = 0.003f;
+
+    /// <summary>
+    /// 噪声采样
+    /// </summary>
+    /// <param name="position">顶点位置</param>
+    /// <returns>双线性过滤</returns>
+    public static Vector4 SampleNoise(Vector3 position)
+    {
+        return noiseSource.GetPixelBilinear(position.x * noiseScale, position.z * noiseScale);
+    }
+
+    public const float cellPerturbStrength = 3f;
+
+    #endregion
+
+
+    /// <summary>
+    /// 方向，N=北，S=南，E=东，W=西
+    /// </summary>
+    public enum HexDirection {
+        NE=0, E=1, SE=2, SW=3, W=4, NW=5
+    }
+
+    /// <summary>
+    /// 单元边界类型
+    /// </summary>
+    public enum HexEdgeType {
+        Flat, Slope, Cliff
+    }
+
+    /// <summary>
+    /// 获取边缘的类型
+    /// </summary>
+    /// <param name="elevation1">海拔1</param>
+    /// <param name="elevation2">海拔2</param>
+    /// <returns>边缘类型</returns>
+    public static HexEdgeType GetEdgeType(int elevation1, int elevation2)
+    {
+        if (elevation1 == elevation2)
+        {
+            return HexEdgeType.Flat;
+        }
+        int delta = elevation2 - elevation1;
+        if (delta == 1 || delta == -1)
+        {
+            return HexEdgeType.Slope;
+        }
+        return HexEdgeType.Cliff;
+    }
+
+    /// <summary>
+    /// 六边形单元的六个方向
+    /// </summary>
+    public readonly static HexDirection[] hexDirections =
+    {
+        HexDirection.NE,
+        HexDirection.E,
+        HexDirection.SE,
+        HexDirection.SW,
+        HexDirection.W,
+        HexDirection.NW
+    };
+
+    /// <summary>
+    /// 六边形外半径=六边形边长
+    /// </summary>
+    public const float OuterRadius = 10f;
+
+    /// <summary>
+    /// 六边形内半径=0.8*外半径
+    /// </summary>
+    public const float InnerRadius = OuterRadius * 0.866025404f;
+
+    /// <summary>
+    /// 六边形单元中心本色区域占比
+    /// </summary>
+    public const float SolidFactor = 0.8f;
+
+    /// <summary>
+    /// 六边形单元外围混合区域占比
+    /// </summary>
+    public const float BlendFactor = 1f - SolidFactor;
+
+    /// <summary>
+    /// 六边形中心区域的六个角组成的数组
+    /// </summary>
+    public readonly static Vector3[] SolidCorners = {
+		new Vector3(0f, 0f, OuterRadius)*SolidFactor,
+		new Vector3(InnerRadius, 0f, 0.5f * OuterRadius)*SolidFactor,
+		new Vector3(InnerRadius, 0f, -0.5f * OuterRadius)*SolidFactor,
+		new Vector3(0f, 0f, -OuterRadius)*SolidFactor,
+		new Vector3(-InnerRadius, 0f, -0.5f * OuterRadius)*SolidFactor,
+		new Vector3(-InnerRadius, 0f, 0.5f * OuterRadius)*SolidFactor,
+		new Vector3(0f, 0f, OuterRadius)*SolidFactor
+    };
+
+    /// <summary>
+    /// 六边形的六个角
+    /// </summary>
+    public readonly static Vector3[] Corners = {
+        new Vector3(0f, 0f, OuterRadius),
+        new Vector3(InnerRadius, 0f, 0.5f * OuterRadius),
+        new Vector3(InnerRadius, 0f, -0.5f * OuterRadius),
+        new Vector3(0f, 0f, -OuterRadius),
+        new Vector3(-InnerRadius, 0f, -0.5f * OuterRadius),
+        new Vector3(-InnerRadius, 0f, 0.5f * OuterRadius),
+        new Vector3(0f, 0f, OuterRadius)
+    };
+
+    /// <summary>
+    /// 海拔步长
+    /// </summary>
+    public const float elevationStep = 3f;
+
+    /// <summary>
+    /// 每个斜坡上的阶梯数
+    /// </summary>
+    public const int terracesPerSlope = 5;
+
+    /// <summary>
+    /// 阶梯步长
+    /// </summary>
+    public const int terraceSteps = terracesPerSlope * 2 + 1;
+
+    /// <summary>
+    /// 水平阶梯步长
+    /// </summary>
+    public const float horizontalTerraceStepSize = 1f / terraceSteps;
+
+    /// <summary>
+    /// 垂直阶梯步长
+    /// </summary>
+    public const float verticalTerraceStepSize = 1f / (terracesPerSlope + 1);
+
+    /// <summary>
+    /// 阶梯插值
+    /// </summary>
+    /// <param name="a">向量a</param>
+    /// <param name="b">向量b</param>
+    /// <param name="step">步数</param>
+    /// <returns>渐变坡度</returns>
+    public static Vector3 TerraceLerp(Vector3 a, Vector3 b, int step)
+    {
+        float h = step * HexMetrics.horizontalTerraceStepSize;
+        a.x += (b.x - a.x) * h;
+        a.z += (b.z - a.z) * h;
+        float v = ((step + 1) / 2) * HexMetrics.verticalTerraceStepSize;
+        a.y += (b.y - a.y) * v;
+        return a;
+    }
+
+    /// <summary>
+    /// 颜色插值
+    /// </summary>
+    /// <param name="a">颜色A</param>
+    /// <param name="b">颜色B</param>
+    /// <param name="step">步长</param>
+    /// <returns>渐变色</returns>
+    public static Color TerraceLerp(Color a, Color b, int step)
+    {
+        float h = step * HexMetrics.horizontalTerraceStepSize;
+        return Color.Lerp(a, b, h);
+    }
+
+    /// <summary>
+    /// 获取相邻六边形单元之间的矩形桥
+    /// </summary>
+    /// <param name="cellIndex">六边形单元索引</param>
+    /// <returns>矩形桥</returns>
+    public  static Vector3 GetBridge(int cellIndex)
+    {
+        return (Corners[cellIndex] + Corners[cellIndex + 1]) * BlendFactor;
+    }
+
     #region Perlin Noise
     /// <summary>
     /// Perlin哈希表
@@ -212,204 +417,4 @@ public static class HexMetrics
         return t * t * t * (t * (t * 6f - 15f) + 10f);
     }
     #endregion
-
-    /// <summary>
-    /// 海拔干扰度
-    /// </summary>
-    public const float elevationPerturbStrength = 1.5f;
-
-    /// <summary>
-    /// 噪源
-    /// </summary>
-    public static Texture2D noiseSource;
-
-    /// <summary>
-    /// 噪声缩放
-    /// </summary>
-    public const float noiseScale = 0.003f;
-
-    /// <summary>
-    /// 噪声采样
-    /// </summary>
-    /// <param name="position">顶点位置</param>
-    /// <returns>双线性过滤</returns>
-    public static Vector4 SampleNoise(Vector3 position)
-    {
-        return noiseSource.GetPixelBilinear(position.x * noiseScale, position.z * noiseScale);
-    }
-
-    public const float cellPerturbStrength = 3f;
-
-    /// <summary>
-    /// 方向，N=北，S=南，E=东，W=西
-    /// </summary>
-    public enum HexDirection {
-        NE=0, E=1, SE=2, SW=3, W=4, NW=5
-    }
-
-    /// <summary>
-    /// 单元边界类型
-    /// </summary>
-    public enum HexEdgeType {
-        Flat, Slope, Cliff
-    }
-
-    /// <summary>
-    /// 获取边缘的类型
-    /// </summary>
-    /// <param name="elevation1">海拔1</param>
-    /// <param name="elevation2">海拔2</param>
-    /// <returns>边缘类型</returns>
-    public static HexEdgeType GetEdgeType(int elevation1, int elevation2)
-    {
-        if (elevation1 == elevation2)
-        {
-            return HexEdgeType.Flat;
-        }
-        int delta = elevation2 - elevation1;
-        if (delta == 1 || delta == -1)
-        {
-            return HexEdgeType.Slope;
-        }
-        return HexEdgeType.Cliff;
-    }
-
-    /// <summary>
-    /// 六边形单元的六个方向
-    /// </summary>
-    public readonly static HexDirection[] hexDirections =
-    {
-        HexDirection.NE,
-        HexDirection.E,
-        HexDirection.SE,
-        HexDirection.SW,
-        HexDirection.W,
-        HexDirection.NW
-    };
-
-    /// <summary>
-    /// 总的顶点数
-    /// </summary>
-    public static int HexCelllCount = 0;
-
-    /// <summary>
-    /// 地图宽度（以单元为单位）
-    /// </summary>
-    public static int MapWidth = 0;
-
-    /// <summary>
-    /// 每个单元的顶点数量
-    /// </summary>
-    public const int CellVerticesCount = 280;//78;
-
-    /// <summary>
-    /// 六边形外半径=六边形边长
-    /// </summary>
-    public const float OuterRadius = 10f;
-
-    /// <summary>
-    /// 六边形内半径=0.8*外半径
-    /// </summary>
-    public const float InnerRadius = OuterRadius * 0.866025404f;
-
-    /// <summary>
-    /// 六边形单元中心本色区域占比
-    /// </summary>
-    public const float SolidFactor = 0.8f;
-
-    /// <summary>
-    /// 六边形单元外围混合区域占比
-    /// </summary>
-    public const float BlendFactor = 1f - SolidFactor;
-
-    /// <summary>
-    /// 六边形中心区域的六个角组成的数组
-    /// </summary>
-    public readonly static Vector3[] SolidCorners = {
-		new Vector3(0f, 0f, OuterRadius)*SolidFactor,
-		new Vector3(InnerRadius, 0f, 0.5f * OuterRadius)*SolidFactor,
-		new Vector3(InnerRadius, 0f, -0.5f * OuterRadius)*SolidFactor,
-		new Vector3(0f, 0f, -OuterRadius)*SolidFactor,
-		new Vector3(-InnerRadius, 0f, -0.5f * OuterRadius)*SolidFactor,
-		new Vector3(-InnerRadius, 0f, 0.5f * OuterRadius)*SolidFactor,
-		new Vector3(0f, 0f, OuterRadius)*SolidFactor
-    };
-
-    /// <summary>
-    /// 六边形的六个角
-    /// </summary>
-    public readonly static Vector3[] Corners = {
-        new Vector3(0f, 0f, OuterRadius),
-        new Vector3(InnerRadius, 0f, 0.5f * OuterRadius),
-        new Vector3(InnerRadius, 0f, -0.5f * OuterRadius),
-        new Vector3(0f, 0f, -OuterRadius),
-        new Vector3(-InnerRadius, 0f, -0.5f * OuterRadius),
-        new Vector3(-InnerRadius, 0f, 0.5f * OuterRadius),
-        new Vector3(0f, 0f, OuterRadius)
-    };
-
-    /// <summary>
-    /// 海拔步长
-    /// </summary>
-    public const float elevationStep = 3f;
-
-    /// <summary>
-    /// 每个斜坡上的阶梯数
-    /// </summary>
-    public const int terracesPerSlope = 5;
-
-    /// <summary>
-    /// 阶梯步长
-    /// </summary>
-    public const int terraceSteps = terracesPerSlope * 2 + 1;
-
-    /// <summary>
-    /// 水平阶梯步长
-    /// </summary>
-    public const float horizontalTerraceStepSize = 1f / terraceSteps;
-
-    /// <summary>
-    /// 垂直阶梯步长
-    /// </summary>
-    public const float verticalTerraceStepSize = 1f / (terracesPerSlope + 1);
-
-    /// <summary>
-    /// 阶梯插值
-    /// </summary>
-    /// <param name="a">向量a</param>
-    /// <param name="b">向量b</param>
-    /// <param name="step">步数</param>
-    /// <returns>渐变坡度</returns>
-    public static Vector3 TerraceLerp(Vector3 a, Vector3 b, int step)
-    {
-        float h = step * HexMetrics.horizontalTerraceStepSize;
-        a.x += (b.x - a.x) * h;
-        a.z += (b.z - a.z) * h;
-        float v = ((step + 1) / 2) * HexMetrics.verticalTerraceStepSize;
-        a.y += (b.y - a.y) * v;
-        return a;
-    }
-
-    /// <summary>
-    /// 颜色插值
-    /// </summary>
-    /// <param name="a">颜色A</param>
-    /// <param name="b">颜色B</param>
-    /// <param name="step">步长</param>
-    /// <returns>渐变色</returns>
-    public static Color TerraceLerp(Color a, Color b, int step)
-    {
-        float h = step * HexMetrics.horizontalTerraceStepSize;
-        return Color.Lerp(a, b, h);
-    }
-
-    /// <summary>
-    /// 获取相邻六边形单元之间的矩形桥
-    /// </summary>
-    /// <param name="cellIndex">六边形单元索引</param>
-    /// <returns>矩形桥</returns>
-    public  static Vector3 GetBridge(int cellIndex)
-    {
-        return (Corners[cellIndex] + Corners[cellIndex + 1]) * BlendFactor;
-    }
 }

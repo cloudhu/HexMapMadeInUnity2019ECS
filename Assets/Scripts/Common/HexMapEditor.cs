@@ -42,7 +42,7 @@ public class HexMapEditor : MonoBehaviour {
         RaycastHit hit;
         if (Physics.Raycast(inputRay, out hit))
         {
-            MainWorld.Instance.ColorCell(hit.point, activeColor,activeElevation);
+            MainWorld.Instance.EditCell(hit.point, activeColor,activeElevation);
         }
     }
 

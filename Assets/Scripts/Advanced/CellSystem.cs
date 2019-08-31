@@ -21,6 +21,7 @@ public class CellSystem : JobComponentSystem {
     /// <summary>
     /// 计算六边形单元的顶点和颜色
     /// </summary>
+    //[BurstCompile]//Unity2019.1.14f1会报错，Unity2019.1.12f1则不会
     struct CalculateJob : IJobForEachWithEntity<Cell,NewDataTag> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
         [BurstCompile]
@@ -60,17 +61,13 @@ public class CellSystem : JobComponentSystem {
                 Vector3 vertex2 = (currCellCenter + HexMetrics.SolidCorners[j + 1]);
                 EdgeVertices e = new EdgeVertices(vertex1, vertex2);
                 TriangulateEdgeFan(currCellCenter, e, currCellColor, ref colorBuffer, ref vertexBuffer);
-                //Vector3 e1 = Vector3.Lerp(vertex1, vertex2, 1f / 3f);
-                //Vector3 e2 = Vector3.Lerp(vertex1, vertex2, 2f / 3f);
-                //AddTriangle(currCellCenter, currCellColor, vertex1, currCellColor, e1, currCellColor, ref colorBuffer, ref vertexBuffer);
-                //AddTriangle(currCellCenter, currCellColor, e1, currCellColor, e2, currCellColor, ref colorBuffer, ref vertexBuffer);
-                //AddTriangle(currCellCenter, currCellColor, e2, currCellColor, vertex2, currCellColor, ref colorBuffer, ref vertexBuffer);
+
                 //Connection Between 2 cells
                 #region  Bridge=桥
                 //桥只连接前三个方向相邻的单元，从而避免重复连接
                 if (j <= 2)
                 {
-                    if (directions[j] == 0)
+                    if (directions[j] == int.MinValue)
                     {//如果没有相邻的单元，则跳过循环
                         continue;
                     }
@@ -82,14 +79,9 @@ public class CellSystem : JobComponentSystem {
                     int neighborElevation = elevations[j];
                     //添加外围桥接区域的顶点
                     Vector3 bridge = (HexMetrics.GetBridge(j));
-                    //Vector3 vertex3 = (vertex1 + bridge);
-                    //Vector3 vertex4 = (vertex2 + bridge);
+
                     bridge.y=(neighborElevation-elevation) * HexMetrics.elevationStep;
                     EdgeVertices e2 = new EdgeVertices(vertex1 + bridge, vertex2+ bridge);
-                    //顶点3和顶点4在相邻单元上，海拔应与其同高
-                    //vertex3.y = vertex4.y = neighborElevation * HexMetrics.elevationStep;
-                    //Vector3 e3 = Vector3.Lerp(vertex3, vertex4, 1f / 3f);
-                    //Vector3 e4 = Vector3.Lerp(vertex3, vertex4, 2f / 3f);
 
                     #region 桥面
                     //判断当前单元与相邻单元的海拔高低差，如果是斜坡，则添加阶梯，平面和峭壁则无需阶梯
@@ -101,9 +93,6 @@ public class CellSystem : JobComponentSystem {
                     {
                         Color bridgeColor = (currCellColor + neighborColor) * 0.5f;
                         TriangulateEdgeStrip(e, currCellColor, e2, neighborColor, ref colorBuffer, ref vertexBuffer);
-                        //AddQuad(vertex1, currCellColor,e1, bridgeColor, vertex3, bridgeColor, e3,neighborColor,ref colorBuffer,ref vertexBuffer);
-                        //AddQuad(e1, currCellColor, e2, bridgeColor, e3, bridgeColor, e4, neighborColor, ref colorBuffer, ref vertexBuffer);
-                        //AddQuad(e2, currCellColor, vertex2, bridgeColor, e4, bridgeColor, vertex4, neighborColor, ref colorBuffer, ref vertexBuffer);
                     }
 
                     #endregion
@@ -112,7 +101,7 @@ public class CellSystem : JobComponentSystem {
 
                     //添加外圈区域三向颜色混合
                     int next = (j + 1);
-                    if (j <= 1 && directions[next] != 0)
+                    if (j <= 1 && directions[next] != int.MinValue)
                     {
                         //下一个相邻单元的海拔
                         int nextElevation = elevations[next];
@@ -157,28 +146,19 @@ public class CellSystem : JobComponentSystem {
         void TriangulateEdgeTerraces(EdgeVertices begin, EdgeVertices end, Color beginColor, Color endColor,ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer)
         {
             EdgeVertices e2 = EdgeVertices.TerraceLerp(begin, end, 1);
-            //Vector3 vertex3 = HexMetrics.TerraceLerp(beginLeft, endLeft, 1);
-            //Vector3 vertex4 = HexMetrics.TerraceLerp(beginRight, endRight, 1);
             /////////////(First Step)/////////////////
             Color bridgeColor = HexMetrics.TerraceLerp(beginColor, endColor, 1);
             TriangulateEdgeStrip(begin, beginColor, e2, bridgeColor,ref colorBuffer,ref vertexBuffer);
-            //AddQuad(beginLeft, beginColor, beginRight, beginColor,vertex3, bridgeColor, vertex4, bridgeColor, ref colorBuffer, ref vertexBuffer);
             ///////////////////(Middle Steps)///////////////////
             for (int i = 2; i < HexMetrics.terraceSteps; i++)
             {
-                //Vector3 stepVertex1 = vertex3;
-                //Vector3 stepVertex2 = vertex4;
                 EdgeVertices e1 = e2;
                 Color c1 = bridgeColor;
                 e2 = EdgeVertices.TerraceLerp(begin, end, i);
-                //vertex3 = HexMetrics.TerraceLerp(beginLeft, endLeft, i);
-                //vertex4 = HexMetrics.TerraceLerp(beginRight, endRight, i);
                 bridgeColor = HexMetrics.TerraceLerp(beginColor, endColor, i);
                 TriangulateEdgeStrip(e1, c1, e2, bridgeColor, ref colorBuffer, ref vertexBuffer);
-                //AddQuad(stepVertex1, c1,stepVertex2, c1,vertex3, bridgeColor, vertex4, bridgeColor, ref colorBuffer, ref vertexBuffer);
             }
             ///////////////(Last Step)///////////////////
-            //AddQuad(vertex3, bridgeColor, vertex4, bridgeColor, endLeft, endColor, endRight, endColor, ref colorBuffer, ref vertexBuffer);
             TriangulateEdgeStrip(e2, bridgeColor, end, endColor, ref colorBuffer, ref vertexBuffer);
         }
 
@@ -324,38 +304,26 @@ public class CellSystem : JobComponentSystem {
         //添加矩形三角顶点和颜色
         void AddQuad(Vector3 v1,Color c1, Vector3 v2,Color c2, Vector3 v3, Color c3, Vector3 v4, Color c4, ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer)
         {
-            colorBuffer.Add(c1);
-            vertexBuffer.Add(v1);
-
-            colorBuffer.Add(c3);
-            vertexBuffer.Add(v3);
-
-            colorBuffer.Add(c2);
-            vertexBuffer.Add(v2);
-
-            colorBuffer.Add(c2);
-            vertexBuffer.Add(v2);
-
-            colorBuffer.Add(c3);
-            vertexBuffer.Add(v3);
-
-            colorBuffer.Add(c4);
-            vertexBuffer.Add((v4));
+            Color bridgeColor = (c2 + c3) * 0.5f;
+            AddTriangle(v1, c1, v3, bridgeColor, v2, bridgeColor, ref colorBuffer, ref vertexBuffer);
+            AddTriangle(v2, bridgeColor, v3, bridgeColor, v4, c4, ref colorBuffer, ref vertexBuffer);
         }
 
         //添加三角顶点与颜色
         void AddTriangle(Vector3 v1, Color bottomColor, Vector3 v2, Color leftColor, Vector3 v3,Color rightColor, ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer)
         {
-            colorBuffer.Add(bottomColor);
+            Color colorTriangle = (bottomColor + leftColor + rightColor) / 3f;
+            colorBuffer.Add(colorTriangle);
             vertexBuffer.Add((v1));
 
-            colorBuffer.Add(leftColor);
+            colorBuffer.Add(colorTriangle);
             vertexBuffer.Add((v2));
 
-            colorBuffer.Add((bottomColor + leftColor + rightColor) / 3f);
+            colorBuffer.Add(colorTriangle);
             vertexBuffer.Add((v3));
         }
 
+        ///三角化扇形边缘
         void TriangulateEdgeFan(Vector3 center, EdgeVertices edge, Color color, ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer)
         {
             AddTriangle(center,color, edge.v1,color, edge.v2,color,ref colorBuffer,ref vertexBuffer);
@@ -364,6 +332,7 @@ public class CellSystem : JobComponentSystem {
             AddTriangle(center,color, edge.v3, color,edge.v4,color, ref colorBuffer, ref vertexBuffer);
         }
 
+        //三角化带状边缘
         void TriangulateEdgeStrip(EdgeVertices e1, Color c1, EdgeVertices e2, Color c2,ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer)
         {
             AddQuad(e1.v1,c1, e1.v2,c2, e2.v1,c1, e2.v2,c2, ref colorBuffer, ref vertexBuffer);
@@ -426,6 +395,4 @@ public class CellSystem : JobComponentSystem {
         return job;
 
     }
-
-
 }

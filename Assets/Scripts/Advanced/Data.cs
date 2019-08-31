@@ -7,8 +7,18 @@ using UnityEngine;
 /// </summary>
 public struct Data   : IComponentData
 {
-    public int Width;
-    public int Height;
+    /// <summary>
+    /// X方向的单元数量
+    /// </summary>
+    public int CellCountX;
+    /// <summary>
+    /// Z方向的单元数量
+    /// </summary>
+    public int CellCountZ;
+    /// <summary>
+    /// X方向的地图块数量
+    /// </summary>
+    public int ChunkCountX;
 }
 
 /// <summary>
@@ -40,6 +50,29 @@ public struct UpdateData : IComponentData
 }
 
 /// <summary>
+/// 地图块数据
+/// </summary>
+public struct ChunkData : IComponentData
+{
+
+    /// <summary>
+    /// 地图块编号
+    /// </summary>
+    public int ChunkId;
+
+    /// <summary>
+    /// 地图块内索引
+    /// </summary>
+    public int ChunkIndex;
+
+    /// <summary>
+    /// 单元索引
+    /// </summary>
+    public int CellIndex;
+
+}
+
+/// <summary>
 /// 单元数据
 /// </summary>
 public struct Cell : IComponentData
@@ -48,6 +81,7 @@ public struct Cell : IComponentData
     /// 单元索引
     /// </summary>
     public int Index;
+
     /// <summary>
     /// 位置
     /// </summary>
