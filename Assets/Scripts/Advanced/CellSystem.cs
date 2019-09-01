@@ -22,10 +22,10 @@ public class CellSystem : JobComponentSystem {
     /// 计算六边形单元的顶点和颜色
     /// </summary>
     //[BurstCompile]//Unity2019.1.14f1会报错，Unity2019.1.12f1则不会
-    struct CalculateJob : IJobForEachWithEntity<Cell,NewDataTag> {
+    struct CalculateJob : IJobForEachWithEntity<Cell,NewDataTag,Neighbors,NeighborsIndex> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
         [BurstCompile]
-        public void Execute(Entity entity, int index,[ReadOnly] ref Cell cellData,[ReadOnly]ref NewDataTag tag)
+        public void Execute(Entity entity, int index,[ReadOnly] ref Cell cellData,[ReadOnly]ref NewDataTag tag, [ReadOnly]ref Neighbors neighbors, [ReadOnly]ref NeighborsIndex neighborsIndex)
         {
             //0.获取单元索引，Execute的index不可靠，添加动态缓存
             int cellIndex = cellData.Index;
@@ -37,28 +37,29 @@ public class CellSystem : JobComponentSystem {
             Color currCellColor = cellData.Color;
             ////保存需要混合的颜色，使用数组[]是为了方便循环
             Color[] blendColors = new Color[6];
-            blendColors[0] = cellData.NE;
-            blendColors[1] = cellData.E;
-            blendColors[2] = cellData.SE;
-            blendColors[3] = cellData.SW;
-            blendColors[4] = cellData.W;
-            blendColors[5] = cellData.NW;
+            blendColors[0] = neighbors.NE;
+            blendColors[1] = neighbors.E;
+            blendColors[2] = neighbors.SE;
+            blendColors[3] = neighbors.SW;
+            blendColors[4] = neighbors.W;
+            blendColors[5] = neighbors.NW;
             //前3个方向相邻单元的索引
             int[] directions = new int[3];
-            directions[0] = cellData.NEIndex;
-            directions[1] = cellData.EIndex;
-            directions[2] = cellData.SEIndex;
+            directions[0] = neighborsIndex.NEIndex;
+            directions[1] = neighborsIndex.EIndex;
+            directions[2] = neighborsIndex.SEIndex;
             //前三个方向相邻单元的海拔
             int[] elevations = new int[3];
-            elevations[0] = cellData.NEElevation;
-            elevations[1] = cellData.EElevation;
-            elevations[2] = cellData.SEElevation;
+            elevations[0] = neighbors.NEElevation;
+            elevations[1] = neighbors.EElevation;
+            elevations[2] = neighbors.SEElevation;
             //添加六边形单元六个方向的顶点、三角和颜色
             for (int j = 0; j < 6; j++)
             {
                 //1.添加中心区域的3个顶点
                 Vector3 vertex1 = (currCellCenter + HexMetrics.SolidCorners[j]);
                 Vector3 vertex2 = (currCellCenter + HexMetrics.SolidCorners[j + 1]);
+                //vertex1.y = vertex2.y = cellData.Elevation * HexMetrics.elevationStep;
                 EdgeVertices e = new EdgeVertices(vertex1, vertex2);
                 TriangulateEdgeFan(currCellCenter, e, currCellColor, ref colorBuffer, ref vertexBuffer);
 

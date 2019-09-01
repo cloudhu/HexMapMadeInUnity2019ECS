@@ -63,14 +63,14 @@ public class HexGrid : MonoBehaviour
         chunk.Refresh();
     }
 
-    public void UpdateChunk( int chunkId, int cellIndex, Color color, int elevation,bool affected=false)
+    public void UpdateChunk( int chunkId, int cellIndex, Color color, int elevation,bool affected=false,int brushSize=0)
     {
         if (chunkId==int.MinValue)
         {
             return;
         }
         HexGridChunk chunk = chunks[chunkId];
-        StartCoroutine(chunk.UpdateCell(cellIndex,color,elevation,affected));
+        StartCoroutine(chunk.UpdateChunk(cellIndex,color,elevation,affected,brushSize));
     }
 
     void CreateChunks()

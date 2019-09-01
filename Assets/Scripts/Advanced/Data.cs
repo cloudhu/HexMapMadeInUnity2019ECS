@@ -44,6 +44,7 @@ public struct UpdateData : IComponentData
     /// 海拔
     /// </summary>
     public int Elevation;
+
 }
 
 /// <summary>
@@ -87,6 +88,17 @@ public struct Cell : IComponentData
     /// 颜色
     /// </summary>
     public Color Color;
+
+
+    /// <summary>
+    /// 当前单元的海拔
+    /// </summary>
+    public int Elevation;
+
+}
+
+public struct Neighbors : IComponentData
+{
     //六个方向相邻单元的颜色
     public Color NE;
     public Color E;
@@ -94,19 +106,6 @@ public struct Cell : IComponentData
     public Color SW;
     public Color W;
     public Color NW;
-    /// <summary>
-    /// 六个方向相邻单元的索引
-    /// </summary>
-    public int NEIndex;
-    public int EIndex;
-    public int SEIndex;
-    public int SWIndex;
-    public int WIndex;
-    public int NWIndex;
-    /// <summary>
-    /// 当前单元的海拔
-    /// </summary>
-    public int Elevation;
     //六个方向相邻单元的海拔
     public int NEElevation;
     public int EElevation;
@@ -116,6 +115,18 @@ public struct Cell : IComponentData
     public int NWElevation;
 }
 
+/// <summary>
+/// 六个方向相邻单元的索引
+/// </summary>
+public struct NeighborsIndex : IComponentData {
+
+    public int NEIndex;
+    public int EIndex;
+    public int SEIndex;
+    public int SWIndex;
+    public int WIndex;
+    public int NWIndex;
+}
 
 public struct ColorBuffer : IBufferElementData {
     // These implicit conversions are optional, but can help reduce typing.

@@ -11,7 +11,8 @@ public class HexGridChunk : MonoBehaviour
 
     public int chunkId = int.MinValue;
     private int[] chunkMap;
-    //private NativeList<int> affectList;
+
+    private EntityManager m_EntityManager;
 
     void Awake()
     {
@@ -20,7 +21,12 @@ public class HexGridChunk : MonoBehaviour
         cellCount = HexMetrics.chunkSizeX * HexMetrics.chunkSizeZ;
         cells = new Entity[cellCount];
         chunkMap = new int[cellCount];
-        //affectList = new NativeList<int>(6,Allocator.Persistent);
+
+    }
+
+    private void Start()
+    {
+        m_EntityManager = MainWorld.Instance.GetEntityManager();
     }
 
     public void AddCell(int chunkIndex,int cellIndex,Entity cell)
@@ -44,71 +50,421 @@ public class HexGridChunk : MonoBehaviour
     /// <param name="cellIndex">单元索引</param>
     /// <param name="color">颜色</param>
     /// <returns></returns>
-   public IEnumerator UpdateCell(int cellIndex, Color color, int elevation,bool affected=false)
+   public IEnumerator UpdateChunk(int cellIndex, Color color, int elevation,bool affected=false,int brushSize=0)
     {
         yield return null;
-        EntityManager m_EntityManager = MainWorld.Instance.GetEntityManager();
+        
         Debug.Log("UpdateChunk:" +chunkId);
-        for (int i = 0; i < cellCount; i++)
+        if (brushSize > 0)
         {
-            Entity entity = cells[i];
-            if (m_EntityManager.HasComponent<UpdateData>(entity)) continue;
-            m_EntityManager.AddComponentData(entity, new UpdateData
+            NativeList<int> updateList = new NativeList<int>((brushSize * (1 + brushSize) * 3 + 1),Allocator.Temp);
+            NativeList<int> affectList = new NativeList<int>((1 + brushSize) * 6, Allocator.Temp);
+            int chunkIndex = GetChunkIndex(cellIndex);
+            if (chunkIndex!=int.MinValue)
             {
-                CellIndex = cellIndex,
-                NewColor = color,
-                Elevation = elevation
-            });
-            if (affected) continue;//如果当前地图块是受影响的，则跳过
-            Cell cell = m_EntityManager.GetComponentData<Cell>(entity);
-            if (cell.Index==cellIndex)
+                updateList.Add(cellIndex);
+                NeighborsIndex cell = m_EntityManager.GetComponentData<NeighborsIndex>(cells[chunkIndex]);
+                Brush(cell,brushSize,ref updateList,ref affectList);
+            }
+
+            //Debug.Log("UpdateChunkList:" + updateList.Length);
+            if (updateList.Length > 0)
             {
-                //检测六个方向可能受影响的地图块，将变化传递过去
-                if (cell.NEIndex!= int.MinValue && GetChunkId(cell.NEIndex)!= chunkId)
+                for (int i = 0; i < cellCount; i++)
                 {
-                    MainWorld.Instance.AffectedChunk(cell.NEIndex);
-                    Debug.Log(cellIndex + "影响：" + cell.NEIndex);
-                }
+                    Entity entity = cells[i];
+                    NeighborsIndex neighborsIndex = m_EntityManager.GetComponentData<NeighborsIndex>(entity);
+                    Cell cell = m_EntityManager.GetComponentData<Cell>(entity);
+                    if (updateList.Contains(chunkMap[i]))
+                    {
+                        Vector3 position = cell.Position;
+                        position.y=elevation * HexMetrics.elevationStep;
+                        m_EntityManager.SetComponentData(entity, new Cell
+                        {
+                            Index = chunkMap[i],
+                            Color = color,
+                            Elevation = elevation,
+                            Position=position
+                        });
+                        //更新相邻单元的颜色
+                        if (updateList.Contains(neighborsIndex.NEIndex))
+                        {
+                            Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(entity);
+                            m_EntityManager.SetComponentData(entity, new Neighbors
+                            {
+                                NE = color,
+                                E = neighbors.E,
+                                SE = neighbors.SE,
+                                SW = neighbors.SW,
+                                W = neighbors.W,
+                                NW = neighbors.NW,
+                                NEElevation = elevation,
+                                EElevation = neighbors.EElevation,
+                                SEElevation = neighbors.SEElevation,
+                                SWElevation = neighbors.SWElevation,
+                                WElevation = neighbors.WElevation,
+                                NWElevation = neighbors.NWElevation
+                            });
+                        }
 
-                if (cell.EIndex != int.MinValue && GetChunkId(cell.EIndex) != chunkId)
-                {
-                    MainWorld.Instance.AffectedChunk(cell.EIndex);
-                    Debug.Log(cellIndex + "影响：" + cell.EIndex);
-                }
+                        if (updateList.Contains(neighborsIndex.EIndex))
+                        {
+                            Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(entity);
+                            m_EntityManager.SetComponentData(entity, new Neighbors
+                            {
+                                NE = neighbors.NE,
+                                E = color,
+                                SE = neighbors.SE,
+                                SW = neighbors.SW,
+                                W = neighbors.W,
+                                NW = neighbors.NW,
+                                NEElevation = neighbors.NEElevation,
+                                EElevation = elevation,
+                                SEElevation = neighbors.SEElevation,
+                                SWElevation = neighbors.SWElevation,
+                                WElevation = neighbors.WElevation,
+                                NWElevation = neighbors.NWElevation
+                            });
+                        }
+                        if (updateList.Contains(neighborsIndex.SEIndex))
+                        {
+                            Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(entity);
+                            m_EntityManager.SetComponentData(entity, new Neighbors
+                            {
+                                NE = neighbors.NE,
+                                E = neighbors.E,
+                                SE = color,
+                                SW = neighbors.SW,
+                                W = neighbors.W,
+                                NW = neighbors.NW,
+                                NEElevation = neighbors.NEElevation,
+                                EElevation = neighbors.EElevation,
+                                SEElevation = elevation,
+                                SWElevation = neighbors.SWElevation,
+                                WElevation = neighbors.WElevation,
+                                NWElevation = neighbors.NWElevation
+                            });
+                        }
 
-                if (cell.SEIndex != int.MinValue && GetChunkId(cell.SEIndex) != chunkId)
-                {
-                    MainWorld.Instance.AffectedChunk(cell.SEIndex);
-                    Debug.Log(cellIndex + "影响：" + cell.SEIndex);
-                }
+                        if (updateList.Contains(neighborsIndex.SWIndex))
+                        {
+                            Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(entity);
+                            m_EntityManager.SetComponentData(entity, new Neighbors
+                            {
+                                NE = neighbors.NE,
+                                E = neighbors.E,
+                                SE = neighbors.SE,
+                                SW = color,
+                                W = neighbors.W,
+                                NW = neighbors.NW,
+                                NEElevation = neighbors.NEElevation,
+                                EElevation = neighbors.EElevation,
+                                SEElevation = neighbors.SEElevation,
+                                SWElevation = elevation,
+                                WElevation = neighbors.WElevation,
+                                NWElevation = neighbors.NWElevation
+                            });
+                        }
 
-                if (cell.SWIndex != int.MinValue && GetChunkId(cell.SWIndex) != chunkId)
-                {
-                    MainWorld.Instance.AffectedChunk(cell.SWIndex);
-                    Debug.Log(cellIndex + "影响：" + cell.SWIndex);
-                }
-                if (cell.WIndex != int.MinValue && GetChunkId(cell.WIndex) != chunkId)
-                {
-                    MainWorld.Instance.AffectedChunk(cell.WIndex);
-                    Debug.Log(cellIndex + "影响：" + cell.WIndex);
-                }
+                        if (updateList.Contains(neighborsIndex.WIndex))
+                        {
+                            Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(entity);
+                            m_EntityManager.SetComponentData(entity, new Neighbors
+                            {
+                                NE = neighbors.NE,
+                                E = neighbors.E,
+                                SE = neighbors.SE,
+                                SW = neighbors.SW,
+                                W = color,
+                                NW = neighbors.NW,
+                                NEElevation = neighbors.NEElevation,
+                                EElevation = neighbors.EElevation,
+                                SEElevation = neighbors.SEElevation,
+                                SWElevation = neighbors.SWElevation,
+                                WElevation = elevation,
+                                NWElevation = neighbors.NWElevation
+                            });
+                        }
 
-                if (cell.NWIndex != int.MinValue && GetChunkId(cell.NWIndex) != chunkId)
+                        if (updateList.Contains(neighborsIndex.NWIndex))
+                        {
+                            Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(entity);
+                            m_EntityManager.SetComponentData(entity, new Neighbors
+                            {
+                                NE = neighbors.NE,
+                                E = neighbors.E,
+                                SE = neighbors.SE,
+                                SW = neighbors.SW,
+                                W = neighbors.W,
+                                NW = color,
+                                NEElevation = neighbors.NEElevation,
+                                EElevation = neighbors.EElevation,
+                                SEElevation = neighbors.SEElevation,
+                                SWElevation = neighbors.SWElevation,
+                                WElevation = neighbors.WElevation,
+                                NWElevation = elevation
+                            });
+                        }
+                    }
+                    else if (affectList.Contains(chunkMap[i]))
+                    {
+
+                        //更新相邻单元的颜色
+                        if (updateList.Contains(neighborsIndex.NEIndex))
+                        {
+                            Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(entity);
+                            m_EntityManager.SetComponentData(entity, new Neighbors
+                            {
+                                NE = color,
+                                E = neighbors.E,
+                                SE = neighbors.SE,
+                                SW = neighbors.SW,
+                                W = neighbors.W,
+                                NW = neighbors.NW,
+                                NEElevation = elevation,
+                                EElevation = neighbors.EElevation,
+                                SEElevation = neighbors.SEElevation,
+                                SWElevation = neighbors.SWElevation,
+                                WElevation = neighbors.WElevation,
+                                NWElevation = neighbors.NWElevation
+                            });
+                        }
+
+                        if (updateList.Contains(neighborsIndex.EIndex))
+                        {
+                            Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(entity);
+                            m_EntityManager.SetComponentData(entity, new Neighbors
+                            {
+                                NE = neighbors.NE,
+                                E = color,
+                                SE = neighbors.SE,
+                                SW = neighbors.SW,
+                                W = neighbors.W,
+                                NW = neighbors.NW,
+                                NEElevation = neighbors.NEElevation,
+                                EElevation =elevation,
+                                SEElevation = neighbors.SEElevation,
+                                SWElevation = neighbors.SWElevation,
+                                WElevation = neighbors.WElevation,
+                                NWElevation = neighbors.NWElevation
+                            });
+                        }
+                        if (updateList.Contains(neighborsIndex.SEIndex))
+                        {
+                            Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(entity);
+                            m_EntityManager.SetComponentData(entity, new Neighbors
+                            {
+                                NE = neighbors.NE,
+                                E = neighbors.E,
+                                SE = color,
+                                SW = neighbors.SW,
+                                W = neighbors.W,
+                                NW = neighbors.NW,
+                                NEElevation = neighbors.NEElevation,
+                                EElevation = neighbors.EElevation,
+                                SEElevation = elevation,
+                                SWElevation = neighbors.SWElevation,
+                                WElevation = neighbors.WElevation,
+                                NWElevation = neighbors.NWElevation
+                            });
+                        }
+
+                        if (updateList.Contains(neighborsIndex.SWIndex))
+                        {
+                            Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(entity);
+                            m_EntityManager.SetComponentData(entity, new Neighbors
+                            {
+                                NE = neighbors.NE,
+                                E = neighbors.E,
+                                SE = neighbors.SE,
+                                SW =color ,
+                                W = neighbors.W,
+                                NW = neighbors.NW,
+                                NEElevation = neighbors.NEElevation,
+                                EElevation = neighbors.EElevation,
+                                SEElevation = neighbors.SEElevation,
+                                SWElevation = elevation,
+                                WElevation = neighbors.WElevation,
+                                NWElevation = neighbors.NWElevation
+                            });
+                        }
+
+                        if (updateList.Contains(neighborsIndex.WIndex))
+                        {
+                            Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(entity);
+                            m_EntityManager.SetComponentData(entity, new Neighbors
+                            {
+                                NE = neighbors.NE,
+                                E = neighbors.E,
+                                SE = neighbors.SE,
+                                SW = neighbors.SW,
+                                W = color,
+                                NW = neighbors.NW,
+                                NEElevation = neighbors.NEElevation,
+                                EElevation = neighbors.EElevation,
+                                SEElevation = neighbors.SEElevation,
+                                SWElevation = neighbors.SWElevation,
+                                WElevation = elevation,
+                                NWElevation = neighbors.NWElevation
+                            });
+                        }
+
+                        if (updateList.Contains(neighborsIndex.NWIndex))
+                        {
+                            Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(entity);
+                            m_EntityManager.SetComponentData(entity, new Neighbors
+                            {
+                                NE = neighbors.NE,
+                                E = neighbors.E,
+                                SE = neighbors.SE,
+                                SW = neighbors.SW,
+                                W = neighbors.W,
+                                NW =color ,
+                                NEElevation = neighbors.NEElevation,
+                                EElevation = neighbors.EElevation,
+                                SEElevation = neighbors.SEElevation,
+                                SWElevation = neighbors.SWElevation,
+                                WElevation = neighbors.WElevation,
+                                NWElevation = elevation
+                            });
+                        }
+                    }
+                    else
+                    {
+                        
+                    }
+
+                    m_EntityManager.AddComponent<NewDataTag>(entity);
+                }
+            }
+            updateList.Dispose();
+            affectList.Dispose();
+        }
+        else
+        {
+            for (int i = 0; i < cellCount; i++)
+            {
+                Entity entity = cells[i];
+
+                if (!m_EntityManager.HasComponent<UpdateData>(entity)) m_EntityManager.AddComponent<UpdateData>(entity);
+                m_EntityManager.SetComponentData(entity, new UpdateData
                 {
-                    MainWorld.Instance.AffectedChunk(cell.NWIndex);
-                    Debug.Log(cellIndex + "影响：" + cell.NWIndex);
+                    CellIndex = cellIndex,
+                    NewColor = color,
+                    Elevation = elevation
+                });
+                if (affected) continue;//如果当前地图块是受影响的，则跳过
+                NeighborsIndex cell = m_EntityManager.GetComponentData<NeighborsIndex>(entity);
+                if (chunkMap[i] == cellIndex)
+                {
+                    //检测六个方向可能受影响的地图块，将变化传递过去
+                    if (cell.NEIndex>int.MinValue && GetChunkIndex(cell.NEIndex) == int.MinValue)
+                    {
+                        MainWorld.Instance.AffectedChunk(cell.NEIndex, 0, true);
+                        Debug.Log(cellIndex + "影响NE：" + cell.NEIndex);
+                    }
+
+                    if (cell.EIndex > int.MinValue && GetChunkIndex(cell.EIndex) == int.MinValue)
+                    {
+                        MainWorld.Instance.AffectedChunk(cell.EIndex, 0, true);
+                        Debug.Log(cellIndex + "影响E：" + cell.EIndex);
+                    }
+
+                    if (cell.SEIndex > int.MinValue && GetChunkIndex(cell.SEIndex) == int.MinValue)
+                    {
+                        MainWorld.Instance.AffectedChunk(cell.SEIndex, 0, true);
+                        Debug.Log(cellIndex + "影响SE：" + cell.SEIndex);
+                    }
+
+                    if (cell.SWIndex > int.MinValue && GetChunkIndex(cell.SWIndex) == int.MinValue)
+                    {
+                        MainWorld.Instance.AffectedChunk(cell.SWIndex, 0, true);
+                        Debug.Log(cellIndex + "影响SW：" + cell.SWIndex);
+                    }
+                    if (cell.WIndex > int.MinValue && GetChunkIndex(cell.WIndex) == int.MinValue)
+                    {
+                        MainWorld.Instance.AffectedChunk(cell.WIndex, 0, true);
+                        Debug.Log(cellIndex + "影响W：" + cell.WIndex);
+                    }
+
+                    if (cell.NWIndex > int.MinValue && GetChunkIndex(cell.NWIndex) == int.MinValue)
+                    {
+                        MainWorld.Instance.AffectedChunk(cell.NWIndex, 0, true);
+                        Debug.Log(cellIndex + "影响NW：" + cell.NWIndex);
+                    }
                 }
             }
         }
+
+
     }
 
-    public int GetChunkId(int cellIndex)
+    void Brush(NeighborsIndex cell,int brushSize,ref NativeList<int> updateList, ref NativeList<int> affectList)
     {
-        for (int i = 0; i < cellCount; i++)
+        Debug.Log("Brush brushSize:"+ brushSize+ " )))Brush updateList:" + updateList.Length);
+        NativeList<int> tempArr = new NativeList<int>(6,Allocator.Temp); 
+        //东南西北六个方向相邻的单元都加进列表
+        if (cell.NEIndex > 0 && !updateList.Contains(cell.NEIndex))
         {
-            if (chunkMap[i]== cellIndex)
+            tempArr.Add(cell.NEIndex);
+        }
+        if (cell.EIndex > 0 && !updateList.Contains(cell.EIndex))
+        {
+            tempArr.Add(cell.EIndex);
+        }
+        if (cell.SEIndex > 0 && !updateList.Contains(cell.SEIndex))
+        {
+            tempArr.Add(cell.SEIndex);
+        }
+        if (cell.SWIndex > 0 && !updateList.Contains(cell.SWIndex))
+        {
+            tempArr.Add(cell.SWIndex);
+        }
+        if (cell.WIndex > 0 && !updateList.Contains(cell.WIndex))
+        {
+            tempArr.Add(cell.WIndex);
+        }
+        if (cell.NWIndex > 0 && !updateList.Contains(cell.NWIndex))
+        {
+            tempArr.Add(cell.NWIndex);
+        }
+        //循环递归，对不同的单元进行分别处理
+        for (int i = 0; i < tempArr.Length; i++)
+        {
+            int tmpIndex = tempArr[i];
+            int chunkIndex = GetChunkIndex(tmpIndex);
+            if (chunkIndex > 0)
             {
-                return chunkId;
+                if (brushSize==0)
+                {
+                    affectList.Add(tmpIndex);
+                }
+                else
+                {
+                    updateList.Add(tmpIndex);
+                    NeighborsIndex cellNext = m_EntityManager.GetComponentData<NeighborsIndex>(cells[chunkIndex]);
+                    Brush(cellNext, brushSize - 1, ref updateList,ref affectList);
+                }
+            }
+            else
+            {
+                MainWorld.Instance.AffectedChunk(tmpIndex, brushSize - 1, brushSize == 0);
+            }
+        }
+        tempArr.Dispose();
+
+    }
+
+    private int GetChunkIndex(int cellIndex)
+    {
+        if (cellIndex!=int.MinValue)
+        {
+            for (int i = 0; i < cellCount; i++)
+            {
+                if (chunkMap[i] == cellIndex)
+                {
+                    return i;
+                }
             }
         }
 
@@ -117,6 +473,7 @@ public class HexGridChunk : MonoBehaviour
 
     private void OnDestroy()
     {
-        //affectList.Dispose();
+        cells = null;
+        chunkMap = null;
     }
 }

@@ -32,6 +32,8 @@ public class CellSpawnSystem : JobComponentSystem {
             //0.代码生成预设，这样可以优化性能
             Entity hexCellPrefab = CommandBuffer.CreateEntity(index);
             CommandBuffer.AddComponent<Cell>(index, hexCellPrefab);
+            CommandBuffer.AddComponent<Neighbors>(index, hexCellPrefab);
+            CommandBuffer.AddComponent<NeighborsIndex>(index, hexCellPrefab);
             CommandBuffer.AddComponent<ChunkData>(index, hexCellPrefab);
             //1.添加颜色数组，这个数组以后从服务器获取，然后传到这里来处理
             Random random = new Random(1208905299U);
@@ -208,25 +210,31 @@ public class CellSpawnSystem : JobComponentSystem {
                         Index=i,
                         Color = color,
                         Position= new Vector3(_x, _y, _z),
-                        NE=blendColors[0],
-                        E=blendColors[1],
-                        SE=blendColors[2],
-                        SW=blendColors[3],
-                        W=blendColors[4],
-                        NW= blendColors[5],
-                        NEIndex=directions[0],
-                        EIndex = directions[1],
-                        SEIndex = directions[2],
-                        SWIndex = directions[3],
-                        WIndex = directions[4],
-                        NWIndex = directions[5],
-                        Elevation=Elevations[i],
-                        NEElevation=Elevations[directions[0]==int.MinValue?0: directions[0]],
+                        Elevation=Elevations[i]
+                    });
+                    CommandBuffer.SetComponent(index, instance, new Neighbors
+                    {
+                        NE = blendColors[0],
+                        E = blendColors[1],
+                        SE = blendColors[2],
+                        SW = blendColors[3],
+                        W = blendColors[4],
+                        NW = blendColors[5],
+                        NEElevation = Elevations[directions[0] == int.MinValue ? 0 : directions[0]],
                         EElevation = Elevations[directions[1] == int.MinValue ? 0 : directions[1]],
                         SEElevation = Elevations[directions[2] == int.MinValue ? 0 : directions[2]],
                         SWElevation = Elevations[directions[3] == int.MinValue ? 0 : directions[3]],
                         WElevation = Elevations[directions[4] == int.MinValue ? 0 : directions[4]],
                         NWElevation = Elevations[directions[5] == int.MinValue ? 0 : directions[5]]
+                    });
+                    CommandBuffer.SetComponent(index, instance, new NeighborsIndex
+                    {
+                        NEIndex = directions[0],
+                        EIndex = directions[1],
+                        SEIndex = directions[2],
+                        SWIndex = directions[3],
+                        WIndex = directions[4],
+                        NWIndex = directions[5]
                     });
                     int chunkX = x / HexMetrics.chunkSizeX;
                     int chunkZ = z / HexMetrics.chunkSizeZ;
