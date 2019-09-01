@@ -11,6 +11,7 @@ public class HexGridChunk : MonoBehaviour
 
     public int chunkId = int.MinValue;
     private int[] chunkMap;
+    //private NativeList<int> affectList;
 
     void Awake()
     {
@@ -19,6 +20,7 @@ public class HexGridChunk : MonoBehaviour
         cellCount = HexMetrics.chunkSizeX * HexMetrics.chunkSizeZ;
         cells = new Entity[cellCount];
         chunkMap = new int[cellCount];
+        //affectList = new NativeList<int>(6,Allocator.Persistent);
     }
 
     public void AddCell(int chunkIndex,int cellIndex,Entity cell)
@@ -27,7 +29,7 @@ public class HexGridChunk : MonoBehaviour
         chunkMap[chunkIndex] = cellIndex;
         if (chunkIndex+1==cellCount)
         {
-            StartCoroutine(hexMesh.Triangulate(cells));
+            Refresh();
         }
     }
 
@@ -46,7 +48,7 @@ public class HexGridChunk : MonoBehaviour
     {
         yield return null;
         EntityManager m_EntityManager = MainWorld.Instance.GetEntityManager();
-
+        Debug.Log("UpdateChunk:" +chunkId);
         for (int i = 0; i < cellCount; i++)
         {
             Entity entity = cells[i];
@@ -55,7 +57,6 @@ public class HexGridChunk : MonoBehaviour
             {
                 CellIndex = cellIndex,
                 NewColor = color,
-                Width = HexMetrics.chunkSizeX,
                 Elevation = elevation
             });
             if (affected) continue;//如果当前地图块是受影响的，则跳过
@@ -66,6 +67,7 @@ public class HexGridChunk : MonoBehaviour
                 if (cell.NEIndex!= int.MinValue && GetChunkId(cell.NEIndex)!= chunkId)
                 {
                     MainWorld.Instance.AffectedChunk(cell.NEIndex);
+                    Debug.Log(cellIndex + "影响：" + cell.NEIndex);
                 }
 
                 if (cell.EIndex != int.MinValue && GetChunkId(cell.EIndex) != chunkId)
@@ -77,20 +79,24 @@ public class HexGridChunk : MonoBehaviour
                 if (cell.SEIndex != int.MinValue && GetChunkId(cell.SEIndex) != chunkId)
                 {
                     MainWorld.Instance.AffectedChunk(cell.SEIndex);
+                    Debug.Log(cellIndex + "影响：" + cell.SEIndex);
                 }
 
                 if (cell.SWIndex != int.MinValue && GetChunkId(cell.SWIndex) != chunkId)
                 {
                     MainWorld.Instance.AffectedChunk(cell.SWIndex);
+                    Debug.Log(cellIndex + "影响：" + cell.SWIndex);
                 }
                 if (cell.WIndex != int.MinValue && GetChunkId(cell.WIndex) != chunkId)
                 {
                     MainWorld.Instance.AffectedChunk(cell.WIndex);
+                    Debug.Log(cellIndex + "影响：" + cell.WIndex);
                 }
 
                 if (cell.NWIndex != int.MinValue && GetChunkId(cell.NWIndex) != chunkId)
                 {
                     MainWorld.Instance.AffectedChunk(cell.NWIndex);
+                    Debug.Log(cellIndex + "影响：" + cell.NWIndex);
                 }
             }
         }
@@ -107,5 +113,10 @@ public class HexGridChunk : MonoBehaviour
         }
 
         return int.MinValue;
+    }
+
+    private void OnDestroy()
+    {
+        //affectList.Dispose();
     }
 }

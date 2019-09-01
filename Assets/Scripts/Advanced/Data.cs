@@ -39,10 +39,7 @@ public struct UpdateData : IComponentData
     /// 新的颜色
     /// </summary>
     public Color NewColor;
-    /// <summary>
-    /// 宽度
-    /// </summary>
-    public int Width;
+
     /// <summary>
     /// 海拔
     /// </summary>

@@ -29,7 +29,6 @@ public class UpdateCellSystem : JobComponentSystem {
             //0.获取单元索引，Execute的index顺序混乱
             int cellIndex = cellData.Index;
             int updateIndex = updata.CellIndex;
-            int width = updata.Width;
 
             //1.判断并更新自身单元颜色以及相邻单元颜色
 

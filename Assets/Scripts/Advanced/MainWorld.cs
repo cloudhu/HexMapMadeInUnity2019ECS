@@ -34,10 +34,21 @@ public class MainWorld : MonoBehaviour
     private Color m_PrevSelect = Color.black;
     //上一次设置的海拔
     private int m_PrevElevation = 0;
-    private int chunkId = int.MinValue;
     //声明一个数组来保存chunk和Cell的对应关系
     private int[] chunkMap;
-    private Queue<int> affectedQueue;
+    /// <summary>
+    /// 需要刷新的地图块队列
+    /// </summary>
+    private Queue<int> RefreshQueue;
+    /// <summary>
+    /// 如果是全新的地图，则需要全部渲染，否则只需局部渲染
+    /// </summary>
+    private bool bIsBrandNew = false;
+
+    /// <summary>
+    /// 第一次刷新自身，第二次刷新受影响的地图块
+    /// </summary>
+    private bool bIsSecondRefresh = false;
     #endregion
 
 
@@ -82,7 +93,7 @@ public class MainWorld : MonoBehaviour
         m_Builder = m_EntityManager.CreateEntity(builderArchetype);
         //3.Setup Map;  Todo:get map data from server and SetupMap,now we just use default data
         //Called from OOP HexGrid to separate it from ECS 
-        affectedQueue = new Queue<int>();
+        RefreshQueue = new Queue<int>();
     }
 
     private void OnDestroy()
@@ -98,27 +109,42 @@ public class MainWorld : MonoBehaviour
     /// </summary>
     public void RenderMesh()
     {
-        if (affectedQueue.Count==0)
+        Debug.Log(RefreshQueue.Count);
+        if (bIsBrandNew)
         {
             //暴力获取所有实体，如果有系统外的实体就糟糕了，Todo：只获取Cell单元实体
             NativeArray<Entity> entities = m_EntityManager.GetAllEntities();
             if (entities.Length < totalCellCount) return;
             //Debug.Log("RenderMesh:"+ entities.Length);
             StartCoroutine(RenderHexMap());
+            bIsBrandNew = false;
             entities.Dispose();
         }
-        else
+        else if(RefreshQueue.Count>0)
         {
-            for (int i = affectedQueue.Count; i >0; i--)
+            int refreshId = RefreshQueue.Dequeue();
+            Debug.Log("refreshId=" + refreshId);
+            HexGrid.Refresh(refreshId);
+            if (bIsSecondRefresh)
             {
-                HexGrid.Refresh(affectedQueue.Dequeue());
+                for (int i = RefreshQueue.Count; i >0; i--)
+                {
+                    HexGrid.Refresh(RefreshQueue.Dequeue());
+                }
+
+                bIsSecondRefresh = false;
+            }
+
+            if (RefreshQueue.Count > 1)
+            {
+                bIsSecondRefresh = true;
             }
         }
     }
 
     IEnumerator RenderHexMap()
     {
-        yield return new WaitForSeconds(0.02f);
+        yield return new WaitForSeconds(0.01f);
         NativeArray<Entity> entities = m_EntityManager.GetAllEntities();
         chunkMap = new int[totalCellCount];
         for (int i = 0; i < entities.Length; i++)
@@ -158,6 +184,7 @@ public class MainWorld : MonoBehaviour
         {
             m_EntityManager.AddComponent<NewDataTag>(m_Builder);
         }
+        bIsBrandNew = true;
         //Create System to spawn cells
         m_CellSpawnSystem = m_HexMapWorld.GetOrCreateSystem<CellSpawnSystem>();
     }
@@ -176,14 +203,11 @@ public class MainWorld : MonoBehaviour
         {//避免玩家重复操作
             return;
         }
-
-        GetChunkId(index);
-        //Debug.Log(index);
+        Debug.Log("EditCell:" + index);
         m_PrevClickCell = index;
         m_PrevSelect = color;
         m_PrevElevation = activeElevation;
-        //Debug.Log(chunkId);
-        HexGrid.UpdateChunk(chunkId,index ,color, activeElevation);
+        HexGrid.UpdateChunk(GetChunkId(index), index ,color, activeElevation);
     }
 
     /// <summary>
@@ -191,17 +215,23 @@ public class MainWorld : MonoBehaviour
     /// </summary>
     /// <param name="cellIndex">单元索引</param>
     /// <returns>地图块编号</returns>
-    void GetChunkId(int cellIndex)
+    int GetChunkId(int cellIndex)
     {
         for (int i = 0; i < totalCellCount; i++)
         {
             if (i == cellIndex)
             {
-                chunkId = chunkMap[i];
-                affectedQueue.Enqueue(chunkId);
-                return;
+                int chunkId = chunkMap[i];        
+                Debug.Log("GetChunkId:" + chunkId);
+                if (!RefreshQueue.Contains(chunkId))
+                {
+                    RefreshQueue.Enqueue(chunkId);
+                    return chunkId;
+                }
             }
         }
+
+        return int.MinValue;
     }
 
     /// <summary>
@@ -210,8 +240,14 @@ public class MainWorld : MonoBehaviour
     /// <param name="cellIndex">单元索引</param>
     public void AffectedChunk(int cellIndex)
     {
-        GetChunkId(cellIndex);
-        HexGrid.UpdateChunk(chunkId, m_PrevClickCell, m_PrevSelect, m_PrevElevation,true);
+        Debug.Log("AffectedChunkcellIndex:" + cellIndex);
+        int chunkId= GetChunkId(cellIndex);
+
+        if (chunkId!=int.MinValue)
+        {
+            Debug.Log("AffectedChunkId:" + chunkId);
+            HexGrid.UpdateChunk(chunkId, m_PrevClickCell, m_PrevSelect, m_PrevElevation, true);
+        }
     }
 
     public World GetWorld()

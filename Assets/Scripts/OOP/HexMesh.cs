@@ -20,7 +20,7 @@ public class HexMesh : MonoBehaviour
 
     public IEnumerator Triangulate(Entity[] cells)
     {
-        yield return new WaitForSeconds(0.02f);
+        yield return new WaitForSeconds(0.01f);
         int totalCount = cells.Length;
         EntityManager m_EntityManager = MainWorld.Instance.GetEntityManager();
         NativeList<Vector3> Vertices = new NativeList<Vector3>(totalCount, Allocator.Temp);
