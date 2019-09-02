@@ -226,19 +226,19 @@ public class MainWorld : MonoBehaviour
     /// 被影响的地图块
     /// </summary>
     /// <param name="cellIndex">单元索引</param>
-    public void AffectedChunk(int cellIndex,int brushSize,bool affected)
+    public void AffectedChunk(int cellIndex,int dstIndex,int brushSize,bool affected)
     {
         if (cellIndex==int.MinValue)
         {
             return;
         }
-        //Debug.Log("AffectedChunkcellIndex:" + cellIndex);
+        Debug.Log("AffectedChunkcellIndex:" + cellIndex);
         int chunkId= GetChunkId(cellIndex);
 
         if (chunkId!=int.MinValue)
         {
-            //Debug.Log("AffectedChunkId:" + chunkId);
-            HexGrid.UpdateChunk(chunkId, m_PrevClickCell, m_PrevSelect, m_PrevElevation, affected, brushSize);
+            Debug.Log("AffectedChunkId:" + chunkId);
+            HexGrid.UpdateChunk(chunkId, dstIndex, m_PrevSelect, m_PrevElevation, affected, brushSize);
         }
     }
 

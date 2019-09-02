@@ -45,6 +45,13 @@ public struct UpdateData : IComponentData
     /// </summary>
     public int Elevation;
 
+    public int NEIndex;
+    public int EIndex;
+    public int SEIndex;
+    public int SWIndex;
+    public int WIndex;
+    public int NWIndex;
+
 }
 
 /// <summary>

@@ -26,58 +26,63 @@ public class UpdateCellSystem : JobComponentSystem {
         [BurstCompile]
         public void Execute(Entity entity, int index, ref Cell cellData, [ReadOnly]ref UpdateData updata,ref Neighbors neighbors,ref NeighborsIndex neighborsIndex)
         {
-            //0.获取单元索引，Execute的index顺序混乱
-            int cellIndex = cellData.Index;
-            int updateIndex = updata.CellIndex;
+            //0.获取更新列表
+            NativeList<int> updateList = new NativeList<int>(7, Allocator.Temp);
+            updateList.Add(updata.CellIndex);
+            if (updata.NEIndex > int.MinValue) updateList.Add(updata.NEIndex);
+            if (updata.EIndex > int.MinValue) updateList.Add(updata.EIndex);
+            if (updata.SEIndex > int.MinValue) updateList.Add(updata.SEIndex);
+            if (updata.SWIndex > int.MinValue) updateList.Add(updata.SWIndex);
+            if (updata.WIndex > int.MinValue) updateList.Add(updata.WIndex);
+            if (updata.NWIndex > int.MinValue) updateList.Add(updata.NWIndex);
             //1.判断并更新自身单元颜色以及相邻单元颜色
-
             Color color = updata.NewColor;
 
             //更新相邻单元的颜色
-            if (neighborsIndex.NEIndex == updateIndex)
+            if (updateList.Contains(neighborsIndex.NEIndex))
             {
                 neighbors.NE = color;
                 neighbors.NEElevation = updata.Elevation;
             }
 
-            if (neighborsIndex.EIndex == updateIndex)
+            if (updateList.Contains(neighborsIndex.EIndex))
             {
                 neighbors.E = color;
                 neighbors.EElevation = updata.Elevation;
             }
-            if (neighborsIndex.SEIndex == updateIndex) {
+            if (updateList.Contains(neighborsIndex.SEIndex)) {
                 neighbors.SE = color;
                 neighbors.SEElevation = updata.Elevation;
             }
 
-            if (neighborsIndex.SWIndex == updateIndex)
+            if (updateList.Contains(neighborsIndex.SWIndex))
             {
                 neighbors.SW = color;
                 neighbors.SWElevation = updata.Elevation;
             }
 
-            if (neighborsIndex.WIndex == updateIndex)
+            if (updateList.Contains(neighborsIndex.WIndex) )
             {
                 neighbors.W = color;
                 neighbors.WElevation = updata.Elevation;
             }
 
-            if (neighborsIndex.NWIndex == updateIndex)
+            if (updateList.Contains(neighborsIndex.NWIndex) )
             {
                 neighbors.NW = color;
                 neighbors.NWElevation = updata.Elevation;
             }
-            if (cellIndex == updateIndex)//更新自身单元的颜色
+            if (updateList.Contains(cellData.Index))//更新自身单元的颜色
             {
                 cellData.Color = color;
                 cellData.Position.y= updata.Elevation * HexMetrics.elevationStep;
                 cellData.Elevation = updata.Elevation;
             }
 
+            updateList.Dispose();
             //2.remove UpdateData after Update,therefor NewDataTag need to be added to active CellSystem
             CommandBuffer.RemoveComponent<UpdateData>(index, entity);
             CommandBuffer.AddComponent<NewDataTag>(index, entity);
-
         }
 
     }
