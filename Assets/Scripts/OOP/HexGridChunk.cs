@@ -1,27 +1,27 @@
 ﻿using System.Collections;
-using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
+/// <summary>
+/// 地图块
+/// </summary>
 public class HexGridChunk : MonoBehaviour
 {
     HexMesh hexMesh;
     private Entity[] cells;
     private int cellCount = 0;
-
-    public int chunkId = int.MinValue;
+    //地图块和总地图索引配对表
     private int[] chunkMap;
-
+    //实体管理器缓存
     private EntityManager m_EntityManager;
 
     void Awake()
     {
-
+        //初始化
         hexMesh = GetComponentInChildren<HexMesh>();
         cellCount = HexMetrics.chunkSizeX * HexMetrics.chunkSizeZ;
         cells = new Entity[cellCount];
         chunkMap = new int[cellCount];
-
     }
 
     private void Start()
@@ -29,6 +29,12 @@ public class HexGridChunk : MonoBehaviour
         m_EntityManager = MainWorld.Instance.GetEntityManager();
     }
 
+    /// <summary>
+    /// 添加单元
+    /// </summary>
+    /// <param name="chunkIndex">块内索引</param>
+    /// <param name="cellIndex">单元索引</param>
+    /// <param name="cell">单元</param>
     public void AddCell(int chunkIndex,int cellIndex,Entity cell)
     {
         cells[chunkIndex] = cell;
@@ -39,6 +45,9 @@ public class HexGridChunk : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 刷新地图块
+    /// </summary>
     public void Refresh()
     {
         StartCoroutine(hexMesh.Triangulate(cells));
@@ -54,7 +63,6 @@ public class HexGridChunk : MonoBehaviour
     {
         yield return null;
         
-        Debug.Log("UpdateChunk:" +chunkId);
         if (brushSize > 0)
         {
             int chunkIndex = GetChunkIndex(cellIndex);
@@ -172,10 +180,13 @@ public class HexGridChunk : MonoBehaviour
                 }
             }
         }
-
-
     }
 
+    /// <summary>
+    /// 获取块内索引
+    /// </summary>
+    /// <param name="cellIndex">单元索引</param>
+    /// <returns></returns>
     private int GetChunkIndex(int cellIndex)
     {
         if (cellIndex!=int.MinValue)

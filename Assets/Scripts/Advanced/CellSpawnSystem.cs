@@ -8,16 +8,19 @@ using Random = Unity.Mathematics.Random;
 /// <summary>
 /// 六边形单元生成系统
 /// </summary>
-[DisableAutoCreation]
 [UpdateInGroup(typeof(InitializationSystemGroup))]
 public class CellSpawnSystem : JobComponentSystem {
 
     BeginInitializationEntityCommandBufferSystem m_EntityCommandBufferSystem;
-
+    private EntityQuery m_Spawner;
     protected override void OnCreate()
     {
         m_EntityCommandBufferSystem = World.GetOrCreateSystem<BeginInitializationEntityCommandBufferSystem>();
-
+        var query = new EntityQueryDesc
+        {
+            All = new ComponentType[] { ComponentType.ReadOnly<Data>(), ComponentType.ReadOnly<NewDataTag>() }
+        };
+        m_Spawner = GetEntityQuery(query);
     }
 
     /// <summary>
@@ -272,7 +275,7 @@ public class CellSpawnSystem : JobComponentSystem {
         var spawnJob = new SpawnJob
         {
             CommandBuffer = m_EntityCommandBufferSystem.CreateCommandBuffer().ToConcurrent()
-        }.Schedule(this, inputDeps);
+        }.Schedule(m_Spawner, inputDeps);
 
         m_EntityCommandBufferSystem.AddJobHandleForProducer(spawnJob);
 

@@ -12,10 +12,15 @@ using UnityEngine;
 public class UpdateCellSystem : JobComponentSystem {
 
     BeginSimulationEntityCommandBufferSystem m_EntityCommandBufferSystem;
-
+    private EntityQuery m_CellGroup;
     protected override void OnCreate()
     {
         m_EntityCommandBufferSystem = World.GetOrCreateSystem<BeginSimulationEntityCommandBufferSystem>();
+        var query = new EntityQueryDesc
+        {
+            All = new ComponentType[] { ComponentType.ReadWrite<Cell>(), ComponentType.ReadOnly<UpdateData>(), ComponentType.ReadWrite<Neighbors>(), ComponentType.ReadOnly<NeighborsIndex>() }
+        };
+        m_CellGroup = GetEntityQuery(query);
     }
 
     /// <summary>
@@ -24,7 +29,7 @@ public class UpdateCellSystem : JobComponentSystem {
     struct CalculateJob : IJobForEachWithEntity<Cell, UpdateData,Neighbors,NeighborsIndex> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
         [BurstCompile]
-        public void Execute(Entity entity, int index, ref Cell cellData, [ReadOnly]ref UpdateData updata,ref Neighbors neighbors,ref NeighborsIndex neighborsIndex)
+        public void Execute(Entity entity, int index, ref Cell cellData, [ReadOnly]ref UpdateData updata,ref Neighbors neighbors, [ReadOnly]ref NeighborsIndex neighborsIndex)
         {
             //0.获取更新列表
             NativeList<int> updateList = new NativeList<int>(7, Allocator.Temp);
@@ -98,7 +103,7 @@ public class UpdateCellSystem : JobComponentSystem {
         {
             CommandBuffer = m_EntityCommandBufferSystem.CreateCommandBuffer().ToConcurrent(),
 
-        }.Schedule(this, inputDeps);
+        }.Schedule(m_CellGroup, inputDeps);
         m_EntityCommandBufferSystem.AddJobHandleForProducer(job);
 
         return job;

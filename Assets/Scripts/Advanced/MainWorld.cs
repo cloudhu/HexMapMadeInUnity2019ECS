@@ -13,7 +13,6 @@ public class MainWorld : MonoBehaviour
     #region Private Var
 
     private World m_HexMapWorld;
-    private CellSpawnSystem m_CellSpawnSystem;
     private EntityManager m_EntityManager;
     private Entity m_Builder;
 
@@ -39,16 +38,8 @@ public class MainWorld : MonoBehaviour
     /// <summary>
     /// 需要刷新的地图块队列
     /// </summary>
-    private NativeList<int> m_RefreshQueue;
-    /// <summary>
-    /// 如果是全新的地图，则需要全部渲染，否则只需局部渲染
-    /// </summary>
-    private bool bIsBrandNew = false;
+    private Queue<int> m_RefreshQueue;
 
-    /// <summary>
-    /// 第一次刷新自身，第二次刷新受影响的地图块
-    /// </summary>
-    //private bool bIsSecondRefresh = false;
     #endregion
 
 
@@ -62,13 +53,6 @@ public class MainWorld : MonoBehaviour
 
         //初始化
         Initialize();
-    }
-
-
-    // Update is called once per frame
-    void Update()
-    {
-        m_CellSpawnSystem.Update();
     }
 
     #endregion
@@ -89,16 +73,16 @@ public class MainWorld : MonoBehaviour
         //1.get the entity Manager
         m_EntityManager = m_HexMapWorld.EntityManager;
         //2.Create Builder Entity;
-        EntityArchetype builderArchetype = m_EntityManager.CreateArchetype(typeof(Data),typeof(NewDataTag));
+        EntityArchetype builderArchetype = m_EntityManager.CreateArchetype(typeof(Data));
         m_Builder = m_EntityManager.CreateEntity(builderArchetype);
         //3.Setup Map;  Todo:get map data from server and SetupMap,now we just use default data
         //Called from OOP HexGrid to separate it from ECS 
-        m_RefreshQueue = new NativeList<int>(Allocator.Persistent);
+        m_RefreshQueue = new Queue<int>();
     }
 
     private void OnDestroy()
     {
-        m_RefreshQueue.Dispose();
+        m_RefreshQueue=null;
         m_ChunkMap = null;
     }
     #endregion
@@ -110,25 +94,14 @@ public class MainWorld : MonoBehaviour
     /// </summary>
     public void RenderMesh()
     {
-        Debug.Log(m_RefreshQueue.Length);
-        if (bIsBrandNew)
+        Debug.Log(m_RefreshQueue.Count);
+        if(m_RefreshQueue.Count>0)
         {
-            //暴力获取所有实体，如果有系统外的实体就糟糕了，Todo：只获取Cell单元实体
-            NativeArray<Entity> entities = m_EntityManager.GetAllEntities();
-            if (entities.Length < m_TotalCellCount) return;
-            //Debug.Log("RenderMesh:"+ entities.Length);
-            StartCoroutine(RenderHexMap());
-            bIsBrandNew = false;
-            entities.Dispose();
+            HexGrid.Refresh(m_RefreshQueue.Dequeue());
         }
-        else if(m_RefreshQueue.Length>0)
+        else
         {
-            for (int i = 0; i < m_RefreshQueue.Length; i++)
-            {
-                int refreshId = m_RefreshQueue[i];
-                Debug.Log("refreshId=" + refreshId);
-                HexGrid.Refresh(refreshId);
-            }
+            StartCoroutine(RenderHexMap());
         }
     }
 
@@ -174,9 +147,6 @@ public class MainWorld : MonoBehaviour
         {
             m_EntityManager.AddComponent<NewDataTag>(m_Builder);
         }
-        bIsBrandNew = true;
-        //Create System to spawn cells
-        m_CellSpawnSystem = m_HexMapWorld.GetOrCreateSystem<CellSpawnSystem>();
     }
 
     /// <summary>
@@ -214,7 +184,10 @@ public class MainWorld : MonoBehaviour
             {
                 int chunkId = m_ChunkMap[i];        
                 Debug.Log("GetChunkId:" + chunkId);
-                m_RefreshQueue.Add(chunkId);
+                if (!m_RefreshQueue.Contains(chunkId))
+                {
+                    m_RefreshQueue.Enqueue(chunkId);
+                }
                 return chunkId;
             }
         }
@@ -250,11 +223,6 @@ public class MainWorld : MonoBehaviour
     public EntityManager GetEntityManager()
     {
         return m_EntityManager;
-    }
-
-    public CellSpawnSystem GetCellSpawnSystem()
-    {
-        return m_CellSpawnSystem;
     }
 
     #endregion

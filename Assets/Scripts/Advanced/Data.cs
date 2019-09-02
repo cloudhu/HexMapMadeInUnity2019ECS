@@ -44,14 +44,13 @@ public struct UpdateData : IComponentData
     /// 海拔
     /// </summary>
     public int Elevation;
-
+    //需要更新的相邻单元索引
     public int NEIndex;
     public int EIndex;
     public int SEIndex;
     public int SWIndex;
     public int WIndex;
     public int NWIndex;
-
 }
 
 /// <summary>

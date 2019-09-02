@@ -12,10 +12,16 @@ using UnityEngine;
 public class CellSystem : JobComponentSystem {
 
     BeginInitializationEntityCommandBufferSystem m_EntityCommandBufferSystem;
-
+    private EntityQuery m_CellGroup;
     protected override void OnCreate()
     {
         m_EntityCommandBufferSystem = World.GetOrCreateSystem<BeginInitializationEntityCommandBufferSystem>();
+        var query = new EntityQueryDesc
+        {
+            All = new ComponentType[] { ComponentType.ReadOnly<Cell>(), ComponentType.ReadOnly<NewDataTag>(),ComponentType.ReadOnly<Neighbors>(),ComponentType.ReadOnly<NeighborsIndex>() }
+        };
+        m_CellGroup = GetEntityQuery(query);
+
     }
 
     /// <summary>
@@ -384,12 +390,13 @@ public class CellSystem : JobComponentSystem {
         {
             CommandBuffer = m_EntityCommandBufferSystem.CreateCommandBuffer().ToConcurrent(),
 
-        }.Schedule(this, inputDeps);
+        }.Schedule(m_CellGroup, inputDeps);
         m_EntityCommandBufferSystem.AddJobHandleForProducer(job);
         job.Complete();
 
         if (job.IsCompleted)
         {
+            Debug.Log("CalculateJob IsCompleted:" + job.IsCompleted);
             MainWorld.Instance.RenderMesh();
         }
 
