@@ -6,6 +6,19 @@
 public static class HexMetrics
 {
 
+    #region River河流
+
+    /// <summary>
+    /// 河床海拔偏移量
+    /// </summary>
+    public const float streamBedElevationOffset = -1f;
+
+    /// <summary>
+    /// 水面海拔偏移量
+    /// </summary>
+    public const float riverSurfaceElevationOffset = -0.5f;
+    #endregion
+
     #region Chunk单元块
     /// <summary>
     /// 单元块的大小:大的块更少draw calls，小块有利于裁剪，顶点数就会减少
@@ -48,6 +61,19 @@ public static class HexMetrics
     }
 
     public const float cellPerturbStrength = 3f;
+
+    /// <summary>
+    /// 噪声干扰
+    /// </summary>
+    /// <param name="position">位置</param>
+    /// <returns>干扰后的位置</returns>
+    public static Vector3 Perturb(Vector3 position)
+    {
+        Vector4 sample = SampleNoise(position);
+        position.x += (sample.x * 2f - 1f) * cellPerturbStrength;
+        position.z += (sample.z * 2f - 1f) * cellPerturbStrength;
+        return position;
+    }
 
     #endregion
 
@@ -107,7 +133,10 @@ public static class HexMetrics
     /// <summary>
     /// 六边形内半径=0.8*外半径
     /// </summary>
-    public const float InnerRadius = OuterRadius * 0.866025404f;
+    public const float InnerRadius = OuterRadius * outerToInner;
+
+    public const float outerToInner = 0.866025404f;
+    public const float innerToOuter = 1f / outerToInner;
 
     /// <summary>
     /// 六边形单元中心本色区域占比
@@ -144,6 +173,31 @@ public static class HexMetrics
         new Vector3(-InnerRadius, 0f, 0.5f * OuterRadius),
         new Vector3(0f, 0f, OuterRadius)
     };
+
+    public static Vector3 GetFirstCorner(int direction)
+    {
+        return Corners[direction];
+    }
+
+    public static Vector3 GetSecondCorner(int direction)
+    {
+        return Corners[(direction + 1 > 5 ? 0 : direction + 1)];
+    }
+
+    public static Vector3 GetFirstSolidCorner(int direction)
+    {
+        return Corners[direction] * SolidFactor;
+    }
+
+    public static Vector3 GetSecondSolidCorner(int direction)
+    {
+        return Corners[(direction + 1>5?0:direction+1)] * SolidFactor;
+    }
+
+    public static Vector3 GetSolidEdgeMiddle(int direction)
+    {
+        return (Corners[direction] + Corners[(direction + 1 > 5 ? 0 : direction + 1)]) * (0.5f * SolidFactor);
+    }
 
     /// <summary>
     /// 海拔步长

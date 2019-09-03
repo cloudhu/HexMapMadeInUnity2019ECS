@@ -18,7 +18,8 @@ public class UpdateCellSystem : JobComponentSystem {
         m_EntityCommandBufferSystem = World.GetOrCreateSystem<BeginSimulationEntityCommandBufferSystem>();
         var query = new EntityQueryDesc
         {
-            All = new ComponentType[] { ComponentType.ReadWrite<Cell>(), ComponentType.ReadOnly<UpdateData>(), ComponentType.ReadWrite<Neighbors>(), ComponentType.ReadOnly<NeighborsIndex>() }
+            All = new ComponentType[] { ComponentType.ReadWrite<Cell>(), ComponentType.ReadOnly<UpdateData>(), ComponentType.ReadWrite<Neighbors>(), ComponentType.ReadOnly<NeighborsIndex>() },
+            None= new ComponentType[] { ComponentType.ReadOnly<NewDataTag>() }
         };
         m_CellGroup = GetEntityQuery(query);
     }

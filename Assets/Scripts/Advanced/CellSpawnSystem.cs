@@ -38,19 +38,28 @@ public class CellSpawnSystem : JobComponentSystem {
             CommandBuffer.AddComponent<Neighbors>(index, hexCellPrefab);
             CommandBuffer.AddComponent<NeighborsIndex>(index, hexCellPrefab);
             CommandBuffer.AddComponent<ChunkData>(index, hexCellPrefab);
+            CommandBuffer.AddComponent<River>(index, hexCellPrefab);
             //1.添加颜色数组，这个数组以后从服务器获取，然后传到这里来处理
             Random random = new Random(1208905299U);
             int cellCountX = createrData.CellCountX;
             int cellCountZ = createrData.CellCountZ;
+            int totalCellCount = cellCountZ * cellCountX;
             //保存单元颜色的原生数组
-            NativeArray<Color> Colors=new NativeArray<Color>(cellCountZ * cellCountX, Allocator.Temp);
+            NativeArray<Color> Colors=new NativeArray<Color>(totalCellCount, Allocator.Temp);
             //保存单元海拔的原生数组
-            NativeArray<int> Elevations = new NativeArray<int>(cellCountZ * cellCountX, Allocator.Temp);
+            NativeArray<int> Elevations = new NativeArray<int>(totalCellCount, Allocator.Temp);
+            NativeList<int> riverSources = new NativeList<int>(totalCellCount/12,Allocator.Temp);
+            NativeList<int> riverRuns = new NativeList<int>(totalCellCount/5, Allocator.Temp);
+            Colors[0] = Color.green;//使第一个单元成为河流的源头
+            Elevations[0] = 5;
+            riverSources.Add(0);
             //后面将从服务器获取这些数据，现在暂时随机生成
-            for (int i = 0; i < cellCountZ* cellCountX; i++)
+            for (int i = 1; i < cellCountZ* cellCountX; i++)
             {
                 Colors[i]= new Color(random.NextFloat(), random.NextFloat(), random.NextFloat());
-                Elevations[i]= random.NextInt(6);
+                int elevtion = random.NextInt(6);
+                Elevations[i]= elevtion;
+                if (elevtion >= 5) riverSources.Add(i);
             }
 
             for (int z = 0,i=0; z < cellCountZ; z++)
@@ -207,13 +216,95 @@ public class CellSpawnSystem : JobComponentSystem {
 
                     directions[5] = direction;
                     blendColors[5] = neighbor;
+                    //初始化河流数据
+                    bool hasRiver = false;
+                    bool hasOutgoingRiver = false;
+                    bool hasIncomingRiver = false;
+                    int incomingRiver = int.MinValue;
+                    int outgoingRiver = int.MinValue;
+                    if (riverSources.Contains(i))
+                    {
+                        hasRiver = true;
+                        int lastE = int.MinValue;
+                        for (int j = 0; j < 6; j++)
+                        {
+                            if (directions[j] != int.MinValue)
+                            {
+                                if (riverRuns.Contains(directions[j])) continue;
+                                int elevationR = Elevations[directions[j]];
+                                if (elevationR< Elevations[i] && elevationR>lastE)
+                                {
+                                    hasOutgoingRiver = true;
+                                    outgoingRiver = directions[j];
+                                    lastE = elevationR;
+                                }
+                            }
+                        }
+
+                        if (hasOutgoingRiver)
+                        {
+                            riverRuns.Add(outgoingRiver);
+                        }
+                        else
+                        {
+                            hasRiver = false;
+                        }
+                    }
+
+                    if (riverRuns.Contains(i))
+                    {
+                        hasRiver = true;
+                        int lastE = int.MinValue;
+                        int lastE2 = int.MaxValue;
+                        for (int j = 5; j >-1; j--)
+                        {
+                            if (directions[j] != int.MinValue)
+                            {
+                                int elevationR = Elevations[directions[j]];
+                                if (elevationR <= Elevations[i] && elevationR > lastE && !riverSources.Contains(directions[j]) && !riverRuns.Contains(directions[j]))
+                                {
+                                    hasOutgoingRiver = true;
+                                    outgoingRiver = directions[j];
+                                    lastE = elevationR;
+                                }
+
+                                if (elevationR>=Elevations[i] && (elevationR < lastE2 || directions[j]<incomingRiver))
+                                {
+                                    if (riverSources.Contains(directions[j]) || riverRuns.Contains(directions[j]))
+                                    {
+                                        incomingRiver = directions[j];
+                                        hasIncomingRiver = true;
+                                        lastE2 = elevationR;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (hasOutgoingRiver)
+                        {
+                            riverRuns.Add(outgoingRiver);
+                        }
+                        else
+                        {
+                            hasRiver = false;
+                        }
+
+                    }
                     //5.设置每个六边形单元的数据
                     CommandBuffer.SetComponent(index, instance, new Cell
                     {
                         Index=i,
                         Color = color,
                         Position= new Vector3(_x, _y, _z),
-                        Elevation=Elevations[i]
+                        Elevation=Elevations[i],
+                        HasRiver=hasRiver
+                    });
+                    CommandBuffer.SetComponent(index, instance, new River
+                    {
+                        HasIncomingRiver=hasIncomingRiver,
+                        HasOutgoingRiver=hasOutgoingRiver,
+                        IncomingRiver=incomingRiver,
+                        OutgoingRiver=outgoingRiver
                     });
                     CommandBuffer.SetComponent(index, instance, new Neighbors
                     {
@@ -260,6 +351,7 @@ public class CellSpawnSystem : JobComponentSystem {
             CommandBuffer.RemoveComponent<NewDataTag>(index,entity);
             Colors.Dispose();
             Elevations.Dispose();
+            riverSources.Dispose();
         }
 
     }

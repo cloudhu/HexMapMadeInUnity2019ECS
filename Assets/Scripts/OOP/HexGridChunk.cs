@@ -7,7 +7,8 @@ using UnityEngine;
 /// </summary>
 public class HexGridChunk : MonoBehaviour
 {
-    HexMesh hexMesh;
+    public HexMesh terrain;
+    public HexRiver rivers;
     private Entity[] cells;
     private int cellCount = 0;
     //地图块和总地图索引配对表
@@ -18,7 +19,6 @@ public class HexGridChunk : MonoBehaviour
     void Awake()
     {
         //初始化
-        hexMesh = GetComponentInChildren<HexMesh>();
         cellCount = HexMetrics.chunkSizeX * HexMetrics.chunkSizeZ;
         cells = new Entity[cellCount];
         chunkMap = new int[cellCount];
@@ -50,7 +50,8 @@ public class HexGridChunk : MonoBehaviour
     /// </summary>
     public void Refresh()
     {
-        StartCoroutine(hexMesh.Triangulate(cells));
+        StartCoroutine(terrain.Triangulate(cells));
+        StartCoroutine(rivers.Triangulate(cells));
     }
 
     /// <summary>

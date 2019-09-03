@@ -95,12 +95,41 @@ public struct Cell : IComponentData
     /// </summary>
     public Color Color;
 
-
     /// <summary>
     /// 当前单元的海拔
     /// </summary>
     public int Elevation;
 
+    /// <summary>
+    /// 当前单元是否有河流
+    /// </summary>
+    public bool HasRiver;
+}
+
+/// <summary>
+/// 河流数据
+/// </summary>
+public struct River : IComponentData
+{
+    /// <summary>
+    /// 是否有河流进入
+    /// </summary>
+    public bool HasIncomingRiver;
+
+    /// <summary>
+    /// 是否有河流出
+    /// </summary>
+    public bool HasOutgoingRiver;
+
+    /// <summary>
+    /// 流入方向
+    /// </summary>
+    public int IncomingRiver;
+
+    /// <summary>
+    /// 流出方向
+    /// </summary>
+    public int OutgoingRiver;
 }
 
 public struct Neighbors : IComponentData
@@ -152,14 +181,20 @@ public struct VertexBuffer : IBufferElementData {
     public Vector3 Value;
 }
 
-public struct TriangleBuffer : IBufferElementData {
+public struct UvBuffer : IBufferElementData {
     // These implicit conversions are optional, but can help reduce typing.
-    public static implicit operator int(TriangleBuffer e) { return e.Value; }
-    public static implicit operator TriangleBuffer(int e) { return new TriangleBuffer { Value = e }; }
+    public static implicit operator Vector2(UvBuffer e) { return e.Value; }
+    public static implicit operator UvBuffer(Vector2 e) { return new UvBuffer { Value = e }; }
 
     // Actual value each buffer element will store.
-    public int Value;
+    public Vector2 Value;
 }
 
+public struct RiverBuffer : IBufferElementData {
+    // These implicit conversions are optional, but can help reduce typing.
+    public static implicit operator Vector3(RiverBuffer e) { return e.Value; }
+    public static implicit operator RiverBuffer(Vector3 e) { return new RiverBuffer { Value = e }; }
 
-
+    // Actual value each buffer element will store.
+    public Vector3 Value;
+}
