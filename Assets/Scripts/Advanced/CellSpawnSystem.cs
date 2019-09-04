@@ -39,6 +39,7 @@ public class CellSpawnSystem : JobComponentSystem {
             CommandBuffer.AddComponent<NeighborsIndex>(index, hexCellPrefab);
             CommandBuffer.AddComponent<ChunkData>(index, hexCellPrefab);
             CommandBuffer.AddComponent<River>(index, hexCellPrefab);
+            CommandBuffer.AddComponent<RoadBools>(index, hexCellPrefab);
             //1.添加颜色数组，这个数组以后从服务器获取，然后传到这里来处理
             Random random = new Random(1208905299U);
             int cellCountX = createrData.CellCountX;
@@ -277,7 +278,28 @@ public class CellSpawnSystem : JobComponentSystem {
                             hasRiver = hasIncomingRiver;
                         }
                     }
+                    //if (hasRiver)//Todo:优化河流系统
+                    //{
+                    //    CommandBuffer.AddComponent<RiverRenderTag>(index,instance);
+                    //}
 
+                    //生成道路数据
+                    bool[] roads = new bool[6];
+                    bool hasRoad = false;
+                    for (int j = 0; j < 6; j++)
+                    {
+                        roads[j] = false;
+                        if (directions[j]!=int.MinValue)
+                        {
+                            int tmpE = Elevations[i] -Elevations[directions[j]];
+                            tmpE = tmpE > 0 ? tmpE : -tmpE;
+                            if (tmpE<=1 && directions[j]!=incomingRiver && directions[j] !=outgoingRiver)
+                            {
+                                roads[j] = true;
+                                hasRoad = true;
+                            }
+                        }
+                    }
                     //5.设置每个六边形单元的数据
                     CommandBuffer.SetComponent(index, instance, new Cell
                     {
@@ -285,8 +307,10 @@ public class CellSpawnSystem : JobComponentSystem {
                         Color = color,
                         Position= new Vector3(_x, _y, _z),
                         Elevation=Elevations[i],
-                        HasRiver=hasRiver
+                        HasRiver=hasRiver,
+                        HasRoad=hasRoad
                     });
+
                     CommandBuffer.SetComponent(index, instance, new River
                     {
                         HasIncomingRiver=hasIncomingRiver,
@@ -317,6 +341,15 @@ public class CellSpawnSystem : JobComponentSystem {
                         SWIndex = directions[3],
                         WIndex = directions[4],
                         NWIndex = directions[5]
+                    });
+                    CommandBuffer.SetComponent(index, instance, new RoadBools
+                    {
+                        NEBool = roads[0],
+                        EBool = roads[1],
+                        SEBool = roads[2],
+                        SWBool = roads[3],
+                        WBool = roads[4],
+                        NWBool = roads[5]
                     });
                     int chunkX = x / HexMetrics.ChunkSizeX;
                     int chunkZ = z / HexMetrics.ChunkSizeZ;

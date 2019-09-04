@@ -102,7 +102,7 @@ public class UpdateCellSystem : JobComponentSystem {
     {
         var job = new CalculateJob
         {
-            CommandBuffer = m_EntityCommandBufferSystem.CreateCommandBuffer().ToConcurrent(),
+            CommandBuffer = m_EntityCommandBufferSystem.CreateCommandBuffer().ToConcurrent()
 
         }.Schedule(m_CellGroup, inputDeps);
         m_EntityCommandBufferSystem.AddJobHandleForProducer(job);
