@@ -45,7 +45,7 @@ public class HexMesh : MonoBehaviour
                     //Vector3 vertex = HexMetrics.Perturb(vertexBuffer[j]);
                     //if (j == 0)
                     //{
-                    //    elevationPerturb= (HexMetrics.SampleNoise(vertex).y * 2f - 1f) * HexMetrics.elevationPerturbStrength;
+                    //    elevationPerturb= (HexMetrics.SampleNoise(vertex).y * 2f - 1f) * HexMetrics.ElevationPerturbStrength;
                     //}
                     //vertex.y += elevationPerturb;
                     //Vertices.Add(vertex);

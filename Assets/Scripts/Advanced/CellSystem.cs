@@ -84,14 +84,15 @@ public class CellSystem : JobComponentSystem {
                 int prev2 = (j - 2) >= 0 ? (j - 2) : (j + 4);
                 //是否有河流通过
                 bool hasRiverThroughEdge = HasRiverThroughEdge(river,directionIndex[j]);
-                float RiverSurfaceY= (elevation + HexMetrics.riverSurfaceElevationOffset) * HexMetrics.elevationStep;
+                float RiverSurfaceY= (elevation + HexMetrics.RiverSurfaceElevationOffset) * HexMetrics.ElevationStep;
 
                 //如果有河流通过，则降低海拔来创造河道
                 if (cellData.HasRiver)
                 {
+                    //CommandBuffer.AddComponent<RiverRenderTag>(index,entity);
                     if (hasRiverThroughEdge)
                     {
-                        e.v3.y = (elevation + HexMetrics.streamBedElevationOffset) * HexMetrics.elevationStep;
+                        e.v3.y = (elevation + HexMetrics.StreamBedElevationOffset) * HexMetrics.ElevationStep;
                         if (river.HasOutgoingRiver!= river.HasIncomingRiver)
                         {
                             //TriangulateWithRiverBeginOrEnd(directions[j], directions[prev], directions[next], currCellColor, currCellCenter, e, ref colorBuffer, ref vertexBuffer);
@@ -135,11 +136,11 @@ public class CellSystem : JobComponentSystem {
                             else if (HasRiverThroughEdge(river, directionIndex[next2]))
                             {
                                 centerL = currCellCenter;
-                                centerR = currCellCenter + HexMetrics.GetSolidEdgeMiddle(next) * (0.5f * HexMetrics.innerToOuter);
+                                centerR = currCellCenter + HexMetrics.GetSolidEdgeMiddle(next) * (0.5f * HexMetrics.InnerToOuter);
                             }
                             else
                             {
-                                centerL = currCellCenter + HexMetrics.GetSolidEdgeMiddle(prev) * (0.5f * HexMetrics.innerToOuter);
+                                centerL = currCellCenter + HexMetrics.GetSolidEdgeMiddle(prev) * (0.5f * HexMetrics.InnerToOuter);
                                 centerR = currCellCenter;
                             }
 
@@ -163,7 +164,7 @@ public class CellSystem : JobComponentSystem {
                         {
                             if (HasRiverThroughEdge(river, directionIndex[prev]))
                             {
-                                center += HexMetrics.GetSolidEdgeMiddle(j)*(HexMetrics.innerToOuter * 0.5f);
+                                center += HexMetrics.GetSolidEdgeMiddle(j)*(HexMetrics.InnerToOuter * 0.5f);
                             }
                             else if (HasRiverThroughEdge(river,directionIndex[prev2]))
                             {
@@ -200,12 +201,12 @@ public class CellSystem : JobComponentSystem {
                     //添加外围桥接区域的顶点
                     Vector3 bridge = (HexMetrics.GetBridge(j));
 
-                    bridge.y=(elevations[j]-elevation) * HexMetrics.elevationStep;
+                    bridge.y=(elevations[j]-elevation) * HexMetrics.ElevationStep;
                     EdgeVertices e2 = new EdgeVertices(e.v1 + bridge, e.v5+ bridge);
                     if (hasRiverThroughEdge)
                     {
-                        float neighborRiverSurfaceY = (elevations[j] + HexMetrics.riverSurfaceElevationOffset) * HexMetrics.elevationStep;
-                        e2.v3.y= (elevations[j] + HexMetrics.streamBedElevationOffset) * HexMetrics.elevationStep;
+                        float neighborRiverSurfaceY = (elevations[j] + HexMetrics.RiverSurfaceElevationOffset) * HexMetrics.ElevationStep;
+                        e2.v3.y= (elevations[j] + HexMetrics.StreamBedElevationOffset) * HexMetrics.ElevationStep;
                         TriangulateRiverQuad(e.v2, e.v4, e2.v2, e2.v4, RiverSurfaceY, neighborRiverSurfaceY,0.8f,ref uvBuffer,ref riverBuffers, river.HasIncomingRiver && river.IncomingRiver == directionIndex[j]);
                     }
                     #region 桥面
@@ -231,7 +232,7 @@ public class CellSystem : JobComponentSystem {
                         //下一个相邻单元的海拔
                         int nextElevation = elevations[next];
                         Vector3 vertex5 = e.v5 + HexMetrics.GetBridge(next);
-                        vertex5.y = nextElevation * HexMetrics.elevationStep;
+                        vertex5.y = nextElevation * HexMetrics.ElevationStep;
                         //判断相邻的三个六边形单元的高低关系，按照最低（Bottom），左（Left），右（Right）的顺序进行三角化处理
                         if (elevation <= elevations[j])
                         {
@@ -275,7 +276,7 @@ public class CellSystem : JobComponentSystem {
             Color bridgeColor = HexMetrics.TerraceLerp(beginColor, endColor, 1);
             TriangulateEdgeStrip(begin, beginColor, e2, bridgeColor,ref colorBuffer,ref vertexBuffer);
             ///////////////////(Middle Steps)///////////////////
-            for (int i = 2; i < HexMetrics.terraceSteps; i++)
+            for (int i = 2; i < HexMetrics.TerraceSteps; i++)
             {
                 EdgeVertices e1 = e2;
                 Color c1 = bridgeColor;
@@ -346,7 +347,7 @@ public class CellSystem : JobComponentSystem {
             Color c4 = HexMetrics.TerraceLerp(beginColor, rightColor, 1);
             AddTriangle(begin,beginColor,v3,c3,v4,c4,ref colorBuffer,ref vertexBuffer);
             ///////////Middle Steps
-            for (int i = 2; i < HexMetrics.terraceSteps; i++)
+            for (int i = 2; i < HexMetrics.TerraceSteps; i++)
             {
                 Vector3 v1 = v3;
                 Vector3 v2 = v4;
@@ -413,7 +414,7 @@ public class CellSystem : JobComponentSystem {
             ///////////////////////First Triangle
             AddTriangle(begin, beginCellColor, v2, c2, boundary, boundaryColor, ref colorBuffer, ref vertexBuffer);
             ///////////////////////////Middle Triangles
-            for (int i = 2; i < HexMetrics.terraceSteps; i++)
+            for (int i = 2; i < HexMetrics.TerraceSteps; i++)
             {
                 Vector3 v1 = v2;
                 Color c1 = c2;
@@ -553,23 +554,21 @@ public class CellSystem : JobComponentSystem {
         //添加矩形三角顶点和颜色
         void AddQuad(Vector3 v1, Color c1, Vector3 v2, Color c2, Vector3 v3, Color c3, Vector3 v4, Color c4, ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer)
         {
-            //Color bridgeColor = (c2 + c3) * 0.5f;
-            AddTriangle(v1, c1, v3, c3, v2, c2, ref colorBuffer, ref vertexBuffer);
-            AddTriangle(v2, c2, v3, c3, v4, c4, ref colorBuffer, ref vertexBuffer);
+            Color bridgeColor = (c2 + c3) * 0.5f;
+            AddTriangle(v1, c1, v3, bridgeColor, v2, bridgeColor, ref colorBuffer, ref vertexBuffer);
+            AddTriangle(v2, bridgeColor, v3, bridgeColor, v4, c4, ref colorBuffer, ref vertexBuffer);
         }
 
         //添加三角顶点与颜色
         void AddTriangle(Vector3 v1, Color bottomColor, Vector3 v2, Color leftColor, Vector3 v3, Color rightColor, ref DynamicBuffer<ColorBuffer> colorBuffer, ref DynamicBuffer<VertexBuffer> vertexBuffer)
         {
-            //Color colorTriangle = (bottomColor + leftColor + rightColor) / 3f;
-            colorBuffer.Add(bottomColor);
+            Color colorTriangle = (bottomColor + leftColor + rightColor) / 3f;
             vertexBuffer.Add((v1));
-
-            colorBuffer.Add(leftColor);
+            colorBuffer.Add(colorTriangle);
             vertexBuffer.Add((v2));
-
-            colorBuffer.Add(rightColor);
+            colorBuffer.Add(colorTriangle);
             vertexBuffer.Add((v3));
+            colorBuffer.Add(colorTriangle);
         }
 
         /// <summary>

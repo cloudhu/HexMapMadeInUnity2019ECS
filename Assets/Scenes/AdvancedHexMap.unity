@@ -618,8 +618,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a5944fd37712d34a999cdf1dd09b804, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chunkCountX: 4
-  chunkCountZ: 3
+  chunkCountX: 5
+  chunkCountZ: 5
   noiseSource: {fileID: 2800000, guid: 14f238fab41d74a41aa3d8024cae0bac, type: 3}
   chunkPrefab: {fileID: 3032814105676310406, guid: 95afdcc78bd176643959207dac339bf6,
     type: 3}

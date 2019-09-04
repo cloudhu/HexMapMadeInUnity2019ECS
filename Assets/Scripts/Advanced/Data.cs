@@ -26,6 +26,8 @@ public struct Data   : IComponentData
 /// </summary>
 public struct NewDataTag : IComponentData { }
 
+//public struct RiverRenderTag : IComponentData { }
+
 /// <summary>
 /// 单元的更新数据
 /// </summary>

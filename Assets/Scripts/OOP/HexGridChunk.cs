@@ -19,7 +19,7 @@ public class HexGridChunk : MonoBehaviour
     void Awake()
     {
         //初始化
-        cellCount = HexMetrics.chunkSizeX * HexMetrics.chunkSizeZ;
+        cellCount = HexMetrics.ChunkSizeX * HexMetrics.ChunkSizeZ;
         cells = new Entity[cellCount];
         chunkMap = new int[cellCount];
     }

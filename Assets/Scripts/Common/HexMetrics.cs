@@ -9,14 +9,19 @@ public static class HexMetrics
     #region River河流
 
     /// <summary>
+    /// 河流源头的海拔值
+    /// </summary>
+    public const int RiverSourceElevation = 5;
+
+    /// <summary>
     /// 河床海拔偏移量
     /// </summary>
-    public const float streamBedElevationOffset = -1f;
+    public const float StreamBedElevationOffset = -1.75f;
 
     /// <summary>
     /// 水面海拔偏移量
     /// </summary>
-    public const float riverSurfaceElevationOffset = -0.5f;
+    public const float RiverSurfaceElevationOffset = -0.5f;
     #endregion
 
     #region Chunk单元块
@@ -29,7 +34,7 @@ public static class HexMetrics
     /// culling, which leads to fewer triangles being drawn.
     /// The pragmatic approach is to just pick a size and fine-tune later.
     /// </summary>
-    public const int chunkSizeX = 5, chunkSizeZ = 5;
+    public const int ChunkSizeX = 5, ChunkSizeZ = 5;
 
     #endregion
 
@@ -38,17 +43,17 @@ public static class HexMetrics
     /// <summary>
     /// 海拔干扰度
     /// </summary>
-    public const float elevationPerturbStrength = 1.5f;
+    public const float ElevationPerturbStrength = 1.5f;
 
     /// <summary>
     /// 噪源
     /// </summary>
-    public static Texture2D noiseSource;
+    public static Texture2D NoiseSource;
 
     /// <summary>
     /// 噪声缩放
     /// </summary>
-    public const float noiseScale = 0.003f;
+    public const float NoiseScale = 0.003f;
 
     /// <summary>
     /// 噪声采样
@@ -57,7 +62,7 @@ public static class HexMetrics
     /// <returns>双线性过滤</returns>
     public static Vector4 SampleNoise(Vector3 position)
     {
-        return noiseSource.GetPixelBilinear(position.x * noiseScale, position.z * noiseScale);
+        return NoiseSource.GetPixelBilinear(position.x * NoiseScale, position.z * NoiseScale);
     }
 
     public const float cellPerturbStrength = 3f;
@@ -133,10 +138,10 @@ public static class HexMetrics
     /// <summary>
     /// 六边形内半径=0.8*外半径
     /// </summary>
-    public const float InnerRadius = OuterRadius * outerToInner;
+    public const float InnerRadius = OuterRadius * OuterToInner;
 
-    public const float outerToInner = 0.866025404f;
-    public const float innerToOuter = 1f / outerToInner;
+    public const float OuterToInner = 0.866025404f;
+    public const float InnerToOuter = 1f / OuterToInner;
 
     /// <summary>
     /// 六边形单元中心本色区域占比
@@ -202,27 +207,27 @@ public static class HexMetrics
     /// <summary>
     /// 海拔步长
     /// </summary>
-    public const float elevationStep = 3f;
+    public const float ElevationStep = 3f;
 
     /// <summary>
     /// 每个斜坡上的阶梯数
     /// </summary>
-    public const int terracesPerSlope = 5;
+    public const int TerracesPerSlope = 5;
 
     /// <summary>
     /// 阶梯步长
     /// </summary>
-    public const int terraceSteps = terracesPerSlope * 2 + 1;
+    public const int TerraceSteps = TerracesPerSlope * 2 + 1;
 
     /// <summary>
     /// 水平阶梯步长
     /// </summary>
-    public const float horizontalTerraceStepSize = 1f / terraceSteps;
+    public const float HorizontalTerraceStepSize = 1f / TerraceSteps;
 
     /// <summary>
     /// 垂直阶梯步长
     /// </summary>
-    public const float verticalTerraceStepSize = 1f / (terracesPerSlope + 1);
+    public const float VerticalTerraceStepSize = 1f / (TerracesPerSlope + 1);
 
     /// <summary>
     /// 阶梯插值
@@ -233,10 +238,10 @@ public static class HexMetrics
     /// <returns>渐变坡度</returns>
     public static Vector3 TerraceLerp(Vector3 a, Vector3 b, int step)
     {
-        float h = step * HexMetrics.horizontalTerraceStepSize;
+        float h = step * HexMetrics.HorizontalTerraceStepSize;
         a.x += (b.x - a.x) * h;
         a.z += (b.z - a.z) * h;
-        float v = ((step + 1) / 2) * HexMetrics.verticalTerraceStepSize;
+        float v = ((step + 1) / 2) * HexMetrics.VerticalTerraceStepSize;
         a.y += (b.y - a.y) * v;
         return a;
     }
@@ -250,7 +255,7 @@ public static class HexMetrics
     /// <returns>渐变色</returns>
     public static Color TerraceLerp(Color a, Color b, int step)
     {
-        float h = step * HexMetrics.horizontalTerraceStepSize;
+        float h = step * HexMetrics.HorizontalTerraceStepSize;
         return Color.Lerp(a, b, h);
     }
 

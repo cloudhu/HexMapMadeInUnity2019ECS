@@ -40,15 +40,15 @@ public class HexGrid : MonoBehaviour
 
     private void Awake()
     {
-        cellCountX = chunkCountX * HexMetrics.chunkSizeX;
-        cellCountZ = chunkCountZ * HexMetrics.chunkSizeZ;
-        HexMetrics.noiseSource = noiseSource;
+        cellCountX = chunkCountX * HexMetrics.ChunkSizeX;
+        cellCountZ = chunkCountZ * HexMetrics.ChunkSizeZ;
+        HexMetrics.NoiseSource = noiseSource;
         CreateChunks();
     }
 
     void OnEnable()
     {
-        HexMetrics.noiseSource = noiseSource;
+        HexMetrics.NoiseSource = noiseSource;
     }
 
     // Start is called before the first frame update

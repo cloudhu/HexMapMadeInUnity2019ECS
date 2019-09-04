@@ -81,7 +81,7 @@ public class UpdateCellSystem : JobComponentSystem {
             if (updateList.Contains(cellData.Index))//更新自身单元的颜色
             {
                 cellData.Color = color;
-                cellData.Position.y= updata.Elevation * HexMetrics.elevationStep;
+                cellData.Position.y= updata.Elevation * HexMetrics.ElevationStep;
                 cellData.Elevation = updata.Elevation;
             }
 

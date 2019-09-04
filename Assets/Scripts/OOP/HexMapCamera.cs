@@ -72,12 +72,12 @@ public class HexMapCamera : MonoBehaviour {
     Vector3 ClampPosition(Vector3 position)
     {
         float xMax =
-            (grid.chunkCountX * HexMetrics.chunkSizeX - 0.5f) *
+            (grid.chunkCountX * HexMetrics.ChunkSizeX - 0.5f) *
             (2f * HexMetrics.InnerRadius);
         position.x = Mathf.Clamp(position.x, -10f, xMax-80f);
 
         float zMax =
-            (grid.chunkCountZ * HexMetrics.chunkSizeZ - 1) *
+            (grid.chunkCountZ * HexMetrics.ChunkSizeZ - 1) *
             (1.5f * HexMetrics.OuterRadius);
         position.z = Mathf.Clamp(position.z,-10f, zMax-20f);
         return position;

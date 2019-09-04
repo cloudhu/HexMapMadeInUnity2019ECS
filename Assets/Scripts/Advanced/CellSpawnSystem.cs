@@ -49,19 +49,21 @@ public class CellSpawnSystem : JobComponentSystem {
             //保存单元海拔的原生数组
             NativeArray<int> Elevations = new NativeArray<int>(totalCellCount, Allocator.Temp);
             //河流的源头
-            NativeList<int> riverSources = new NativeList<int>(totalCellCount/12,Allocator.Temp);
+            NativeList<int> riverSources = new NativeList<int>(totalCellCount/15,Allocator.Temp);
             //流入的河流索引
             NativeArray<int> riverIn = new NativeArray<int>(totalCellCount, Allocator.Temp);
             Colors[0] = Color.green;//使第一个单元成为河流的源头
-            Elevations[0] = 5;
+            Elevations[0] = HexMetrics.RiverSourceElevation;
             riverSources.Add(0);
+            riverIn[0] = -1;
+            
             //后面将从服务器获取这些数据，现在暂时随机生成
-            for (int i = 1; i < cellCountZ* cellCountX; i++)
+            for (int i = 1; i < totalCellCount; i++)
             {
                 Colors[i]= new Color(random.NextFloat(), random.NextFloat(), random.NextFloat());
-                int elevtion = random.NextInt(6);
-                Elevations[i]= elevtion;
-                if (elevtion >= 5) riverSources.Add(i);
+                Elevations[i]= random.NextInt(6);
+                if (Elevations[i] >= HexMetrics.RiverSourceElevation) riverSources.Add(i);
+                riverIn[i] = -1;
             }
 
             for (int z = 0,i=0; z < cellCountZ; z++)
@@ -74,7 +76,7 @@ public class CellSpawnSystem : JobComponentSystem {
 
                     //3.计算阵列对应的六边形单元坐标
                     float _x = (x + z * 0.5f - z / 2) * (HexMetrics.InnerRadius * 2f);
-                    float _y = Elevations[i] * HexMetrics.elevationStep;
+                    float _y = Elevations[i] * HexMetrics.ElevationStep;
                     float _z = z * (HexMetrics.OuterRadius * 1.5f);
 
                     //4.计算当前单元所在六个方向的邻居单元颜色
@@ -224,23 +226,37 @@ public class CellSpawnSystem : JobComponentSystem {
                     bool hasIncomingRiver = false;
                     int incomingRiver = int.MinValue;
                     int outgoingRiver = int.MinValue;
+                    //如果当前单元是河源
                     if (riverSources.Contains(i))
                     {
-                        hasRiver = true;
-                        int lastE = int.MinValue;
+                        hasRiver = true;//河源单元必然有河流
+                        //上一个单元海拔,用来做比较
+                        int lastElevation = int.MinValue;
+                        //从六个方向寻找河床
                         for (int j = 0; j < 6; j++)
                         {
-                            if (directions[j] != int.MinValue)
+                            if (directions[j] != int.MinValue)//如果是最小值，说明没有相邻单元
                             {
-                                int elevationR = Elevations[directions[j]];
-                                if (i<directions[j] && !riverSources.Contains(directions[j]) && elevationR<= Elevations[i] && elevationR>lastE)
+                                int elevationR = Elevations[directions[j]];//获取相邻单元的海拔
+                                //先判断出水口：水向东流，则当前所以必然小于相邻索引，否则就在西面
+                                if (i<directions[j])
                                 {
-                                    hasOutgoingRiver = true;
-                                    outgoingRiver = directions[j];
-                                    lastE = elevationR;
+                                    //如果已经是源头了，则无法在流入了，一个单元最多有一条河流经，且海拔必然低于河源
+                                    if (!riverSources.Contains(directions[j]) && elevationR <= Elevations[i])
+                                    {
+                                        //为了源远流长，选择与自身海拔相近的单元
+                                        if (elevationR > lastElevation)
+                                        {
+                                            hasOutgoingRiver = true;
+                                            outgoingRiver = directions[j];
+                                            lastElevation = elevationR;
+                                        }
+                                    }
                                 }
+                                //判断入水口，但凡入水口都保存在数组中了
                                 if (riverIn.Contains(directions[j]))
                                 {
+                                    //方向校正，当前单元的入水方向即是相邻单元的出水方向
                                     if (directions[j] == riverIn[i])
                                     {
                                         incomingRiver = riverIn[i];
@@ -249,14 +265,15 @@ public class CellSpawnSystem : JobComponentSystem {
                                 }
                             }
                         }
-
+                        //有出水口则保存起来
                         if (hasOutgoingRiver)
                         {
+                            //当前单元的出水口，正是相邻单元的入水口
                             riverIn[outgoingRiver]=i;
                             riverSources.Add(outgoingRiver);
                         }
                         else
-                        {
+                        {//出水口没有，进水口也没有，则闭源
                             hasRiver = hasIncomingRiver;
                         }
                     }
@@ -301,14 +318,14 @@ public class CellSpawnSystem : JobComponentSystem {
                         WIndex = directions[4],
                         NWIndex = directions[5]
                     });
-                    int chunkX = x / HexMetrics.chunkSizeX;
-                    int chunkZ = z / HexMetrics.chunkSizeZ;
-                    int localX = x - chunkX * HexMetrics.chunkSizeX;
-                    int localZ = z - chunkZ * HexMetrics.chunkSizeZ;
+                    int chunkX = x / HexMetrics.ChunkSizeX;
+                    int chunkZ = z / HexMetrics.ChunkSizeZ;
+                    int localX = x - chunkX * HexMetrics.ChunkSizeX;
+                    int localZ = z - chunkZ * HexMetrics.ChunkSizeZ;
                     CommandBuffer.SetComponent(index,instance,new ChunkData
                     {
                         ChunkId= chunkX + chunkZ * createrData.ChunkCountX,
-                        ChunkIndex= localX + localZ * HexMetrics.chunkSizeX,
+                        ChunkIndex= localX + localZ * HexMetrics.ChunkSizeX,
                         CellIndex=i
                     });
                     //6.添加新数据标签NewDataTag组件，激活CellSystem来处理新的数据
