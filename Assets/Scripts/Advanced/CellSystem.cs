@@ -77,9 +77,7 @@ public class CellSystem : JobComponentSystem {
             {
                 //1.添加中心区域的3个顶点
                 int next = (j + 1) > 5 ? 0 : (j + 1);
-                Vector3 vertex1 = (currCellCenter + HexMetrics.SolidCorners[j]);
-                Vector3 vertex2 = (currCellCenter + HexMetrics.SolidCorners[next]);
-                EdgeVertices e = new EdgeVertices(vertex1, vertex2);
+                EdgeVertices e = new EdgeVertices((currCellCenter + HexMetrics.SolidCorners[j]), (currCellCenter + HexMetrics.SolidCorners[next]));
                 
                 int prev= (j - 1) < 0 ? 5 : (j - 1);
                 int next2 = (j + 2) <= 5 ? (j + 2) : (j - 4);
@@ -97,7 +95,7 @@ public class CellSystem : JobComponentSystem {
                         if (river.HasOutgoingRiver!= river.HasIncomingRiver)
                         {
                             //TriangulateWithRiverBeginOrEnd(directions[j], directions[prev], directions[next], currCellColor, currCellCenter, e, ref colorBuffer, ref vertexBuffer);
-                            EdgeVertices m = new EdgeVertices(Vector3.Lerp(currCellCenter, vertex1, 0.5f), Vector3.Lerp(currCellCenter, vertex2, 0.5f));
+                            EdgeVertices m = new EdgeVertices(Vector3.Lerp(currCellCenter, e.v1, 0.5f), Vector3.Lerp(currCellCenter, e.v5, 0.5f));
                             m.v3.y = e.v3.y;
                             TriangulateEdgeStrip(m, currCellColor, e, currCellColor, ref colorBuffer, ref vertexBuffer);
                             TriangulateEdgeFan(currCellCenter, m, currCellColor, ref colorBuffer, ref vertexBuffer);
@@ -116,11 +114,11 @@ public class CellSystem : JobComponentSystem {
                         }
                         else
                         {
-                            //获取当前方向的相反方向，并判断是否有河流经过
-                            bool oppositeHasRiverThroughEdge = HasRiverThroughEdge(river, directionIndex[OppositeDirection(j)]);
+
                             //TriangulateWithRiver(direction, directions[prev], directions[next], currCellColor, currCellCenter, e, ref colorBuffer, ref vertexBuffer, oppositeHasRiverThroughEdge);
                             Vector3 centerL, centerR;
-                            if (oppositeHasRiverThroughEdge)
+                            //获取当前方向的相反方向，并判断是否有河流经过
+                            if (HasRiverThroughEdge(river, directionIndex[OppositeDirection(j)]))
                             {
                                 centerL = currCellCenter + HexMetrics.GetFirstSolidCorner(prev) * 0.25f;
                                 centerR = currCellCenter + HexMetrics.GetSecondSolidCorner(next) * 0.25f;
@@ -160,28 +158,29 @@ public class CellSystem : JobComponentSystem {
                     }
                     else
                     {
+                        Vector3 center = currCellCenter;
                         if (HasRiverThroughEdge(river,directionIndex[next]))
                         {
                             if (HasRiverThroughEdge(river, directionIndex[prev]))
                             {
-                                currCellCenter += HexMetrics.GetSolidEdgeMiddle(j)*(HexMetrics.innerToOuter * 0.5f);
+                                center += HexMetrics.GetSolidEdgeMiddle(j)*(HexMetrics.innerToOuter * 0.5f);
                             }
                             else if (HasRiverThroughEdge(river,directionIndex[prev2]))
                             {
-                                currCellCenter += HexMetrics.GetFirstSolidCorner(j) * 0.25f;
+                                center += HexMetrics.GetFirstSolidCorner(j) * 0.25f;
                             }
                         }
-                        else if (HasRiverThroughEdge(river,directionIndex[prev]) && HasRiverThroughEdge(river, directionIndex[prev2]))
+                        else if (HasRiverThroughEdge(river,directionIndex[prev]) && HasRiverThroughEdge(river, directionIndex[next2]))
                         {
-                            currCellCenter += HexMetrics.GetSecondSolidCorner(j) * 0.25f;
+                            center += HexMetrics.GetSecondSolidCorner(j) * 0.25f;
                         }
                         EdgeVertices m = new EdgeVertices(
-                            Vector3.Lerp(currCellCenter, e.v1, 0.5f),
-                            Vector3.Lerp(currCellCenter, e.v5, 0.5f)
+                            Vector3.Lerp(center, e.v1, 0.5f),
+                            Vector3.Lerp(center, e.v5, 0.5f)
                         );
 
                         TriangulateEdgeStrip(m, currCellColor, e, currCellColor, ref colorBuffer, ref vertexBuffer);
-                        TriangulateEdgeFan(currCellCenter, m, currCellColor, ref colorBuffer, ref vertexBuffer);
+                        TriangulateEdgeFan(center, m, currCellColor, ref colorBuffer, ref vertexBuffer);
                     }
                 }
                 else
@@ -202,7 +201,7 @@ public class CellSystem : JobComponentSystem {
                     Vector3 bridge = (HexMetrics.GetBridge(j));
 
                     bridge.y=(elevations[j]-elevation) * HexMetrics.elevationStep;
-                    EdgeVertices e2 = new EdgeVertices(vertex1 + bridge, vertex2+ bridge);
+                    EdgeVertices e2 = new EdgeVertices(e.v1 + bridge, e.v5+ bridge);
                     if (hasRiverThroughEdge)
                     {
                         float neighborRiverSurfaceY = (elevations[j] + HexMetrics.riverSurfaceElevationOffset) * HexMetrics.elevationStep;
@@ -231,7 +230,7 @@ public class CellSystem : JobComponentSystem {
                     {
                         //下一个相邻单元的海拔
                         int nextElevation = elevations[next];
-                        Vector3 vertex5 = vertex2 + HexMetrics.GetBridge(next);
+                        Vector3 vertex5 = e.v5 + HexMetrics.GetBridge(next);
                         vertex5.y = nextElevation * HexMetrics.elevationStep;
                         //判断相邻的三个六边形单元的高低关系，按照最低（Bottom），左（Left），右（Right）的顺序进行三角化处理
                         if (elevation <= elevations[j])
@@ -239,20 +238,20 @@ public class CellSystem : JobComponentSystem {
                             if (elevation <= nextElevation)
                             {
                                 //当前单元海拔最低
-                                TriangulateCorner(vertex2, currCellColor, e2.v5, blendColors[j], vertex5, blendColors[next],ref colorBuffer,ref vertexBuffer,elevation, elevations[j], nextElevation);
+                                TriangulateCorner(e.v5, currCellColor, e2.v5, blendColors[j], vertex5, blendColors[next],ref colorBuffer,ref vertexBuffer,elevation, elevations[j], nextElevation);
                             }
                             else
                             {
-                                TriangulateCorner(vertex5, blendColors[next], vertex2, currCellColor, e2.v5, blendColors[j], ref colorBuffer, ref vertexBuffer, nextElevation, elevation, elevations[j]);
+                                TriangulateCorner(vertex5, blendColors[next], e.v5, currCellColor, e2.v5, blendColors[j], ref colorBuffer, ref vertexBuffer, nextElevation, elevation, elevations[j]);
                             }
                         }
                         else if (elevations[j] <= nextElevation)
                         {
-                            TriangulateCorner(e2.v5, blendColors[j], vertex5, blendColors[next], vertex2, currCellColor, ref colorBuffer, ref vertexBuffer, elevations[j], nextElevation, elevation);
+                            TriangulateCorner(e2.v5, blendColors[j], vertex5, blendColors[next], e.v5, currCellColor, ref colorBuffer, ref vertexBuffer, elevations[j], nextElevation, elevation);
                         }
                         else
                         {
-                            TriangulateCorner(vertex5, blendColors[next], vertex2, currCellColor, e2.v5, blendColors[j], ref colorBuffer, ref vertexBuffer, nextElevation, elevation, elevations[j]);
+                            TriangulateCorner(vertex5, blendColors[next], e.v5, currCellColor, e2.v5, blendColors[j], ref colorBuffer, ref vertexBuffer, nextElevation, elevation, elevations[j]);
                         }
 
                     }

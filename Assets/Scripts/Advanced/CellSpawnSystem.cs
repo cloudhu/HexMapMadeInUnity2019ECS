@@ -48,8 +48,10 @@ public class CellSpawnSystem : JobComponentSystem {
             NativeArray<Color> Colors=new NativeArray<Color>(totalCellCount, Allocator.Temp);
             //保存单元海拔的原生数组
             NativeArray<int> Elevations = new NativeArray<int>(totalCellCount, Allocator.Temp);
+            //河流的源头
             NativeList<int> riverSources = new NativeList<int>(totalCellCount/12,Allocator.Temp);
-            NativeList<int> riverRuns = new NativeList<int>(totalCellCount/5, Allocator.Temp);
+            //流入的河流索引
+            NativeArray<int> riverIn = new NativeArray<int>(totalCellCount, Allocator.Temp);
             Colors[0] = Color.green;//使第一个单元成为河流的源头
             Elevations[0] = 5;
             riverSources.Add(0);
@@ -230,51 +232,19 @@ public class CellSpawnSystem : JobComponentSystem {
                         {
                             if (directions[j] != int.MinValue)
                             {
-                                if (riverRuns.Contains(directions[j])) continue;
                                 int elevationR = Elevations[directions[j]];
-                                if (elevationR< Elevations[i] && elevationR>lastE)
+                                if (i<directions[j] && !riverSources.Contains(directions[j]) && elevationR<= Elevations[i] && elevationR>lastE)
                                 {
                                     hasOutgoingRiver = true;
                                     outgoingRiver = directions[j];
                                     lastE = elevationR;
                                 }
-                            }
-                        }
-
-                        if (hasOutgoingRiver)
-                        {
-                            riverRuns.Add(outgoingRiver);
-                        }
-                        else
-                        {
-                            hasRiver = false;
-                        }
-                    }
-
-                    if (riverRuns.Contains(i))
-                    {
-                        hasRiver = true;
-                        int lastE = int.MinValue;
-                        int lastE2 = int.MaxValue;
-                        for (int j = 5; j >-1; j--)
-                        {
-                            if (directions[j] != int.MinValue)
-                            {
-                                int elevationR = Elevations[directions[j]];
-                                if (elevationR <= Elevations[i] && elevationR > lastE && !riverSources.Contains(directions[j]) && !riverRuns.Contains(directions[j]))
+                                if (riverIn.Contains(directions[j]))
                                 {
-                                    hasOutgoingRiver = true;
-                                    outgoingRiver = directions[j];
-                                    lastE = elevationR;
-                                }
-
-                                if (elevationR>=Elevations[i] && (elevationR < lastE2 || directions[j]<incomingRiver))
-                                {
-                                    if (riverSources.Contains(directions[j]) || riverRuns.Contains(directions[j]))
+                                    if (directions[j] == riverIn[i])
                                     {
-                                        incomingRiver = directions[j];
+                                        incomingRiver = riverIn[i];
                                         hasIncomingRiver = true;
-                                        lastE2 = elevationR;
                                     }
                                 }
                             }
@@ -282,14 +252,15 @@ public class CellSpawnSystem : JobComponentSystem {
 
                         if (hasOutgoingRiver)
                         {
-                            riverRuns.Add(outgoingRiver);
+                            riverIn[outgoingRiver]=i;
+                            riverSources.Add(outgoingRiver);
                         }
                         else
                         {
-                            hasRiver = false;
+                            hasRiver = hasIncomingRiver;
                         }
-
                     }
+
                     //5.设置每个六边形单元的数据
                     CommandBuffer.SetComponent(index, instance, new Cell
                     {
@@ -352,6 +323,7 @@ public class CellSpawnSystem : JobComponentSystem {
             Colors.Dispose();
             Elevations.Dispose();
             riverSources.Dispose();
+            riverIn.Dispose();
         }
 
     }
