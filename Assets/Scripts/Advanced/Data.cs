@@ -103,11 +103,24 @@ public struct Cell : IComponentData
     public int Elevation;
 
     /// <summary>
+    /// 水体高度
+    /// </summary>
+    public int WaterLevel;
+
+    /// <summary>
     /// 当前单元是否有河流
     /// </summary>
     public bool HasRiver;
 
+    /// <summary>
+    /// 当前单元是否有路
+    /// </summary>
     public bool HasRoad;
+
+    /// <summary>
+    /// 是否被水淹没
+    /// </summary>
+    public bool IsUnderWater;
 }
 
 /// <summary>
@@ -152,23 +165,24 @@ public struct Neighbors : IComponentData
     public int SWElevation;
     public int WElevation;
     public int NWElevation;
-}
-
-/// <summary>
-/// 六个方向相邻单元的索引
-/// </summary>
-public struct NeighborsIndex : IComponentData {
-
+    //索引
     public int NEIndex;
     public int EIndex;
     public int SEIndex;
     public int SWIndex;
     public int WIndex;
     public int NWIndex;
+    //6个方向的位置
+    public Vector3 NEPosition;
+    public Vector3 EPosition;
+    public Vector3 SEPosition;
+    public Vector3 SWPosition;
+    public Vector3 WPosition;
+    public Vector3 NWPosition;
 }
 
 /// <summary>
-/// 六个方向相邻单元的索引
+/// 单元的六个方向是否有道路通过
 /// </summary>
 public struct RoadBools : IComponentData {
 
@@ -229,7 +243,7 @@ public struct RiverBuffer : IBufferElementData {
 }
 
 /// <summary>
-/// 道路
+/// 道路顶点动态缓存
 /// </summary>
 public struct RoadBuffer : IBufferElementData {
     // These implicit conversions are optional, but can help reduce typing.
@@ -246,5 +260,65 @@ public struct RoadUvBuffer : IBufferElementData {
     public static implicit operator RoadUvBuffer(Vector2 e) { return new RoadUvBuffer { Value = e }; }
 
     // Actual value each buffer element will store.
+    public Vector2 Value;
+}
+
+/// <summary>
+/// 水体顶点
+/// </summary>
+public struct WaterBuffer : IBufferElementData {
+    // These implicit conversions are optional, but can help reduce typing.
+    public static implicit operator Vector3(WaterBuffer e) { return e.Value; }
+    public static implicit operator WaterBuffer(Vector3 e) { return new WaterBuffer { Value = e }; }
+
+    // Actual value each buffer element will store.
+    public Vector3 Value;
+}
+
+/// <summary>
+/// 水岸顶点
+/// </summary>
+public struct WaterShoreBuffer : IBufferElementData {
+    // These implicit conversions are optional, but can help reduce typing.
+    public static implicit operator Vector3(WaterShoreBuffer e) { return e.Value; }
+    public static implicit operator WaterShoreBuffer(Vector3 e) { return new WaterShoreBuffer { Value = e }; }
+
+    // Actual value each buffer element will store.
+    public Vector3 Value;
+}
+
+public struct ShoreUvBuffer : IBufferElementData {
+    // These implicit conversions are optional, but can help reduce typing.
+    public static implicit operator Vector2(ShoreUvBuffer e) { return e.Value; }
+    public static implicit operator ShoreUvBuffer(Vector2 e) { return new ShoreUvBuffer { Value = e }; }
+
+    // Actual value each buffer element will store. 
+    public Vector2 Value;
+}
+
+public struct EstuaryBuffer : IBufferElementData {
+    // These implicit conversions are optional, but can help reduce typing.
+    public static implicit operator Vector3(EstuaryBuffer e) { return e.Value; }
+    public static implicit operator EstuaryBuffer(Vector3 e) { return new EstuaryBuffer { Value = e }; }
+
+    // Actual value each buffer element will store.
+    public Vector3 Value;
+}
+
+public struct EstuaryUvBuffer : IBufferElementData {
+    // These implicit conversions are optional, but can help reduce typing.
+    public static implicit operator Vector2(EstuaryUvBuffer e) { return e.Value; }
+    public static implicit operator EstuaryUvBuffer(Vector2 e) { return new EstuaryUvBuffer { Value = e }; }
+
+    // Actual value each buffer element will store. Estuary
+    public Vector2 Value;
+}
+
+public struct EstuaryUvsBuffer : IBufferElementData {
+    // These implicit conversions are optional, but can help reduce typing.
+    public static implicit operator Vector2(EstuaryUvsBuffer e) { return e.Value; }
+    public static implicit operator EstuaryUvsBuffer(Vector2 e) { return new EstuaryUvsBuffer { Value = e }; }
+
+    // Actual value each buffer element will store. Estuary
     public Vector2 Value;
 }

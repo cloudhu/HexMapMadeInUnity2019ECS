@@ -6,7 +6,7 @@
 public static class HexMetrics
 {
 
-    #region River河流
+    #region River河流 Water
 
     /// <summary>
     /// 河流源头的海拔值
@@ -21,7 +21,30 @@ public static class HexMetrics
     /// <summary>
     /// 水面海拔偏移量
     /// </summary>
-    public const float RiverSurfaceElevationOffset = -0.5f;
+    public const float WaterSurfaceElevationOffset = -0.5f;
+
+    /// <summary>
+    /// 水体占比
+    /// </summary>
+    public const float WaterFactor = 0.6f;
+
+
+    public static Vector3 GetFirstWaterCorner(int direction)
+    {
+        return Corners[direction] * WaterFactor;
+    }
+
+    public static Vector3 GetSecondWaterCorner(int direction)
+    {
+        return Corners[direction + 1] * WaterFactor;
+    }
+
+    public const float WaterBlendFactor = 1f - WaterFactor;
+
+    public static Vector3 GetWaterBridge(int direction)
+    {
+        return (Corners[direction] + Corners[direction + 1]) * WaterBlendFactor;
+    }
     #endregion
 
     #region Chunk单元块
@@ -84,7 +107,7 @@ public static class HexMetrics
 
 
     /// <summary>
-    /// 方向，N=北，S=南，E=东，W=西
+    /// 方向，N=北，S=南，EPosition=东，WPosition=西
     /// </summary>
     public enum HexDirection {
         NE=0, E=1, SE=2, SW=3, W=4, NW=5

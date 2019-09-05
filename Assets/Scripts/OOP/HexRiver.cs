@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -18,7 +17,7 @@ public class HexRiver : MonoBehaviour
 
     public IEnumerator Triangulate(Entity[] cells)
     {
-        yield return new WaitForSeconds(0.01f);
+        yield return null;//new WaitForSeconds(0.01f);
         int totalCount = cells.Length;
         EntityManager m_EntityManager = MainWorld.Instance.GetEntityManager();
         NativeList<Vector3> Vertices = new NativeList<Vector3>(totalCount, Allocator.Temp);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Rendering;
 using UnityEngine;
 
 /// <summary>
@@ -9,12 +10,15 @@ using UnityEngine;
 /// </summary>
 public class MainWorld : MonoBehaviour
 {
-    public HexGrid HexGrid; 
+    public HexGrid HexGrid;
+    //public Material RiverMaterial;
     #region Private Var
 
     private World m_HexMapWorld;
     private EntityManager m_EntityManager;
     private Entity m_Builder;
+
+    //private Entity m_River;
 
     /// <summary>
     /// 地图宽度（以六边形为基本单位）
@@ -78,6 +82,15 @@ public class MainWorld : MonoBehaviour
         //3.Setup Map;  Todo:get map data from server and SetupMap,now we just use default data
         //Called from OOP HexGrid to separate it from ECS 
         m_RefreshQueue = new Queue<int>();
+        //River Entity
+        //EntityArchetype riverArchetype = m_EntityManager.CreateArchetype(typeof(RenderMesh));
+        //m_River = m_EntityManager.CreateEntity(riverArchetype);
+        //m_EntityManager.SetSharedComponentData(m_River,new RenderMesh
+        //{
+        //    mesh=new Mesh(),
+        //    material=RiverMaterial,
+        //    castShadows= UnityEngine.Rendering.ShadowCastingMode.Off
+        //});
     }
 
     private void OnDestroy()
@@ -107,7 +120,7 @@ public class MainWorld : MonoBehaviour
 
     IEnumerator RenderHexMap()
     {
-        yield return new WaitForSeconds(0.01f);
+        yield return null;//new WaitForSeconds(0.01f);
         NativeArray<Entity> entities = m_EntityManager.GetAllEntities();
         m_ChunkMap = new int[m_TotalCellCount];
         for (int i = 0; i < entities.Length; i++)
@@ -225,6 +238,10 @@ public class MainWorld : MonoBehaviour
         return m_EntityManager;
     }
 
+    //public Entity GetRiver()
+    //{
+    //    return m_River;
+    //}
     #endregion
 
 }

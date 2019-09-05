@@ -4,7 +4,7 @@ using Unity.Entities;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-public class HexRoad : MonoBehaviour {
+public class WaterShore : MonoBehaviour {
     Mesh m_Mesh;
 
     void Awake()
@@ -27,12 +27,12 @@ public class HexRoad : MonoBehaviour {
             //0.取出实体，如果实体的索引为m_Builder则跳过
             Entity entity = cells[i];
             Cell cell = m_EntityManager.GetComponentData<Cell>(entity);
-            if (cell.HasRoad)
+            if (cell.HasRiver)
             {
-                DynamicBuffer<RoadBuffer> riverBuffers = m_EntityManager.GetBuffer<RoadBuffer>(entity);
+                DynamicBuffer<WaterShoreBuffer> riverBuffers = m_EntityManager.GetBuffer<WaterShoreBuffer>(entity);
                 if (riverBuffers.Length > 0)
                 {
-                    DynamicBuffer<RoadUvBuffer> uvBuffers = m_EntityManager.GetBuffer<RoadUvBuffer>(entity);
+                    DynamicBuffer<ShoreUvBuffer> uvBuffers = m_EntityManager.GetBuffer<ShoreUvBuffer>(entity);
                     for (int j = 0; j < riverBuffers.Length; j++)
                     {
                         Triangles.Add(Vertices.Length);

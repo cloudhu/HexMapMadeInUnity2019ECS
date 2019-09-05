@@ -10,6 +10,9 @@ public class HexGridChunk : MonoBehaviour
     public HexMesh Terrain;
     public HexRiver River;
     public HexRoad Road;
+    public HexWater Water;
+    public WaterShore Shore;
+    public Estuary Estuary;
     private Entity[] cells;
     private int cellCount = 0;
     //地图块和总地图索引配对表
@@ -54,6 +57,9 @@ public class HexGridChunk : MonoBehaviour
         StartCoroutine(Terrain.Triangulate(cells));
         StartCoroutine(River.Triangulate(cells));
         StartCoroutine(Road.Triangulate(cells));
+        StartCoroutine(Water.Triangulate(cells));
+        StartCoroutine(Shore.Triangulate(cells));
+        StartCoroutine(Estuary.Triangulate(cells));
     }
 
     /// <summary>
@@ -69,8 +75,8 @@ public class HexGridChunk : MonoBehaviour
         if (brushSize > 0)
         {
             int chunkIndex = GetChunkIndex(cellIndex);
-            NeighborsIndex neighborsIndexs = m_EntityManager.GetComponentData<NeighborsIndex>(cells[chunkIndex]);
-            int NEIndex = neighborsIndexs.NEIndex;
+            Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(cells[chunkIndex]);
+            int NEIndex = neighbors.NEIndex;
             if (NEIndex > int.MinValue )
             {
                 if (GetChunkIndex(NEIndex) == int.MinValue)
@@ -78,28 +84,28 @@ public class HexGridChunk : MonoBehaviour
                     MainWorld.Instance.AffectedChunk(NEIndex, NEIndex, 0, false);
                 }
             }
-            if (neighborsIndexs.EIndex > int.MinValue && GetChunkIndex(neighborsIndexs.EIndex) == int.MinValue)
+            if (neighbors.EIndex > int.MinValue && GetChunkIndex(neighbors.EIndex) == int.MinValue)
             {
-                MainWorld.Instance.AffectedChunk(neighborsIndexs.EIndex, neighborsIndexs.EIndex, 0, false);
+                MainWorld.Instance.AffectedChunk(neighbors.EIndex, neighbors.EIndex, 0, false);
             }
 
-            if (neighborsIndexs.SEIndex > int.MinValue && GetChunkIndex(neighborsIndexs.SEIndex) == int.MinValue)
+            if (neighbors.SEIndex > int.MinValue && GetChunkIndex(neighbors.SEIndex) == int.MinValue)
             {
-                MainWorld.Instance.AffectedChunk(neighborsIndexs.SEIndex, neighborsIndexs.SEIndex, 0, false);
+                MainWorld.Instance.AffectedChunk(neighbors.SEIndex, neighbors.SEIndex, 0, false);
             }
 
-            if (neighborsIndexs.SWIndex > int.MinValue && GetChunkIndex(neighborsIndexs.SWIndex) == int.MinValue)
+            if (neighbors.SWIndex > int.MinValue && GetChunkIndex(neighbors.SWIndex) == int.MinValue)
             {
-                MainWorld.Instance.AffectedChunk(neighborsIndexs.SWIndex, neighborsIndexs.SWIndex, 0, false);
+                MainWorld.Instance.AffectedChunk(neighbors.SWIndex, neighbors.SWIndex, 0, false);
             }
-            if (neighborsIndexs.WIndex > int.MinValue && GetChunkIndex(neighborsIndexs.WIndex) == int.MinValue)
+            if (neighbors.WIndex > int.MinValue && GetChunkIndex(neighbors.WIndex) == int.MinValue)
             {
-                MainWorld.Instance.AffectedChunk(neighborsIndexs.WIndex, neighborsIndexs.WIndex, 0, false);
+                MainWorld.Instance.AffectedChunk(neighbors.WIndex, neighbors.WIndex, 0, false);
             }
 
-            if (neighborsIndexs.NWIndex > int.MinValue && GetChunkIndex(neighborsIndexs.NWIndex) == int.MinValue)
+            if (neighbors.NWIndex > int.MinValue && GetChunkIndex(neighbors.NWIndex) == int.MinValue)
             {
-                MainWorld.Instance.AffectedChunk(neighborsIndexs.NWIndex, neighborsIndexs.NWIndex, 0, false);
+                MainWorld.Instance.AffectedChunk(neighbors.NWIndex, neighbors.NWIndex, 0, false);
             }
 
             UpdateData data = new UpdateData
@@ -108,11 +114,11 @@ public class HexGridChunk : MonoBehaviour
                 NewColor = color,
                 Elevation = elevation,
                 NEIndex=NEIndex,
-                EIndex= neighborsIndexs.EIndex,
-                SEIndex= neighborsIndexs.SEIndex,
-                SWIndex= neighborsIndexs.SWIndex,
-                WIndex= neighborsIndexs.WIndex,
-                NWIndex= neighborsIndexs.NWIndex
+                EIndex= neighbors.EIndex,
+                SEIndex= neighbors.SEIndex,
+                SWIndex= neighbors.SWIndex,
+                WIndex= neighbors.WIndex,
+                NWIndex= neighbors.NWIndex
             };
             for (int i = 0; i < cellCount; i++)
             {
@@ -142,43 +148,43 @@ public class HexGridChunk : MonoBehaviour
                 if (!m_EntityManager.HasComponent<UpdateData>(entity)) m_EntityManager.AddComponent<UpdateData>(entity);
                 m_EntityManager.SetComponentData(entity, data);
                 if (affected) continue;//如果当前地图块是受影响的，则跳过
-                NeighborsIndex cell = m_EntityManager.GetComponentData<NeighborsIndex>(entity);
+                Neighbors neighbors = m_EntityManager.GetComponentData<Neighbors>(entity);
                 if (chunkMap[i] == cellIndex)
                 {
                     //检测六个方向可能受影响的地图块，将变化传递过去
-                    if (cell.NEIndex>int.MinValue && GetChunkIndex(cell.NEIndex) == int.MinValue)
+                    if (neighbors.NEIndex>int.MinValue && GetChunkIndex(neighbors.NEIndex) == int.MinValue)
                     {
-                        MainWorld.Instance.AffectedChunk(cell.NEIndex,cellIndex, 0, true);
-                        Debug.Log(cellIndex + "影响NE：" + cell.NEIndex);
+                        MainWorld.Instance.AffectedChunk(neighbors.NEIndex,cellIndex, 0, true);
+                        Debug.Log(cellIndex + "影响NE：" + neighbors.NEIndex);
                     }
 
-                    if (cell.EIndex > int.MinValue && GetChunkIndex(cell.EIndex) == int.MinValue)
+                    if (neighbors.EIndex > int.MinValue && GetChunkIndex(neighbors.EIndex) == int.MinValue)
                     {
-                        MainWorld.Instance.AffectedChunk(cell.EIndex, cellIndex, 0, true);
-                        Debug.Log(cellIndex + "影响E：" + cell.EIndex);
+                        MainWorld.Instance.AffectedChunk(neighbors.EIndex, cellIndex, 0, true);
+                        Debug.Log(cellIndex + "影响E：" + neighbors.EIndex);
                     }
 
-                    if (cell.SEIndex > int.MinValue && GetChunkIndex(cell.SEIndex) == int.MinValue)
+                    if (neighbors.SEIndex > int.MinValue && GetChunkIndex(neighbors.SEIndex) == int.MinValue)
                     {
-                        MainWorld.Instance.AffectedChunk(cell.SEIndex, cellIndex, 0, true);
-                        Debug.Log(cellIndex + "影响SE：" + cell.SEIndex);
+                        MainWorld.Instance.AffectedChunk(neighbors.SEIndex, cellIndex, 0, true);
+                        Debug.Log(cellIndex + "影响SE：" + neighbors.SEIndex);
                     }
 
-                    if (cell.SWIndex > int.MinValue && GetChunkIndex(cell.SWIndex) == int.MinValue)
+                    if (neighbors.SWIndex > int.MinValue && GetChunkIndex(neighbors.SWIndex) == int.MinValue)
                     {
-                        MainWorld.Instance.AffectedChunk(cell.SWIndex, cellIndex, 0, true);
-                        Debug.Log(cellIndex + "影响SW：" + cell.SWIndex);
+                        MainWorld.Instance.AffectedChunk(neighbors.SWIndex, cellIndex, 0, true);
+                        Debug.Log(cellIndex + "影响SW：" + neighbors.SWIndex);
                     }
-                    if (cell.WIndex > int.MinValue && GetChunkIndex(cell.WIndex) == int.MinValue)
+                    if (neighbors.WIndex > int.MinValue && GetChunkIndex(neighbors.WIndex) == int.MinValue)
                     {
-                        MainWorld.Instance.AffectedChunk(cell.WIndex, cellIndex,0, true);
-                        Debug.Log(cellIndex + "影响W：" + cell.WIndex);
+                        MainWorld.Instance.AffectedChunk(neighbors.WIndex, cellIndex,0, true);
+                        Debug.Log(cellIndex + "影响W：" + neighbors.WIndex);
                     }
 
-                    if (cell.NWIndex > int.MinValue && GetChunkIndex(cell.NWIndex) == int.MinValue)
+                    if (neighbors.NWIndex > int.MinValue && GetChunkIndex(neighbors.NWIndex) == int.MinValue)
                     {
-                        MainWorld.Instance.AffectedChunk(cell.NWIndex, cellIndex, 0, true);
-                        Debug.Log(cellIndex + "影响NW：" + cell.NWIndex);
+                        MainWorld.Instance.AffectedChunk(neighbors.NWIndex, cellIndex, 0, true);
+                        Debug.Log(cellIndex + "影响NW：" + neighbors.NWIndex);
                     }
                 }
             }

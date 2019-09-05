@@ -4,7 +4,7 @@ using Unity.Entities;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-public class HexRoad : MonoBehaviour {
+public class HexWater : MonoBehaviour {
     Mesh m_Mesh;
 
     void Awake()
@@ -21,44 +21,44 @@ public class HexRoad : MonoBehaviour {
         EntityManager m_EntityManager = MainWorld.Instance.GetEntityManager();
         NativeList<Vector3> Vertices = new NativeList<Vector3>(totalCount, Allocator.Temp);
         NativeList<int> Triangles = new NativeList<int>(totalCount, Allocator.Temp);
-        NativeList<Vector2> uvs = new NativeList<Vector2>(totalCount, Allocator.Temp);
+        //NativeList<Vector2> uvs = new NativeList<Vector2>(totalCount, Allocator.Temp);
         for (int i = 0; i < totalCount; i++)
         {
             //0.取出实体，如果实体的索引为m_Builder则跳过
             Entity entity = cells[i];
             Cell cell = m_EntityManager.GetComponentData<Cell>(entity);
-            if (cell.HasRoad)
+            if (cell.HasRiver)
             {
-                DynamicBuffer<RoadBuffer> riverBuffers = m_EntityManager.GetBuffer<RoadBuffer>(entity);
+                DynamicBuffer<WaterBuffer> riverBuffers = m_EntityManager.GetBuffer<WaterBuffer>(entity);
                 if (riverBuffers.Length > 0)
                 {
-                    DynamicBuffer<RoadUvBuffer> uvBuffers = m_EntityManager.GetBuffer<RoadUvBuffer>(entity);
+                    //DynamicBuffer<UvBuffer> uvBuffers = m_EntityManager.GetBuffer<UvBuffer>(entity);
                     for (int j = 0; j < riverBuffers.Length; j++)
                     {
                         Triangles.Add(Vertices.Length);
                         Vertices.Add(riverBuffers[j]);
-                        uvs.Add(uvBuffers[j]);
+                        //uvs.Add(uvBuffers[j]);
                     }
-                    uvBuffers.Clear();
+                    //uvBuffers.Clear();
                     riverBuffers.Clear();
                 }
             }
         }
 
         Debug.Log("-----------------------------------------------------------------------------------------");
-        Debug.Log("Vertices=" + Vertices.Length + "----Triangles=" + Triangles.Length + "----UV=" + uvs.Length);
+        Debug.Log("Vertices=" + Vertices.Length + "----Triangles=" + Triangles.Length + "----UV=");
 
         if (Vertices.Length > 1)
         {
             m_Mesh.Clear();
             m_Mesh.vertices = Vertices.ToArray();
             m_Mesh.triangles = Triangles.ToArray();
-            m_Mesh.uv = uvs.ToArray();
+            //m_Mesh.uv = uvs.ToArray();
             m_Mesh.RecalculateNormals();
             m_Mesh.Optimize();
         }
         Vertices.Dispose();
         Triangles.Dispose();
-        uvs.Dispose();
+        //uvs.Dispose();
     }
 }

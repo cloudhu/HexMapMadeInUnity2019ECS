@@ -7,7 +7,7 @@ using UnityEngine;
 /// <summary>
 /// 更新六边形单元系统
 /// </summary>
-[DisableAutoCreation]
+//[DisableAutoCreation]
 [UpdateInGroup(typeof(InitializationSystemGroup))]
 public class RiverSystem : JobComponentSystem {
 
@@ -18,7 +18,7 @@ public class RiverSystem : JobComponentSystem {
         m_EntityCommandBufferSystem = World.GetOrCreateSystem<BeginInitializationEntityCommandBufferSystem>();
         var query = new EntityQueryDesc
         {
-            All = new ComponentType[] { ComponentType.ReadOnly<Cell>(), ComponentType.ReadOnly<RiverRenderTag>(), ComponentType.ReadOnly<Neighbors>(), ComponentType.ReadOnly<NeighborsIndex>() },
+            All = new ComponentType[] { ComponentType.ReadOnly<Cell>(), ComponentType.ReadOnly<RiverRenderTag>(), ComponentType.ReadOnly<Neighbors>(), ComponentType.ReadOnly<River>() },
             None = new ComponentType[] { ComponentType.ReadOnly<NewDataTag>() }
         };
         m_CellGroup = GetEntityQuery(query);
@@ -27,15 +27,17 @@ public class RiverSystem : JobComponentSystem {
     /// <summary>
     /// 循环创建六边形单元，使其生成对应长宽的阵列
     /// </summary>
-    struct RiverCalculateJob : IJobForEachWithEntity<Cell, Neighbors, NeighborsIndex> {
+    struct RiverCalculateJob : IJobForEachWithEntity<Cell, Neighbors,River,RiverRenderTag> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
         public NativeArray<Vector3> Vertices;
+        //public NativeArray<Vector2> Uvs;
         [BurstCompile]
-        public void Execute(Entity entity, int index,[ReadOnly] ref Cell cellData, [ReadOnly]ref Neighbors neighbors, [ReadOnly]ref NeighborsIndex neighborsIndex)
+        public void Execute(Entity entity, int index,[ReadOnly] ref Cell cellData, [ReadOnly]ref Neighbors neighbors,[ReadOnly]ref River river,[ReadOnly]ref RiverRenderTag renderTag)
         {
-            Vertices[index] = cellData.Position;
-            //2.remove UpdateData after Update,therefor NewDataTag need to be added to active CellSystem
             CommandBuffer.RemoveComponent<RiverRenderTag>(index, entity);
+            //Vertices[index] = cellData.Position;
+            //2.remove RiverRenderTag after Update
+
         }
 
     }
@@ -59,10 +61,10 @@ public class RiverSystem : JobComponentSystem {
         if (job.IsCompleted)
         {
             Debug.Log("RiverCalculateJob IsCompleted :"+ vertices.Length);
-            for (int i = 0; i < vertices.Length; i++)
-            {
-                Debug.Log(vertices[i]);
-            }
+            //for (int i = 0; i < vertices.Length; i++)
+            //{
+            //    Debug.Log(vertices[i]);
+            //}
 
             vertices.Dispose();
         }

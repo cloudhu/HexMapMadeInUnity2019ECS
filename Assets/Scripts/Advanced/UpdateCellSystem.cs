@@ -18,7 +18,7 @@ public class UpdateCellSystem : JobComponentSystem {
         m_EntityCommandBufferSystem = World.GetOrCreateSystem<BeginSimulationEntityCommandBufferSystem>();
         var query = new EntityQueryDesc
         {
-            All = new ComponentType[] { ComponentType.ReadWrite<Cell>(), ComponentType.ReadOnly<UpdateData>(), ComponentType.ReadWrite<Neighbors>(), ComponentType.ReadOnly<NeighborsIndex>() },
+            All = new ComponentType[] { ComponentType.ReadWrite<Cell>(), ComponentType.ReadOnly<UpdateData>(), ComponentType.ReadWrite<Neighbors>() },
             None= new ComponentType[] { ComponentType.ReadOnly<NewDataTag>() }
         };
         m_CellGroup = GetEntityQuery(query);
@@ -27,10 +27,10 @@ public class UpdateCellSystem : JobComponentSystem {
     /// <summary>
     /// 循环创建六边形单元，使其生成对应长宽的阵列
     /// </summary>
-    struct CalculateJob : IJobForEachWithEntity<Cell, UpdateData,Neighbors,NeighborsIndex> {
+    struct CalculateJob : IJobForEachWithEntity<Cell, UpdateData,Neighbors> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
         [BurstCompile]
-        public void Execute(Entity entity, int index, ref Cell cellData, [ReadOnly]ref UpdateData updata,ref Neighbors neighbors, [ReadOnly]ref NeighborsIndex neighborsIndex)
+        public void Execute(Entity entity, int index, ref Cell cellData, [ReadOnly]ref UpdateData updata,ref Neighbors neighbors)
         {
             //0.获取更新列表
             NativeList<int> updateList = new NativeList<int>(7, Allocator.Temp);
@@ -45,35 +45,35 @@ public class UpdateCellSystem : JobComponentSystem {
             Color color = updata.NewColor;
 
             //更新相邻单元的颜色
-            if (updateList.Contains(neighborsIndex.NEIndex))
+            if (updateList.Contains(neighbors.NEIndex))
             {
                 neighbors.NE = color;
                 neighbors.NEElevation = updata.Elevation;
             }
 
-            if (updateList.Contains(neighborsIndex.EIndex))
+            if (updateList.Contains(neighbors.EIndex))
             {
                 neighbors.E = color;
                 neighbors.EElevation = updata.Elevation;
             }
-            if (updateList.Contains(neighborsIndex.SEIndex)) {
+            if (updateList.Contains(neighbors.SEIndex)) {
                 neighbors.SE = color;
                 neighbors.SEElevation = updata.Elevation;
             }
 
-            if (updateList.Contains(neighborsIndex.SWIndex))
+            if (updateList.Contains(neighbors.SWIndex))
             {
                 neighbors.SW = color;
                 neighbors.SWElevation = updata.Elevation;
             }
 
-            if (updateList.Contains(neighborsIndex.WIndex) )
+            if (updateList.Contains(neighbors.WIndex) )
             {
                 neighbors.W = color;
                 neighbors.WElevation = updata.Elevation;
             }
 
-            if (updateList.Contains(neighborsIndex.NWIndex) )
+            if (updateList.Contains(neighbors.NWIndex) )
             {
                 neighbors.NW = color;
                 neighbors.NWElevation = updata.Elevation;

@@ -18,35 +18,40 @@ public class CellSystem : JobComponentSystem {
         m_EntityCommandBufferSystem = World.GetOrCreateSystem<BeginInitializationEntityCommandBufferSystem>();
         var query = new EntityQueryDesc
         {
-            All = new ComponentType[] { ComponentType.ReadOnly<Cell>(), ComponentType.ReadOnly<NewDataTag>(),ComponentType.ReadOnly<Neighbors>(),ComponentType.ReadOnly<NeighborsIndex>(), ComponentType.ReadOnly<River>(), ComponentType.ReadOnly<RoadBools>() },
+            All = new ComponentType[] { ComponentType.ReadOnly<Cell>(), ComponentType.ReadOnly<NewDataTag>(),ComponentType.ReadOnly<Neighbors>(), ComponentType.ReadOnly<River>(), ComponentType.ReadOnly<RoadBools>()},
             None= new ComponentType[] { ComponentType.ReadOnly<UpdateData>() }
         };
         m_CellGroup = GetEntityQuery(query);
-
     }
 
     /// <summary>
     /// 计算六边形单元的顶点和颜色
     /// </summary>
     //[BurstCompile]//Unity2019.1.14f1会报错，Unity2019.1.12f1则不会
-    struct CalculateJob : IJobForEachWithEntity<Cell,NewDataTag,Neighbors,NeighborsIndex,River,RoadBools> {
+    struct CalculateJob : IJobForEachWithEntity<Cell,NewDataTag,Neighbors,River,RoadBools> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
         [BurstCompile]
-        public void Execute(Entity entity, int index,[ReadOnly] ref Cell cellData,[ReadOnly]ref NewDataTag tag, [ReadOnly]ref Neighbors neighbors, [ReadOnly]ref NeighborsIndex neighborsIndex,[ReadOnly] ref River river,[ReadOnly] ref RoadBools roadBools)
+        public void Execute(Entity entity, int index,[ReadOnly] ref Cell cellData,[ReadOnly]ref NewDataTag tag, [ReadOnly]ref Neighbors neighbors,[ReadOnly] ref River river,[ReadOnly] ref RoadBools roadBools)
         {
             #region InitData初始化数据
 
-            //0.获取单元索引，Execute的index不可靠，添加动态缓存
-            int cellIndex = cellData.Index;
+            //0.添加动态缓存
             DynamicBuffer<ColorBuffer> colorBuffer = CommandBuffer.AddBuffer<ColorBuffer>(index, entity);
             DynamicBuffer<VertexBuffer> vertexBuffer = CommandBuffer.AddBuffer<VertexBuffer>(index, entity);
             //用于河流的动态缓存
-            DynamicBuffer<UvBuffer> uvBuffer = CommandBuffer.AddBuffer<UvBuffer>(index, entity);
+            DynamicBuffer<UvBuffer> riverUvBuffer = CommandBuffer.AddBuffer<UvBuffer>(index, entity);
             DynamicBuffer<RiverBuffer> riverBuffers = CommandBuffer.AddBuffer<RiverBuffer>(index, entity);
 
             //用于道路的动态缓存
             DynamicBuffer<RoadBuffer> roadBuffers = CommandBuffer.AddBuffer<RoadBuffer>(index, entity);
             DynamicBuffer<RoadUvBuffer> roadUvs= CommandBuffer.AddBuffer<RoadUvBuffer>(index, entity);
+            //水体
+            DynamicBuffer<WaterBuffer> waterBuffers = CommandBuffer.AddBuffer<WaterBuffer>(index, entity);
+            DynamicBuffer<WaterShoreBuffer> shoreBuffers = CommandBuffer.AddBuffer<WaterShoreBuffer>(index, entity);
+            DynamicBuffer<ShoreUvBuffer> shoreUvs = CommandBuffer.AddBuffer<ShoreUvBuffer>(index, entity);
+            DynamicBuffer<EstuaryBuffer> estuaryBuffers = CommandBuffer.AddBuffer<EstuaryBuffer>(index, entity);
+            DynamicBuffer<EstuaryUvBuffer> estuaryUvs = CommandBuffer.AddBuffer<EstuaryUvBuffer>(index, entity);
+            DynamicBuffer<EstuaryUvsBuffer> estuaryUvs2 = CommandBuffer.AddBuffer<EstuaryUvsBuffer>(index, entity);
             //1.获取当前单元的中心位置
             Vector3 currCellCenter = cellData.Position;
             //缓存当前单元的颜色
@@ -63,12 +68,12 @@ public class CellSystem : JobComponentSystem {
             blendColors[5] = neighbors.NW;
             //6个方向相邻单元的索引
             int[] directionIndex = new int[6];
-            directionIndex[0] = neighborsIndex.NEIndex;
-            directionIndex[1] = neighborsIndex.EIndex;
-            directionIndex[2] = neighborsIndex.SEIndex;
-            directionIndex[3] = neighborsIndex.SWIndex;
-            directionIndex[4] = neighborsIndex.WIndex;
-            directionIndex[5] = neighborsIndex.NWIndex;
+            directionIndex[0] = neighbors.NEIndex;
+            directionIndex[1] = neighbors.EIndex;
+            directionIndex[2] = neighbors.SEIndex;
+            directionIndex[3] = neighbors.SWIndex;
+            directionIndex[4] = neighbors.WIndex;
+            directionIndex[5] = neighbors.NWIndex;
             //6个方向相邻单元的海拔
             int[] elevations = new int[6];
             elevations[0] = neighbors.NEElevation;
@@ -85,22 +90,30 @@ public class CellSystem : JobComponentSystem {
             roads[3] = roadBools.SWBool;
             roads[4] = roadBools.WBool;
             roads[5] = roadBools.NWBool;
-            
+            //6个方向的邻居位置
+            Vector3[] positions = new Vector3[6];
+            positions[0] = neighbors.NEPosition;
+            positions[1] = neighbors.EPosition;
+            positions[2] = neighbors.SEPosition;
+            positions[3] = neighbors.SWPosition;
+            positions[4] = neighbors.WPosition;
+            positions[5] = neighbors.NWPosition;
             #endregion
 
             //添加六边形单元六个方向的顶点、三角和颜色
             for (int j = 0; j < 6; j++)
             {
+                #region Triangulate三角化
                 //1.添加中心区域的3个顶点
                 int next = (j + 1) > 5 ? 0 : (j + 1);
                 EdgeVertices e = new EdgeVertices((currCellCenter + HexMetrics.SolidCorners[j]), (currCellCenter + HexMetrics.SolidCorners[next]));
-                
-                int prev= (j - 1) < 0 ? 5 : (j - 1);
+
+                int prev = (j - 1) < 0 ? 5 : (j - 1);
                 int next2 = (j + 2) <= 5 ? (j + 2) : (j - 4);
                 int prev2 = (j - 2) >= 0 ? (j - 2) : (j + 4);
                 //是否有河流通过
-                bool hasRiverThroughEdge = HasRiverThroughEdge(river,directionIndex[j]);
-                float RiverSurfaceY= (elevation + HexMetrics.RiverSurfaceElevationOffset) * HexMetrics.ElevationStep;
+                bool hasRiverThroughEdge = HasRiverThroughEdge(river, directionIndex[j]);
+                float RiverSurfaceY = (elevation + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep;
                 bool hasRoad = roads[j];
                 #region River 河流
 
@@ -110,31 +123,36 @@ public class CellSystem : JobComponentSystem {
                     if (hasRiverThroughEdge)
                     {
                         e.v3.y = (elevation + HexMetrics.StreamBedElevationOffset) * HexMetrics.ElevationStep;
+                        //TriangulateWithRiverBeginOrEnd三角化河流的开始或结束
                         if (river.HasOutgoingRiver != river.HasIncomingRiver)
                         {
                             EdgeVertices m = new EdgeVertices(Vector3.Lerp(currCellCenter, e.v1, 0.5f), Vector3.Lerp(currCellCenter, e.v5, 0.5f));
                             m.v3.y = e.v3.y;
                             if (hasRoad)
                             {
-                                TriangulateRoadSegment(m.v2, m.v3, m.v4, e.v2, e.v3, e.v4,ref roadBuffers,ref roadUvs);
+                                TriangulateRoadSegment(m.v2, m.v3, m.v4, e.v2, e.v3, e.v4, ref roadBuffers, ref roadUvs);
                             }
                             TriangulateEdgeStrip(m, currCellColor, e, currCellColor, ref colorBuffer, ref vertexBuffer);
                             TriangulateEdgeFan(currCellCenter, m, currCellColor, ref colorBuffer, ref vertexBuffer);
-                            TriangulateRiverQuad(m.v2, m.v4, e.v2, e.v4, RiverSurfaceY, RiverSurfaceY, 0.6f, ref uvBuffer, ref riverBuffers, river.HasIncomingRiver);
-                            Vector3 center = currCellCenter;
-                            center.y = m.v2.y = m.v4.y = RiverSurfaceY;
-                            AddTriangle(center, m.v2, m.v4, ref riverBuffers);
-                            if (river.HasIncomingRiver)
+                            if (!cellData.IsUnderWater)
                             {
-                                AddTriangleUV(new Vector2(0.5f, 0.4f), new Vector2(1f, 0.2f), new Vector2(0f, 0.2f), ref uvBuffer);
-                            }
-                            else
-                            {
-                                AddTriangleUV(new Vector2(0.5f, 0.4f), new Vector2(0f, 0.6f), new Vector2(1f, 0.6f), ref uvBuffer);
+                                TriangulateRiverQuad(m.v2, m.v4, e.v2, e.v4, RiverSurfaceY, RiverSurfaceY, 0.6f, ref riverUvBuffer, ref riverBuffers, river.HasIncomingRiver);
+                                Vector3 center = currCellCenter;
+                                center.y = m.v2.y = m.v4.y = RiverSurfaceY;
+                                AddTriangle(center, m.v2, m.v4, ref riverBuffers);
+                                if (river.HasIncomingRiver)
+                                {
+                                    AddTriangleUV(new Vector2(0.5f, 0.4f), new Vector2(1f, 0.2f), new Vector2(0f, 0.2f), ref riverUvBuffer);
+                                }
+                                else
+                                {
+                                    AddTriangleUV(new Vector2(0.5f, 0.4f), new Vector2(0f, 0.6f), new Vector2(1f, 0.6f), ref riverUvBuffer);
+                                }
                             }
                         }
                         else
                         {
+                            //TriangulateWithRiver 三角化河段
                             Vector3 centerL, centerR;
                             //获取当前方向的相反方向，并判断是否有河流经过
                             if (HasRiverThroughEdge(river, directionIndex[OppositeDirection(j)]))
@@ -175,9 +193,12 @@ public class CellSystem : JobComponentSystem {
                             AddQuad(centerL, currCellColor, center, currCellColor, m.v2, currCellColor, m.v3, currCellColor, ref colorBuffer, ref vertexBuffer);
                             AddQuad(center, currCellColor, centerR, currCellColor, m.v3, currCellColor, m.v4, currCellColor, ref colorBuffer, ref vertexBuffer);
                             AddTriangle(centerR, currCellColor, m.v4, currCellColor, m.v5, currCellColor, ref colorBuffer, ref vertexBuffer);
-                            bool reversed = river.IncomingRiver == directionIndex[j];
-                            TriangulateRiverQuad(centerL, centerR, m.v2, m.v4, RiverSurfaceY, RiverSurfaceY, 0.4f, ref uvBuffer, ref riverBuffers, reversed);
-                            TriangulateRiverQuad(m.v2, m.v4, e.v2, e.v4, RiverSurfaceY, RiverSurfaceY, 0.6f, ref uvBuffer, ref riverBuffers, reversed);
+                            if (!cellData.IsUnderWater)
+                            {
+                                bool reversed = river.IncomingRiver == directionIndex[j];
+                                TriangulateRiverQuad(centerL, centerR, m.v2, m.v4, RiverSurfaceY, RiverSurfaceY, 0.4f, ref riverUvBuffer, ref riverBuffers, reversed);
+                                TriangulateRiverQuad(m.v2, m.v4, e.v2, e.v4, RiverSurfaceY, RiverSurfaceY, 0.6f, ref riverUvBuffer, ref riverBuffers, reversed);
+                            }
                         }
                     }
                     else
@@ -221,7 +242,7 @@ public class CellSystem : JobComponentSystem {
                             Vector3 roadCenter = center;
                             int outgoingDirection = river.OutgoingRiver;
                             int incomingDirection = river.IncomingRiver;
-                            
+
                             for (int i = 0; i < 6; i++)
                             {
                                 if (incomingDirection == directionIndex[i])
@@ -264,11 +285,11 @@ public class CellSystem : JobComponentSystem {
                                     roadCenter += corner * 0.5f;
                                     center += corner * 0.25f;
                                 }
-                                else if (incomingDirection == (outgoingDirection - 1 < 0?5: outgoingDirection - 1))
+                                else if (incomingDirection == (outgoingDirection - 1 < 0 ? 5 : outgoingDirection - 1))
                                 {
                                     roadCenter -= HexMetrics.GetSecondCorner(incomingDirection) * 0.2f;
                                 }
-                                else if (incomingDirection == (outgoingDirection + 1 > 5 ?0: outgoingDirection + 1 ))
+                                else if (incomingDirection == (outgoingDirection + 1 > 5 ? 0 : outgoingDirection + 1))
                                 {
                                     roadCenter -= HexMetrics.GetFirstCorner(incomingDirection) * 0.2f;
                                 }
@@ -297,7 +318,7 @@ public class CellSystem : JobComponentSystem {
                                     {
                                         middle = j;
                                     }
-                                    if (!roads[middle] && !roads[(middle-1<0?5:middle-1)] && !roads[(middle+1>5?0:middle+1)])
+                                    if (!roads[middle] && !roads[(middle - 1 < 0 ? 5 : middle - 1)] && !roads[(middle + 1 > 5 ? 0 : middle + 1)])
                                     {
                                         continue;
                                     }
@@ -327,16 +348,16 @@ public class CellSystem : JobComponentSystem {
                     TriangulateEdgeFan(currCellCenter, e, currCellColor, ref colorBuffer, ref vertexBuffer);
                     if (hasRoad)
                     {
-                        Vector2 interpolators = GetRoadInterpolators(roads[j], roads[prev],roads[next]);
+                        Vector2 interpolators = GetRoadInterpolators(roads[j], roads[prev], roads[next]);
 
-                        TriangulateRoad(currCellCenter, Vector3.Lerp(currCellCenter, e.v1, interpolators.x), Vector3.Lerp(currCellCenter, e.v5, interpolators.y), e,ref roadBuffers,ref roadUvs, roads[j]);
+                        TriangulateRoad(currCellCenter, Vector3.Lerp(currCellCenter, e.v1, interpolators.x), Vector3.Lerp(currCellCenter, e.v5, interpolators.y), e, ref roadBuffers, ref roadUvs, roads[j]);
                     }
                 }
 
                 #endregion
 
                 //Connection Between 2 cells
-                #region  Bridge=桥
+                #region  Bridge=桥TriangulateConnection
                 //桥只连接前三个方向相邻的单元，从而避免重复连接
                 if (j <= 2)
                 {
@@ -348,19 +369,56 @@ public class CellSystem : JobComponentSystem {
                     //添加外围桥接区域的顶点
                     Vector3 bridge = (HexMetrics.GetBridge(j));
 
-                    bridge.y=(elevations[j]-elevation) * HexMetrics.ElevationStep;
-                    EdgeVertices e2 = new EdgeVertices(e.v1 + bridge, e.v5+ bridge);
+                    bridge.y = (elevations[j] - elevation) * HexMetrics.ElevationStep;
+                    EdgeVertices e2 = new EdgeVertices(e.v1 + bridge, e.v5 + bridge);
                     if (hasRiverThroughEdge)
                     {
-                        float neighborRiverSurfaceY = (elevations[j] + HexMetrics.RiverSurfaceElevationOffset) * HexMetrics.ElevationStep;
-                        e2.v3.y= (elevations[j] + HexMetrics.StreamBedElevationOffset) * HexMetrics.ElevationStep;
-                        TriangulateRiverQuad(e.v2, e.v4, e2.v2, e2.v4, RiverSurfaceY, neighborRiverSurfaceY,0.8f,ref uvBuffer,ref riverBuffers, river.HasIncomingRiver && river.IncomingRiver == directionIndex[j]);
+                        float neighborRiverSurfaceY = (elevations[j] + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep;
+                        e2.v3.y = (elevations[j] + HexMetrics.StreamBedElevationOffset) * HexMetrics.ElevationStep;
+                        if (!cellData.IsUnderWater)
+                        {
+                            if (elevations[j]>cellData.WaterLevel)
+                            {
+                                TriangulateRiverQuad(e.v2, e.v4, e2.v2, e2.v4, RiverSurfaceY, neighborRiverSurfaceY, 0.8f, ref riverUvBuffer, ref riverBuffers, river.HasIncomingRiver && river.IncomingRiver == directionIndex[j]);
+                            }
+                            else if (elevation > elevations[j]+1)
+                            {
+                                Vector3 v1 = e.v2;
+                                Vector3 v2 = e.v4;
+                                Vector3 v3 = e2.v2;
+                                Vector3 v4 = e2.v4;
+                                v1.y = v2.y = RiverSurfaceY;
+                                v3.y = v4.y = neighborRiverSurfaceY;
+                                float waterY= (elevations[j]+1 + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep;
+                                float t = (waterY - neighborRiverSurfaceY) / (RiverSurfaceY - neighborRiverSurfaceY);
+                                v3 = Vector3.Lerp(v3, v1, t);
+                                v4 = Vector3.Lerp(v4, v2, t);
+                                AddQuad(v1, v2, v3, v4,ref riverBuffers);
+                                AddQuadUV(0f, 1f, 0.8f, 1f,ref riverUvBuffer);
+                            }
+                        }
+                        else if (elevations[j] > cellData.WaterLevel && elevation > elevations[j] + 1)
+                        {
+                            Vector3 v1 = e2.v4;
+                            Vector3 v2 = e2.v2;
+                            Vector3 v3 = e.v4;
+                            Vector3 v4 = e.v2;
+                            v1.y = v2.y = neighborRiverSurfaceY;
+                            v3.y = v4.y = RiverSurfaceY;
+                            float waterY = (cellData.WaterLevel + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep;
+                            float t = (waterY - RiverSurfaceY) / (neighborRiverSurfaceY - RiverSurfaceY);
+                            v3 = Vector3.Lerp(v3, v1, t);
+                            v4 = Vector3.Lerp(v4, v2, t);
+                            AddQuad(v1, v2, v3, v4, ref riverBuffers);
+                            AddQuadUV(0f, 1f, 0.8f, 1f, ref riverUvBuffer);
+                        }
+
                     }
                     #region 桥面
                     //判断当前单元与相邻单元的海拔高低差，如果是斜坡，则添加阶梯，平面和峭壁则无需阶梯
                     if (HexMetrics.GetEdgeType(elevation, elevations[j]) == HexMetrics.HexEdgeType.Slope)
                     {
-                        TriangulateEdgeTerraces(e,e2,currCellColor,blendColors[j],ref colorBuffer, ref vertexBuffer,roads[j],ref roadBuffers,ref roadUvs);
+                        TriangulateEdgeTerraces(e, e2, currCellColor, blendColors[j], ref colorBuffer, ref vertexBuffer, roads[j], ref roadBuffers, ref roadUvs);
                     }
                     else
                     {
@@ -390,7 +448,7 @@ public class CellSystem : JobComponentSystem {
                             if (elevation <= nextElevation)
                             {
                                 //当前单元海拔最低
-                                TriangulateCorner(e.v5, currCellColor, e2.v5, blendColors[j], vertex5, blendColors[next],ref colorBuffer,ref vertexBuffer,elevation, elevations[j], nextElevation);
+                                TriangulateCorner(e.v5, currCellColor, e2.v5, blendColors[j], vertex5, blendColors[next], ref colorBuffer, ref vertexBuffer, elevation, elevations[j], nextElevation);
                             }
                             else
                             {
@@ -414,11 +472,267 @@ public class CellSystem : JobComponentSystem {
 
                 #endregion
 
+                #region TriangulateWater三角化水体
+
+                if (cellData.IsUnderWater)
+                {
+                    float WaterSurfaceY = (cellData.WaterLevel + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep; ;
+                    currCellCenter.y = WaterSurfaceY;
+                    if (directionIndex[j] != int.MinValue && elevations[j] > cellData.WaterLevel)
+                    {
+                        #region TriangulateWaterShore三角化水岸
+
+                        EdgeVertices e1 = new EdgeVertices(
+                            currCellCenter + HexMetrics.GetFirstWaterCorner(j),
+                            currCellCenter + HexMetrics.GetSecondWaterCorner(j)
+                        );
+                        AddTriangle(currCellCenter, e1.v1, e1.v2,ref waterBuffers);
+                        AddTriangle(currCellCenter, e1.v2, e1.v3, ref waterBuffers);
+                        AddTriangle(currCellCenter, e1.v3, e1.v4, ref waterBuffers);
+                        AddTriangle(currCellCenter, e1.v4, e1.v5, ref waterBuffers);
+
+                        Vector3 center2 = positions[j];
+                        center2.y = currCellCenter.y;
+                        EdgeVertices e2 = new EdgeVertices(
+                            center2 + HexMetrics.GetSecondSolidCorner(OppositeDirection(j)),
+                            center2 + HexMetrics.GetFirstSolidCorner(OppositeDirection(j))
+                        );
+
+                        if (hasRiverThroughEdge)
+                        {
+                            #region TriangulateEstuary三角化河口
+                            AddTriangle(e2.v1, e1.v2, e1.v1, ref shoreBuffers);
+                            AddTriangle(e2.v5, e1.v5, e1.v4, ref shoreBuffers);
+                            AddTriangleUV(
+                                new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(0f, 0f), ref shoreUvs
+                            );
+                            AddTriangleUV(
+                                new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(0f, 0f), ref shoreUvs
+                            );
+
+                            AddQuad(e2.v1, e1.v2, e2.v2, e1.v3,ref estuaryBuffers);
+                            AddTriangle(e1.v3, e2.v2, e2.v4, ref estuaryBuffers);
+                            AddQuad(e1.v3, e1.v4, e2.v4, e2.v5, ref estuaryBuffers);
+
+                            AddQuadUV(
+                                new Vector2(0f, 1f), new Vector2(0f, 0f),
+                                new Vector2(1f, 1f), new Vector2(0f, 0f),ref estuaryUvs
+                            );
+                            AddTriangleUV(
+                                new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(1f, 1f), ref estuaryUvs
+                            );
+                            AddQuadUV(
+                                new Vector2(0f, 0f), new Vector2(0f, 0f),
+                                new Vector2(1f, 1f), new Vector2(0f, 1f), ref estuaryUvs
+                            );
+
+                            if (river.HasIncomingRiver && river.IncomingRiver == directionIndex[j])
+                            {
+                                AddQuadUV2(
+                                    new Vector2(1.5f, 1f), new Vector2(0.7f, 1.15f),
+                                    new Vector2(1f, 0.8f), new Vector2(0.5f, 1.1f), ref estuaryUvs2
+                                );
+                                AddTriangleUV2(
+                                    new Vector2(0.5f, 1.1f),
+                                    new Vector2(1f, 0.8f),
+                                    new Vector2(0f, 0.8f), ref estuaryUvs2
+                                );
+                                AddQuadUV2(
+                                    new Vector2(0.5f, 1.1f), new Vector2(0.3f, 1.15f),
+                                    new Vector2(0f, 0.8f), new Vector2(-0.5f, 1f), ref estuaryUvs2
+                                );
+                            }
+                            else
+                            {
+                                AddQuadUV2(
+                                    new Vector2(-0.5f, -0.2f), new Vector2(0.3f, -0.35f),
+                                    new Vector2(0f, 0f), new Vector2(0.5f, -0.3f), ref estuaryUvs2
+                                );
+                                AddTriangleUV2(
+                                    new Vector2(0.5f, -0.3f),
+                                    new Vector2(0f, 0f),
+                                    new Vector2(1f, 0f), ref estuaryUvs2
+                                );
+                                AddQuadUV2(
+                                    new Vector2(0.5f, -0.3f), new Vector2(0.7f, -0.35f),
+                                    new Vector2(1f, 0f), new Vector2(1.5f, -0.2f), ref estuaryUvs2
+                                );
+                            }
+
+                            #endregion
+                        }
+                        else
+                        {
+                            AddQuad(e1.v1, e1.v2, e2.v1, e2.v2,ref shoreBuffers);
+                            AddQuad(e1.v2, e1.v3, e2.v2, e2.v3, ref shoreBuffers);
+                            AddQuad(e1.v3, e1.v4, e2.v3, e2.v4, ref shoreBuffers);
+                            AddQuad(e1.v4, e1.v5, e2.v4, e2.v5, ref shoreBuffers);
+                            AddQuadUV(0f, 0f, 0f, 1f,ref shoreUvs);
+                            AddQuadUV(0f, 0f, 0f, 1f, ref shoreUvs);
+                            AddQuadUV(0f, 0f, 0f, 1f, ref shoreUvs);
+                            AddQuadUV(0f, 0f, 0f, 1f, ref shoreUvs);
+                        }
+
+                        if (directionIndex[next] != int.MinValue)
+                        {
+                            Vector3 v3 = positions[next] + (elevations[next]>cellData.WaterLevel?
+                                             HexMetrics.GetFirstWaterCorner(prev) :
+                                             HexMetrics.GetFirstSolidCorner(prev));
+                            v3.y = currCellCenter.y;
+                            AddTriangle(e1.v5, e2.v5, v3,ref shoreBuffers);
+                            AddTriangleUV(
+                                new Vector2(0f, 0f),
+                                new Vector2(0f, 1f),
+                                new Vector2(0f, elevations[next] > cellData.WaterLevel ? 0f : 1f), ref shoreUvs
+                            );
+                        }
+
+                        #endregion
+                    }
+                    else
+                    {
+                        #region TriangulateOpenWater三角化开阔水面
+
+                        Vector3 c1 = currCellCenter + HexMetrics.GetFirstWaterCorner(j);
+                        Vector3 c2 = currCellCenter + HexMetrics.GetSecondWaterCorner(j);
+
+                        AddTriangle(currCellCenter, c1, c2, ref waterBuffers);
+
+                        if (j <= 2 && directionIndex[j] != int.MinValue)
+                        {
+                            Vector3 bridge = HexMetrics.GetWaterBridge(j);
+                            Vector3 e1 = c1 + bridge;
+                            Vector3 e2 = c2 + bridge;
+
+                            AddQuad(c1, c2, e1, e2, ref waterBuffers);
+
+                            if (j <= 1)
+                            {
+
+                                if (directionIndex[next] != int.MinValue || elevations[next] > cellData.WaterLevel)
+                                {
+                                    continue;
+                                }
+                                AddTriangle(c2, e2, c2 + HexMetrics.GetWaterBridge(next), ref waterBuffers);
+                            }
+                        }
+
+                        #endregion
+                    }
+
+                }
+
+                #endregion
+
+                #endregion
+
             }
             //4.turn off cell system by remove NewDataTag
             CommandBuffer.RemoveComponent<NewDataTag>(index,entity);
         }
 
+        #region Water水体
+
+        //为水体添加三角
+        void AddTriangle(Vector3 v1, Vector3 v2, Vector3 v3, ref DynamicBuffer<WaterBuffer> waterBuffers)
+        {
+            waterBuffers.Add((v1));
+            waterBuffers.Add((v2));
+            waterBuffers.Add((v3));
+        }
+
+        void AddQuad(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, ref DynamicBuffer<WaterBuffer> waterBuffers)
+        {
+            AddTriangle(v1, v3, v2, ref waterBuffers);
+            AddTriangle(v2, v3, v4, ref waterBuffers);
+        }
+
+        void AddTriangle(Vector3 v1, Vector3 v2, Vector3 v3, ref DynamicBuffer<WaterShoreBuffer> waterBuffers)
+        {
+            waterBuffers.Add((v1));
+            waterBuffers.Add((v2));
+            waterBuffers.Add((v3));
+        }
+
+        void AddQuad(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, ref DynamicBuffer<WaterShoreBuffer> waterBuffers)
+        {
+            AddTriangle(v1, v3, v2, ref waterBuffers);
+            AddTriangle(v2, v3, v4, ref waterBuffers);
+        }
+
+        //添加三角区UV
+        void AddTriangleUV(Vector2 uv1, Vector2 uv2, Vector2 uv3, ref DynamicBuffer<ShoreUvBuffer> uvs)
+        {
+            uvs.Add(uv1);
+            uvs.Add(uv2);
+            uvs.Add(uv3);
+        }
+
+        //添加矩形UV
+        void AddQuadUV(Vector2 uv1, Vector2 uv2, Vector2 uv3, Vector2 uv4, ref DynamicBuffer<ShoreUvBuffer> uvs)
+        {
+            AddTriangleUV(uv1, uv3, uv2, ref uvs);
+            AddTriangleUV(uv2, uv3, uv4, ref uvs);
+        }
+
+        private void AddQuadUV(float uMin, float uMax, float vMin, float vMax, ref DynamicBuffer<ShoreUvBuffer> uvs)
+        {
+            AddQuadUV(new Vector2(uMin, vMin), new Vector2(uMax, vMin), new Vector2(uMin, vMax), new Vector2(uMax, vMax), ref uvs);
+        }
+
+        void AddTriangle(Vector3 v1, Vector3 v2, Vector3 v3, ref DynamicBuffer<EstuaryBuffer> waterBuffers)
+        {
+            waterBuffers.Add((v1));
+            waterBuffers.Add((v2));
+            waterBuffers.Add((v3));
+        }
+
+        void AddQuad(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, ref DynamicBuffer<EstuaryBuffer> waterBuffers)
+        {
+            AddTriangle(v1, v3, v2, ref waterBuffers);
+            AddTriangle(v2, v3, v4, ref waterBuffers);
+        }
+
+        //添加三角区UV
+        void AddTriangleUV(Vector2 uv1, Vector2 uv2, Vector2 uv3, ref DynamicBuffer<EstuaryUvBuffer> uvs)
+        {
+            uvs.Add(uv1);
+            uvs.Add(uv2);
+            uvs.Add(uv3);
+        }
+
+        //添加矩形UV
+        void AddQuadUV(Vector2 uv1, Vector2 uv2, Vector2 uv3, Vector2 uv4, ref DynamicBuffer<EstuaryUvBuffer> uvs)
+        {
+            AddTriangleUV(uv1, uv3, uv2, ref uvs);
+            AddTriangleUV(uv2, uv3, uv4, ref uvs);
+        }
+
+        private void AddQuadUV(float uMin, float uMax, float vMin, float vMax, ref DynamicBuffer<EstuaryUvBuffer> uvs)
+        {
+            AddQuadUV(new Vector2(uMin, vMin), new Vector2(uMax, vMin), new Vector2(uMin, vMax), new Vector2(uMax, vMax), ref uvs);
+        }
+
+        //添加三角区UV
+        void AddTriangleUV2(Vector2 uv1, Vector2 uv2, Vector2 uv3, ref DynamicBuffer<EstuaryUvsBuffer> uvs)
+        {
+            uvs.Add(uv1);
+            uvs.Add(uv2);
+            uvs.Add(uv3);
+        }
+
+        //添加矩形UV
+        void AddQuadUV2(Vector2 uv1, Vector2 uv2, Vector2 uv3, Vector2 uv4, ref DynamicBuffer<EstuaryUvsBuffer> uvs)
+        {
+            AddTriangleUV2(uv1, uv3, uv2, ref uvs);
+            AddTriangleUV2(uv2, uv3, uv4, ref uvs);
+        }
+
+        private void AddQuadUV2(float uMin, float uMax, float vMin, float vMax, ref DynamicBuffer<EstuaryUvsBuffer> uvs)
+        {
+            AddQuadUV2(new Vector2(uMin, vMin), new Vector2(uMax, vMin), new Vector2(uMin, vMax), new Vector2(uMax, vMax), ref uvs);
+        }
+        #endregion
 
         #region River
 
