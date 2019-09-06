@@ -47,35 +47,35 @@ public class UpdateCellSystem : JobComponentSystem {
             //更新相邻单元的颜色
             if (updateList.Contains(neighbors.NEIndex))
             {
-                neighbors.NE = color;
+                neighbors.NEColor = color;
                 neighbors.NEElevation = updata.Elevation;
             }
 
             if (updateList.Contains(neighbors.EIndex))
             {
-                neighbors.E = color;
+                neighbors.EColor = color;
                 neighbors.EElevation = updata.Elevation;
             }
             if (updateList.Contains(neighbors.SEIndex)) {
-                neighbors.SE = color;
+                neighbors.SEColor = color;
                 neighbors.SEElevation = updata.Elevation;
             }
 
             if (updateList.Contains(neighbors.SWIndex))
             {
-                neighbors.SW = color;
+                neighbors.SWColor = color;
                 neighbors.SWElevation = updata.Elevation;
             }
 
             if (updateList.Contains(neighbors.WIndex) )
             {
-                neighbors.W = color;
+                neighbors.WColor = color;
                 neighbors.WElevation = updata.Elevation;
             }
 
             if (updateList.Contains(neighbors.NWIndex) )
             {
-                neighbors.NW = color;
+                neighbors.NWColor = color;
                 neighbors.NWElevation = updata.Elevation;
             }
             if (updateList.Contains(cellData.Index))//更新自身单元的颜色

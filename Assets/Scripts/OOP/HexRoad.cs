@@ -45,7 +45,7 @@ public class HexRoad : MonoBehaviour {
             }
         }
 
-        Debug.Log("-----------------------------------------------------------------------------------------");
+        Debug.Log("-----------------------------------HexRoad------------------------------------------------------");
         Debug.Log("Vertices=" + Vertices.Length + "----Triangles=" + Triangles.Length + "----UV=" + uvs.Length);
 
         if (Vertices.Length > 1)

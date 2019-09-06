@@ -57,7 +57,7 @@ public class HexMesh : MonoBehaviour
             }
         }
 
-        Debug.Log("-----------------------------------------------------------------------------------------");
+        Debug.Log("--------------------------------HexMesh---------------------------------------------------------");
         Debug.Log("Vertices=" + Vertices.Length + "----Triangles=" + Triangles.Length + "----Colors=" + Colors.Length);
 
         if (Vertices.Length > 1)

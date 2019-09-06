@@ -54,6 +54,9 @@ public class CellSpawnSystem : JobComponentSystem {
             NativeArray<int> riverIn = new NativeArray<int>(totalCellCount, Allocator.Temp);
             //所有单元的坐标
             NativeArray<Vector3> positions = new NativeArray<Vector3>(totalCellCount, Allocator.Temp);
+            //二维数组来保存相邻单元的索引
+            int[,] neighborIndexs = new int[totalCellCount,6];
+
             for (int z = 0, i = 0; z < cellCountZ; z++)
             {
                 for (int x = 0; x < cellCountX; x++)
@@ -63,6 +66,103 @@ public class CellSpawnSystem : JobComponentSystem {
                     if (Elevations[i] >= HexMetrics.RiverSourceElevation) riverSources.Add(i);
                     riverIn[i] = -1;
                     positions[i] = new Vector3((x + z * 0.5f - z / 2) * (HexMetrics.InnerRadius * 2f), Elevations[i] * HexMetrics.ElevationStep, z * (HexMetrics.OuterRadius * 1.5f));
+                    //判断当前单元所在行数是否为偶数
+                    bool ifEven = (z & 1) == 0;
+                    //当前单元是否处于行尾
+                    bool notEnd = (i + 1) != (z + 1) * cellCountX;
+                    //是否处于行首
+                    bool notStart = i != z * cellCountX;
+                    //是否最后一行
+                    bool notLastRow = (z != (cellCountZ - 1));
+                    //默认没有相邻的单元
+                    int direction = int.MinValue;
+                    //0=东北：NEPosition
+                    if (notLastRow)//非最末行
+                    {
+                        if (ifEven)//偶数行
+                        {
+                            direction = i + cellCountX;
+                        }
+                        else
+                        {
+                            if (notEnd)//最末尾没有相邻的单元
+                            {
+                                direction = i + cellCountX + 1;
+                            }
+                        }
+                    }
+
+                    neighborIndexs[i,0] = direction;
+                    direction = int.MinValue;
+                    //颜色混合1 东：EPosition
+                    if (notEnd)
+                    {
+                        direction = i + 1;
+                    }
+
+                    neighborIndexs[i,1] = direction;
+                    direction = int.MinValue;
+                    //东南2：SEPosition
+                    if (i >= cellCountX)
+                    {
+                        if (ifEven)
+                        {
+                            direction = i - cellCountX;
+                        }
+                        else
+                        {
+                            if (notEnd)
+                            {
+                                direction = i - cellCountX + 1;
+                            }
+                        }
+                    }
+                    neighborIndexs[i,2] = direction;
+                    direction = int.MinValue;
+                    //西南3：SWPosition
+                    if (i >= cellCountX)
+                    {
+                        if (ifEven)
+                        {
+                            if (notStart)
+                            {
+                                direction = i - cellCountX - 1;
+                            }
+
+                        }
+                        else
+                        {
+                            direction = i - cellCountX;
+                        }
+                    }
+
+                    neighborIndexs[i,3] = direction;
+                    direction = int.MinValue;
+                    //西4：WPosition
+                    if (notStart)
+                    {
+                        direction = i - 1;
+                    }
+                    neighborIndexs[i,4] = direction;
+                    direction = int.MinValue;
+                    //5西北：NWPosition
+                    if (notLastRow)
+                    {
+                        if (ifEven)
+                        {
+                            if (notStart)
+                            {
+                                direction = i + cellCountX - 1;
+                            }
+                        }
+                        else
+                        {
+                            direction = i + cellCountX;
+                        }
+                    }
+
+                    neighborIndexs[i,5] = direction;
+
                     i++;
                 }
             }
@@ -75,151 +175,11 @@ public class CellSpawnSystem : JobComponentSystem {
                     //2.实例化
                     var instance = CommandBuffer.Instantiate(index, hexCellPrefab);
 
-                    //3.计算阵列对应的六边形单元坐标
-
-
-                    //4.计算当前单元所在六个方向的邻居单元颜色
-                    Color[] blendColors = new Color[6];
-                    int[] directions = new int[6];
-
                     //当前单元的颜色
                     Color color = Colors[i];
-                    //邻居单元的颜色
-                    Color neighbor = color;
-                    int direction = int.MinValue;
-                    //判断当前单元所在行数是否为偶数
-                    bool ifEven = (z & 1) == 0;
-                    //当前单元是否处于行尾
-                    bool ifEnd = (i + 1) == (z + 1) * cellCountX;
-                    //是否处于行首
-                    bool ifStart = i == z * cellCountX;
-                    //是否最后一行
-                    bool isLastRow = (z == (cellCountZ - 1));
 
-                    //0=东北：NEPosition
-                    if (!isLastRow)//非最末行
-                    {
-                        if (ifEven)//偶数行
-                        {
-                            
-                            neighbor = Colors[i + cellCountX];
-                            direction = i + cellCountX;
-                        }
-                        else
-                        {
-                            if (!ifEnd)//最末尾没有相邻的单元
-                            {
-                                neighbor = (Colors[i + cellCountX + 1]);
-                                direction = i + cellCountX + 1;
-                            }
-                        }
-                    }
+                    #region River
 
-                    directions[0] = direction;
-                    blendColors[0] = neighbor;
-                    direction = int.MinValue;
-                    //颜色混合1 东：EPosition
-                    if (ifEnd)
-                    {
-                        //如果在地图行尾，没有东邻居
-                        neighbor = color;
-                    }
-                    else
-                    {
-                        neighbor = (Colors[i + 1]);
-                        direction = i + 1;
-                    }
-
-                    directions[1] = direction;
-                    blendColors[1] = neighbor;
-                    direction = int.MinValue;
-                    //东南2：SEPosition
-                    neighbor = color;
-                    if(i>=cellCountX)
-                    {
-                        if (ifEven)
-                        {
-                            neighbor = (Colors[i - cellCountX]);
-                            direction = i - cellCountX;
-                        }
-                        else
-                        {
-                            if (!ifEnd)
-                            {
-                                neighbor = (Colors[i - cellCountX + 1]);
-                                direction = i - cellCountX + 1;
-                            }
-                        }
-                    }
-                    blendColors[2] = neighbor;
-                    directions[2] = direction;
-                    direction = int.MinValue;
-                    //西南3：SWPosition
-                    if (i < cellCountX) neighbor = color;
-                    else
-                    {
-                        if (ifEven)
-                        {
-                            if (ifStart) neighbor = color;
-                            else
-                            {
-                                neighbor = (Colors[i - cellCountX - 1]);
-                                direction = i - cellCountX - 1;
-                            }
- 
-                        }
-                        else
-                        {
-                            neighbor = (Colors[i - cellCountX]);
-                            direction = i - cellCountX;
-                        }
-                    }
-
-                    directions[3] = direction;
-                    blendColors[3] = neighbor;
-                    direction = int.MinValue;
-                    //西4：WPosition
-                    if (ifStart)
-                    {
-                        //如果在地图起始位置，没有西邻居
-                        neighbor = color;
-                    }
-                    else
-                    {
-                        neighbor = (Colors[i - 1]);
-                        direction = i - 1;
-                    }
-                    blendColors[4] = neighbor;
-                    directions[4] = direction;
-                    direction = int.MinValue;
-                    //5西北：NWPosition
-                    if (isLastRow)
-                    {
-                        neighbor = color;
-                    }
-                    else
-                    {
-                        if (ifEven)
-                        {
-                            if (ifStart)
-                            {
-                                neighbor = color;
-                            }
-                            else
-                            {
-                                neighbor = (Colors[i + cellCountX - 1]);
-                                direction = i + cellCountX - 1;
-                            }
-                        }
-                        else
-                        {
-                            neighbor = (Colors[i + cellCountX]);
-                            direction = i + cellCountX;
-                        }
-                    }
-
-                    directions[5] = direction;
-                    blendColors[5] = neighbor;
                     //初始化河流数据
                     bool hasRiver = false;
                     bool hasOutgoingRiver = false;
@@ -235,29 +195,29 @@ public class CellSpawnSystem : JobComponentSystem {
                         //从六个方向寻找河床
                         for (int j = 0; j < 6; j++)
                         {
-                            if (directions[j] != int.MinValue)//如果是最小值，说明没有相邻单元
+                            if (neighborIndexs[i,j] != int.MinValue)//如果是最小值，说明没有相邻单元
                             {
-                                int elevationR = Elevations[directions[j]];//获取相邻单元的海拔
+                                int elevationR = Elevations[neighborIndexs[i, j]];//获取相邻单元的海拔
                                 //先判断出水口：水向东流，则当前所以必然小于相邻索引，否则就在西面
-                                if (i<directions[j])
+                                if (i < neighborIndexs[i, j])
                                 {
                                     //如果已经是源头了，则无法在流入了，一个单元最多有一条河流经，且海拔必然低于河源
-                                    if (!riverSources.Contains(directions[j]) && elevationR <= Elevations[i])
+                                    if (!riverSources.Contains(neighborIndexs[i, j]) && elevationR <= Elevations[i])
                                     {
                                         //为了源远流长，选择与自身海拔相近的单元
                                         if (elevationR > lastElevation)
                                         {
                                             hasOutgoingRiver = true;
-                                            outgoingRiver = directions[j];
+                                            outgoingRiver = neighborIndexs[i, j];
                                             lastElevation = elevationR;
                                         }
                                     }
                                 }
                                 //判断入水口，但凡入水口都保存在数组中了
-                                if (riverIn.Contains(directions[j]))
+                                if (riverIn.Contains(neighborIndexs[i, j]))
                                 {
                                     //方向校正，当前单元的入水方向即是相邻单元的出水方向
-                                    if (directions[j] == riverIn[i])
+                                    if (neighborIndexs[i, j] == riverIn[i])
                                     {
                                         incomingRiver = riverIn[i];
                                         hasIncomingRiver = true;
@@ -269,7 +229,7 @@ public class CellSpawnSystem : JobComponentSystem {
                         if (hasOutgoingRiver)
                         {
                             //当前单元的出水口，正是相邻单元的入水口
-                            riverIn[outgoingRiver]=i;
+                            riverIn[outgoingRiver] = i;
                             riverSources.Add(outgoingRiver);
                         }
                         else
@@ -282,6 +242,10 @@ public class CellSpawnSystem : JobComponentSystem {
                     //    CommandBuffer.AddComponent<RiverRenderTag>(index, instance);
                     //}
 
+                    #endregion
+
+                    #region Road
+
                     //生成道路数据，用一个临时数组来暂存
                     bool[] roads = new bool[6];
                     bool hasRoad = false;
@@ -290,50 +254,67 @@ public class CellSpawnSystem : JobComponentSystem {
                     {
                         roads[j] = false;
                         //首先确认该方向有相邻的单元
-                        if (directions[j]!=int.MinValue)
+                        if (neighborIndexs[i, j] != int.MinValue)
                         {
                             //计算海拔差值，海拔相差过大的悬崖峭壁就不修路了
-                            int tmpE = Elevations[i] -Elevations[directions[j]];
+                            int tmpE = Elevations[i] - Elevations[neighborIndexs[i, j]];
                             tmpE = tmpE > 0 ? tmpE : -tmpE;
                             //河流通过的地方不修路，后面会造桥
-                            if (tmpE<=1 && directions[j]!=incomingRiver && directions[j] !=outgoingRiver)
+                            if (tmpE <= 1 && neighborIndexs[i, j] != incomingRiver && neighborIndexs[i, j] != outgoingRiver)
                             {
                                 roads[j] = true;
                                 hasRoad = true;
                             }
                         }
                     }
-                    //是否被水淹没？
-                    bool isUnderWater = false;
-                    int waterLevel = int.MinValue;
-                    //海拔低于1的低洼地带被水淹没
-                    if (Elevations[i]<=1)
-                    {
-                        isUnderWater = true;
-                        waterLevel = Elevations[i] + 3;
-                    }
+
+                    #endregion
+
+                    #region Water
+                    
+                    //当前单元是否被水淹没？
+                    bool isUnderWater = true;
+                    //当前单元的水位
+                    float waterLevel = Elevations[i] + HexMetrics.WaterLevelOffset;
+                    //相邻单元是否处于水下
+                    bool[] neighborIsUnderWater = new bool[6];
                     //单元6边都被高地环绕的地带积水
-                    if (!isUnderWater)
+                    for (int j = 0; j < 6; j++)
                     {
-                        isUnderWater = true;
-                        waterLevel = Elevations[i] + 3;
-                        for (int j = 0; j < 6; j++)
+                        neighborIsUnderWater[j] = true;
+                        int neighborIndex = neighborIndexs[i, j];
+                        if (neighborIndex != int.MinValue)
                         {
-                            if (directions[j] != int.MinValue)
-                            {
-                                if (Elevations[directions[j]]<Elevations[i])
-                                {
-                                    isUnderWater = false;
-                                    waterLevel = int.MinValue;
-                                    break;
-                                }
-                            }
-                            else
+                            if (Elevations[neighborIndex] < Elevations[i])
                             {
                                 isUnderWater = false;
                                 waterLevel = int.MinValue;
-                                break;
                             }
+
+                            for (int k = 0; k < 6; k++)
+                            {
+                                int nextNeighborIndex = neighborIndexs[neighborIndex, k];
+                                if (nextNeighborIndex!=int.MinValue)
+                                {
+                                    if (Elevations[nextNeighborIndex] < Elevations[neighborIndex])
+                                    {
+                                        neighborIsUnderWater[j] = false;
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    neighborIsUnderWater[j] = false;
+                                    break;
+                                }
+                            }
+
+                        }
+                        else
+                        {
+                            isUnderWater = false;
+                            waterLevel = int.MinValue;
+                            neighborIsUnderWater[j] = false;
                         }
                     }
                     //河流尽头积水
@@ -343,9 +324,12 @@ public class CellSpawnSystem : JobComponentSystem {
                         if (hasIncomingRiver && !hasOutgoingRiver)
                         {
                             isUnderWater = true;
-                            waterLevel = Elevations[i] + 3;
+                            waterLevel = Elevations[i] + HexMetrics.WaterLevelOffset;
                         }
                     }
+
+                    #endregion
+
                     //5.设置每个六边形单元的数据
                     CommandBuffer.SetComponent(index, instance, new Cell
                     {
@@ -369,40 +353,46 @@ public class CellSpawnSystem : JobComponentSystem {
 
                     CommandBuffer.SetComponent(index, instance, new Neighbors
                     {
-                        NE = blendColors[0],
-                        E = blendColors[1],
-                        SE = blendColors[2],
-                        SW = blendColors[3],
-                        W = blendColors[4],
-                        NW = blendColors[5],
-                        NEElevation = directions[0] == int.MinValue ? int.MinValue : Elevations[directions[0]],
-                        EElevation = directions[1] == int.MinValue ? int.MinValue : Elevations[directions[1]],
-                        SEElevation = directions[2] == int.MinValue ? int.MinValue : Elevations[directions[2]],
-                        SWElevation = directions[3] == int.MinValue ? int.MinValue : Elevations[directions[3]],
-                        WElevation = directions[4] == int.MinValue ? int.MinValue : Elevations[directions[4]],
-                        NWElevation = directions[5] == int.MinValue ? int.MinValue : Elevations[directions[5]],
-                        NEIndex = directions[0],
-                        EIndex = directions[1],
-                        SEIndex = directions[2],
-                        SWIndex = directions[3],
-                        WIndex = directions[4],
-                        NWIndex = directions[5],
-                        NEPosition = directions[0] == int.MinValue ? Vector3.left : positions[directions[0]],
-                        EPosition = directions[1] == int.MinValue ? Vector3.left : positions[directions[1]],
-                        SEPosition = directions[2] == int.MinValue ? Vector3.left : positions[directions[2]],
-                        SWPosition = directions[3] == int.MinValue ? Vector3.left : positions[directions[3]],
-                        WPosition = directions[4] == int.MinValue ? Vector3.left : positions[directions[4]],
-                        NWPosition = directions[5] == int.MinValue ? Vector3.left : positions[directions[5]]
+                        NEColor = neighborIndexs[i, 0] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 0]],
+                        EColor = neighborIndexs[i,1] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 1]],
+                        SEColor = neighborIndexs[i, 2] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 2]],
+                        SWColor = neighborIndexs[i, 3] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 3]],
+                        WColor = neighborIndexs[i, 4] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 4]],
+                        NWColor = neighborIndexs[i, 5] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 5]],
+                        NEElevation = neighborIndexs[i, 0] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 0]],
+                        EElevation = neighborIndexs[i, 1] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 1]],
+                        SEElevation = neighborIndexs[i, 2] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 2]],
+                        SWElevation = neighborIndexs[i, 3] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 3]],
+                        WElevation = neighborIndexs[i, 4] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 4]],
+                        NWElevation = neighborIndexs[i, 5] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 5]],
+                        NEIndex = neighborIndexs[i, 0],
+                        EIndex = neighborIndexs[i, 1],
+                        SEIndex = neighborIndexs[i, 2],
+                        SWIndex = neighborIndexs[i, 3],
+                        WIndex = neighborIndexs[i, 4],
+                        NWIndex = neighborIndexs[i, 5],
+                        NEPosition = neighborIndexs[i, 0] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 0]],
+                        EPosition = neighborIndexs[i, 1] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 1]],
+                        SEPosition = neighborIndexs[i, 2] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 2]],
+                        SWPosition = neighborIndexs[i, 3] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 3]],
+                        WPosition = neighborIndexs[i, 4] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 4]],
+                        NWPosition = neighborIndexs[i, 5] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 5]],
+                        NEIsUnderWater= neighborIsUnderWater[0],
+                        EIsUnderWater= neighborIsUnderWater[1],
+                        SEIsUnderWater= neighborIsUnderWater[2],
+                        SWIsUnderWater= neighborIsUnderWater[3],
+                        WIsUnderWater= neighborIsUnderWater[4],
+                        NWIsUnderWater= neighborIsUnderWater[5]
                     });
 
                     CommandBuffer.SetComponent(index, instance, new RoadBools
                     {
-                        NEBool = roads[0],
-                        EBool = roads[1],
-                        SEBool = roads[2],
-                        SWBool = roads[3],
-                        WBool = roads[4],
-                        NWBool = roads[5]
+                        NEHasRoad = roads[0],
+                        EHasRoad = roads[1],
+                        SEHasRoad = roads[2],
+                        SWHasRoad = roads[3],
+                        WHasRoad = roads[4],
+                        NWHasRoad = roads[5]
                     });
                     int chunkX = x / HexMetrics.ChunkSizeX;
                     int chunkZ = z / HexMetrics.ChunkSizeZ;

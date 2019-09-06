@@ -29,7 +29,7 @@ public class Estuary : MonoBehaviour {
             //0.取出实体，如果实体的索引为m_Builder则跳过
             Entity entity = cells[i];
             Cell cell = m_EntityManager.GetComponentData<Cell>(entity);
-            if (cell.HasRiver)
+            if (cell.IsUnderWater)
             {
                 DynamicBuffer<EstuaryBuffer> riverBuffers = m_EntityManager.GetBuffer<EstuaryBuffer>(entity);
                 if (riverBuffers.Length > 0)
@@ -53,7 +53,7 @@ public class Estuary : MonoBehaviour {
             }
         }
 
-        Debug.Log("-----------------------------------------------------------------------------------------");
+        Debug.Log("-------------------------------------Estuary----------------------------------------------------");
         Debug.Log("Vertices=" + Vertices.Length + "----Triangles=" + Triangles.Length + "----UV=" + uvs.Count);
 
         if (Vertices.Length > 1)

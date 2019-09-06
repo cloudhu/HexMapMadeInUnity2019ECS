@@ -27,7 +27,7 @@ public class HexWater : MonoBehaviour {
             //0.取出实体，如果实体的索引为m_Builder则跳过
             Entity entity = cells[i];
             Cell cell = m_EntityManager.GetComponentData<Cell>(entity);
-            if (cell.HasRiver)
+            if (cell.IsUnderWater)
             {
                 DynamicBuffer<WaterBuffer> riverBuffers = m_EntityManager.GetBuffer<WaterBuffer>(entity);
                 if (riverBuffers.Length > 0)
@@ -45,7 +45,7 @@ public class HexWater : MonoBehaviour {
             }
         }
 
-        Debug.Log("-----------------------------------------------------------------------------------------");
+        Debug.Log("-------------------------------------HexWater----------------------------------------------------");
         Debug.Log("Vertices=" + Vertices.Length + "----Triangles=" + Triangles.Length + "----UV=");
 
         if (Vertices.Length > 1)

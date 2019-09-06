@@ -60,12 +60,12 @@ public class CellSystem : JobComponentSystem {
             int elevation = cellData.Elevation;
             ////保存需要混合的颜色，使用数组[]是为了方便循环
             Color[] blendColors = new Color[6];
-            blendColors[0] = neighbors.NE;
-            blendColors[1] = neighbors.E;
-            blendColors[2] = neighbors.SE;
-            blendColors[3] = neighbors.SW;
-            blendColors[4] = neighbors.W;
-            blendColors[5] = neighbors.NW;
+            blendColors[0] = neighbors.NEColor;
+            blendColors[1] = neighbors.EColor;
+            blendColors[2] = neighbors.SEColor;
+            blendColors[3] = neighbors.SWColor;
+            blendColors[4] = neighbors.WColor;
+            blendColors[5] = neighbors.NWColor;
             //6个方向相邻单元的索引
             int[] directionIndex = new int[6];
             directionIndex[0] = neighbors.NEIndex;
@@ -84,12 +84,12 @@ public class CellSystem : JobComponentSystem {
             elevations[5] = neighbors.NWElevation;
             //6个方向上的道路
             bool[] roads = new bool[6];
-            roads[0] = roadBools.NEBool;
-            roads[1] = roadBools.EBool;
-            roads[2] = roadBools.SEBool;
-            roads[3] = roadBools.SWBool;
-            roads[4] = roadBools.WBool;
-            roads[5] = roadBools.NWBool;
+            roads[0] = roadBools.NEHasRoad;
+            roads[1] = roadBools.EHasRoad;
+            roads[2] = roadBools.SEHasRoad;
+            roads[3] = roadBools.SWHasRoad;
+            roads[4] = roadBools.WHasRoad;
+            roads[5] = roadBools.NWHasRoad;
             //6个方向的邻居位置
             Vector3[] positions = new Vector3[6];
             positions[0] = neighbors.NEPosition;
@@ -98,6 +98,14 @@ public class CellSystem : JobComponentSystem {
             positions[3] = neighbors.SWPosition;
             positions[4] = neighbors.WPosition;
             positions[5] = neighbors.NWPosition;
+            //6个方向是否在水下
+            bool[] neighborIsUnderWater = new bool[6];
+            neighborIsUnderWater[0] = neighbors.NEIsUnderWater;
+            neighborIsUnderWater[1] = neighbors.EIsUnderWater;
+            neighborIsUnderWater[2] = neighbors.SEIsUnderWater;
+            neighborIsUnderWater[3] = neighbors.SWIsUnderWater;
+            neighborIsUnderWater[4] = neighbors.WIsUnderWater;
+            neighborIsUnderWater[5] = neighbors.NWIsUnderWater;
             #endregion
 
             //添加六边形单元六个方向的顶点、三角和颜色
@@ -134,6 +142,7 @@ public class CellSystem : JobComponentSystem {
                             }
                             TriangulateEdgeStrip(m, currCellColor, e, currCellColor, ref colorBuffer, ref vertexBuffer);
                             TriangulateEdgeFan(currCellCenter, m, currCellColor, ref colorBuffer, ref vertexBuffer);
+                            //隐藏处于水下的河流
                             if (!cellData.IsUnderWater)
                             {
                                 TriangulateRiverQuad(m.v2, m.v4, e.v2, e.v4, RiverSurfaceY, RiverSurfaceY, 0.6f, ref riverUvBuffer, ref riverBuffers, river.HasIncomingRiver);
@@ -193,6 +202,7 @@ public class CellSystem : JobComponentSystem {
                             AddQuad(centerL, currCellColor, center, currCellColor, m.v2, currCellColor, m.v3, currCellColor, ref colorBuffer, ref vertexBuffer);
                             AddQuad(center, currCellColor, centerR, currCellColor, m.v3, currCellColor, m.v4, currCellColor, ref colorBuffer, ref vertexBuffer);
                             AddTriangle(centerR, currCellColor, m.v4, currCellColor, m.v5, currCellColor, ref colorBuffer, ref vertexBuffer);
+                            //隐藏处于水下的河流
                             if (!cellData.IsUnderWater)
                             {
                                 bool reversed = river.IncomingRiver == directionIndex[j];
@@ -357,7 +367,7 @@ public class CellSystem : JobComponentSystem {
                 #endregion
 
                 //Connection Between 2 cells
-                #region  Bridge=桥TriangulateConnection
+                #region  Bridge=桥=》TriangulateConnection三角化桥连接
                 //桥只连接前三个方向相邻的单元，从而避免重复连接
                 if (j <= 2)
                 {
@@ -377,19 +387,20 @@ public class CellSystem : JobComponentSystem {
                         e2.v3.y = (elevations[j] + HexMetrics.StreamBedElevationOffset) * HexMetrics.ElevationStep;
                         if (!cellData.IsUnderWater)
                         {
-                            if (elevations[j]>cellData.WaterLevel)
+                            if (!neighborIsUnderWater[j])
                             {
                                 TriangulateRiverQuad(e.v2, e.v4, e2.v2, e2.v4, RiverSurfaceY, neighborRiverSurfaceY, 0.8f, ref riverUvBuffer, ref riverBuffers, river.HasIncomingRiver && river.IncomingRiver == directionIndex[j]);
                             }
-                            else if (elevation > elevations[j]+1)
+                            else if (elevation > elevations[j]+HexMetrics.WaterLevelOffset)
                             {
+                                //TriangulateWaterfallInWater三角化瀑布
                                 Vector3 v1 = e.v2;
                                 Vector3 v2 = e.v4;
                                 Vector3 v3 = e2.v2;
                                 Vector3 v4 = e2.v4;
                                 v1.y = v2.y = RiverSurfaceY;
                                 v3.y = v4.y = neighborRiverSurfaceY;
-                                float waterY= (elevations[j]+1 + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep;
+                                float waterY= (elevations[j]+ HexMetrics.WaterLevelOffset + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep;
                                 float t = (waterY - neighborRiverSurfaceY) / (RiverSurfaceY - neighborRiverSurfaceY);
                                 v3 = Vector3.Lerp(v3, v1, t);
                                 v4 = Vector3.Lerp(v4, v2, t);
@@ -397,8 +408,9 @@ public class CellSystem : JobComponentSystem {
                                 AddQuadUV(0f, 1f, 0.8f, 1f,ref riverUvBuffer);
                             }
                         }
-                        else if (elevations[j] > cellData.WaterLevel && elevation > elevations[j] + 1)
+                        else if (!neighborIsUnderWater[j] && elevation > elevations[j] + HexMetrics.WaterLevelOffset)
                         {
+                            //TriangulateWaterfallInWater三角化瀑布
                             Vector3 v1 = e2.v4;
                             Vector3 v2 = e2.v2;
                             Vector3 v3 = e.v4;
@@ -476,6 +488,7 @@ public class CellSystem : JobComponentSystem {
 
                 if (cellData.IsUnderWater)
                 {
+                    currCellCenter = cellData.Position;
                     float WaterSurfaceY = (cellData.WaterLevel + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep; ;
                     currCellCenter.y = WaterSurfaceY;
                     if (directionIndex[j] != int.MinValue && elevations[j] > cellData.WaterLevel)
@@ -503,60 +516,28 @@ public class CellSystem : JobComponentSystem {
                             #region TriangulateEstuary三角化河口
                             AddTriangle(e2.v1, e1.v2, e1.v1, ref shoreBuffers);
                             AddTriangle(e2.v5, e1.v5, e1.v4, ref shoreBuffers);
-                            AddTriangleUV(
-                                new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(0f, 0f), ref shoreUvs
-                            );
-                            AddTriangleUV(
-                                new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(0f, 0f), ref shoreUvs
-                            );
+                            AddTriangleUV(new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(0f, 0f), ref shoreUvs);
+                            AddTriangleUV(new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(0f, 0f), ref shoreUvs);
 
                             AddQuad(e2.v1, e1.v2, e2.v2, e1.v3,ref estuaryBuffers);
                             AddTriangle(e1.v3, e2.v2, e2.v4, ref estuaryBuffers);
                             AddQuad(e1.v3, e1.v4, e2.v4, e2.v5, ref estuaryBuffers);
 
-                            AddQuadUV(
-                                new Vector2(0f, 1f), new Vector2(0f, 0f),
-                                new Vector2(1f, 1f), new Vector2(0f, 0f),ref estuaryUvs
-                            );
-                            AddTriangleUV(
-                                new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(1f, 1f), ref estuaryUvs
-                            );
-                            AddQuadUV(
-                                new Vector2(0f, 0f), new Vector2(0f, 0f),
-                                new Vector2(1f, 1f), new Vector2(0f, 1f), ref estuaryUvs
-                            );
+                            AddQuadUV(new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0f),ref estuaryUvs);
+                            AddTriangleUV(new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(1f, 1f), ref estuaryUvs);
+                            AddQuadUV(new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f), ref estuaryUvs);
 
                             if (river.HasIncomingRiver && river.IncomingRiver == directionIndex[j])
                             {
-                                AddQuadUV2(
-                                    new Vector2(1.5f, 1f), new Vector2(0.7f, 1.15f),
-                                    new Vector2(1f, 0.8f), new Vector2(0.5f, 1.1f), ref estuaryUvs2
-                                );
-                                AddTriangleUV2(
-                                    new Vector2(0.5f, 1.1f),
-                                    new Vector2(1f, 0.8f),
-                                    new Vector2(0f, 0.8f), ref estuaryUvs2
-                                );
-                                AddQuadUV2(
-                                    new Vector2(0.5f, 1.1f), new Vector2(0.3f, 1.15f),
-                                    new Vector2(0f, 0.8f), new Vector2(-0.5f, 1f), ref estuaryUvs2
-                                );
+                                AddQuadUV2(new Vector2(1.5f, 1f), new Vector2(0.7f, 1.15f), new Vector2(1f, 0.8f), new Vector2(0.5f, 1.1f), ref estuaryUvs2);
+                                AddTriangleUV2(new Vector2(0.5f, 1.1f), new Vector2(1f, 0.8f), new Vector2(0f, 0.8f), ref estuaryUvs2);
+                                AddQuadUV2(new Vector2(0.5f, 1.1f), new Vector2(0.3f, 1.15f), new Vector2(0f, 0.8f), new Vector2(-0.5f, 1f), ref estuaryUvs2);
                             }
                             else
                             {
-                                AddQuadUV2(
-                                    new Vector2(-0.5f, -0.2f), new Vector2(0.3f, -0.35f),
-                                    new Vector2(0f, 0f), new Vector2(0.5f, -0.3f), ref estuaryUvs2
-                                );
-                                AddTriangleUV2(
-                                    new Vector2(0.5f, -0.3f),
-                                    new Vector2(0f, 0f),
-                                    new Vector2(1f, 0f), ref estuaryUvs2
-                                );
-                                AddQuadUV2(
-                                    new Vector2(0.5f, -0.3f), new Vector2(0.7f, -0.35f),
-                                    new Vector2(1f, 0f), new Vector2(1.5f, -0.2f), ref estuaryUvs2
-                                );
+                                AddQuadUV2(new Vector2(-0.5f, -0.2f), new Vector2(0.3f, -0.35f), new Vector2(0f, 0f), new Vector2(0.5f, -0.3f), ref estuaryUvs2);
+                                AddTriangleUV2(new Vector2(0.5f, -0.3f), new Vector2(0f, 0f), new Vector2(1f, 0f), ref estuaryUvs2);
+                                AddQuadUV2(new Vector2(0.5f, -0.3f), new Vector2(0.7f, -0.35f), new Vector2(1f, 0f), new Vector2(1.5f, -0.2f), ref estuaryUvs2);
                             }
 
                             #endregion

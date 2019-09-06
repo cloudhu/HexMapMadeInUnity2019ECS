@@ -105,7 +105,7 @@ public struct Cell : IComponentData
     /// <summary>
     /// 水体高度
     /// </summary>
-    public int WaterLevel;
+    public float WaterLevel;
 
     /// <summary>
     /// 当前单元是否有河流
@@ -152,12 +152,12 @@ public struct River : IComponentData
 public struct Neighbors : IComponentData
 {
     //六个方向相邻单元的颜色
-    public Color NE;
-    public Color E;
-    public Color SE;
-    public Color SW;
-    public Color W;
-    public Color NW;
+    public Color NEColor;
+    public Color EColor;
+    public Color SEColor;
+    public Color SWColor;
+    public Color WColor;
+    public Color NWColor;
     //六个方向相邻单元的海拔
     public int NEElevation;
     public int EElevation;
@@ -179,6 +179,13 @@ public struct Neighbors : IComponentData
     public Vector3 SWPosition;
     public Vector3 WPosition;
     public Vector3 NWPosition;
+    //6个方向相邻的单元是否处于水下
+    public bool NEIsUnderWater;
+    public bool EIsUnderWater;
+    public bool SEIsUnderWater;
+    public bool SWIsUnderWater;
+    public bool WIsUnderWater;
+    public bool NWIsUnderWater;
 }
 
 /// <summary>
@@ -186,12 +193,12 @@ public struct Neighbors : IComponentData
 /// </summary>
 public struct RoadBools : IComponentData {
 
-    public bool NEBool;
-    public bool EBool;
-    public bool SEBool;
-    public bool SWBool;
-    public bool WBool;
-    public bool NWBool;
+    public bool NEHasRoad;
+    public bool EHasRoad;
+    public bool SEHasRoad;
+    public bool SWHasRoad;
+    public bool WHasRoad;
+    public bool NWHasRoad;
 }
 
 /// <summary>

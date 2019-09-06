@@ -46,7 +46,7 @@ public class HexRiver : MonoBehaviour
             }
         }
 
-        Debug.Log("-----------------------------------------------------------------------------------------");
+        Debug.Log("----------------------------------HexRiver-------------------------------------------------------");
         Debug.Log("Vertices=" + Vertices.Length + "----Triangles=" + Triangles.Length + "----UV=" + uvs.Length);
 
         if (Vertices.Length > 1)

@@ -24,6 +24,11 @@ public static class HexMetrics
     public const float WaterSurfaceElevationOffset = -0.5f;
 
     /// <summary>
+    /// 水位偏移量
+    /// </summary>
+    public const float WaterLevelOffset = 0.5f;
+
+    /// <summary>
     /// 水体占比
     /// </summary>
     public const float WaterFactor = 0.6f;
