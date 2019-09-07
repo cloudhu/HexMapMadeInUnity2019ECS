@@ -329,3 +329,12 @@ public struct EstuaryUvsBuffer : IBufferElementData {
     // Actual value each buffer element will store. Estuary
     public Vector2 Value;
 }
+
+public struct DebugBuffer : IBufferElementData {
+    // These implicit conversions are optional, but can help reduce typing.
+    public static implicit operator int(DebugBuffer e) { return e.Value; }
+    public static implicit operator DebugBuffer(int e) { return new DebugBuffer { Value = e }; }
+
+    // Actual value each buffer element will store. Estuary
+    public int Value;
+}

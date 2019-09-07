@@ -620,7 +620,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   chunkCountX: 3
   chunkCountZ: 3
-  noiseSource: {fileID: 2800000, guid: 14f238fab41d74a41aa3d8024cae0bac, type: 3}
+  noiseSource: {fileID: 2800000, guid: 38701cdeb1fb9427cbb585f917aa59cb, type: 3}
   chunkPrefab: {fileID: 3032814105676310406, guid: 95afdcc78bd176643959207dac339bf6,
     type: 3}
 --- !u!4 &359018409
@@ -1058,7 +1058,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stickMinZoom: -260
-  stickMaxZoom: -45
+  stickMaxZoom: 0
   swivelMinZoom: 90
   swivelMaxZoom: 45
   moveSpeedMinZoom: 400
@@ -1416,7 +1416,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HexGrid: {fileID: 359018408}
-  RiverMaterial: {fileID: 2100000, guid: af5fa3dd9aa9a46188be6d7b2348bd92, type: 2}
 --- !u!4 &675462475
 Transform:
   m_ObjectHideFlags: 0

@@ -26,6 +26,7 @@ public class CellSpawnSystem : JobComponentSystem {
     /// <summary>
     /// 循环创建六边形单元，使其生成对应长宽的阵列
     /// </summary>
+    //[BurstCompile]
     struct SpawnJob : IJobForEachWithEntity<Data,NewDataTag> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
         
@@ -39,6 +40,8 @@ public class CellSpawnSystem : JobComponentSystem {
             CommandBuffer.AddComponent<ChunkData>(index, hexCellPrefab);
             CommandBuffer.AddComponent<River>(index, hexCellPrefab);
             CommandBuffer.AddComponent<RoadBools>(index, hexCellPrefab);
+            //用于调试的动态缓存
+            //DynamicBuffer<DebugBuffer> debug= CommandBuffer.AddBuffer<DebugBuffer>(index,entity);
             //1.添加颜色数组，这个数组以后从服务器获取，然后传到这里来处理
             Random random = new Random(1208905299U);
             int cellCountX = createrData.CellCountX;
@@ -64,7 +67,7 @@ public class CellSpawnSystem : JobComponentSystem {
                     Colors[i] = new Color(random.NextFloat(), random.NextFloat(), random.NextFloat());
                     Elevations[i] = random.NextInt(6);
                     if (Elevations[i] >= HexMetrics.RiverSourceElevation) riverSources.Add(i);
-                    riverIn[i] = -1;
+                    riverIn[i] = int.MinValue;
                     positions[i] = new Vector3((x + z * 0.5f - z / 2) * (HexMetrics.InnerRadius * 2f), Elevations[i] * HexMetrics.ElevationStep, z * (HexMetrics.OuterRadius * 1.5f));
                     //判断当前单元所在行数是否为偶数
                     bool ifEven = (z & 1) == 0;
@@ -181,62 +184,199 @@ public class CellSpawnSystem : JobComponentSystem {
                     #region River
 
                     //初始化河流数据
-                    bool hasRiver = false;
+                    bool hasRiver = true;
                     bool hasOutgoingRiver = false;
                     bool hasIncomingRiver = false;
                     int incomingRiver = int.MinValue;
                     int outgoingRiver = int.MinValue;
-                    //如果当前单元是河源
-                    if (riverSources.Contains(i))
+
+                    //上一个单元海拔,用来做比较
+                    int lastElevation = int.MinValue;
+
+                    //从六个方向寻找河床，无法使用递归函数优化，报错在Job下面的递归函数中
+                    for (int j = 0; j < 6; j++)
                     {
-                        hasRiver = true;//河源单元必然有河流
-                        //上一个单元海拔,用来做比较
-                        int lastElevation = int.MinValue;
-                        //从六个方向寻找河床
-                        for (int j = 0; j < 6; j++)
+                        bool nextHasOutgoingRiver = false;
+                        //下一个出口
+                        int nextOutgoingRiver = int.MinValue;
+                        //低于源头的最高海拔
+                        int maxElevation = int.MinValue;
+                        int neighborIndex = neighborIndexs[i, j];
+                        if (neighborIndex != int.MinValue)//如果是最小值，说明没有相邻单元
                         {
-                            if (neighborIndexs[i,j] != int.MinValue)//如果是最小值，说明没有相邻单元
+                            //获取相邻单元的海拔
+                            int neighborElevation = Elevations[neighborIndex];
+
+                            for (int k = 0; k < 6; k++)
                             {
-                                int elevationR = Elevations[neighborIndexs[i, j]];//获取相邻单元的海拔
-                                //先判断出水口：水向东流，则当前所以必然小于相邻索引，否则就在西面
-                                if (i < neighborIndexs[i, j])
+                                int nextNeighborIndex = neighborIndexs[neighborIndex, k];
+
+                                if (nextNeighborIndex != int.MinValue)
                                 {
-                                    //如果已经是源头了，则无法在流入了，一个单元最多有一条河流经，且海拔必然低于河源
-                                    if (!riverSources.Contains(neighborIndexs[i, j]) && elevationR <= Elevations[i])
+                                    int nextElevation = Elevations[nextNeighborIndex];
+                                    int next2OutgoingRiver = int.MinValue;
+
+                                    int maxE = int.MinValue;
+                                    bool next2HasOutgoing = false;
+
+                                    for (int l = 0; l < 6; l++)
                                     {
-                                        //为了源远流长，选择与自身海拔相近的单元
-                                        if (elevationR > lastElevation)
+                                        int next2Index = neighborIndexs[nextNeighborIndex, l];
+                                        if (next2Index != int.MinValue)
                                         {
-                                            hasOutgoingRiver = true;
-                                            outgoingRiver = neighborIndexs[i, j];
-                                            lastElevation = elevationR;
+                                            if (riverSources.Contains(nextNeighborIndex))
+                                            {
+                                                int next2E = Elevations[next2Index];
+                                                if (next2E < nextElevation && next2E > maxE)
+                                                {
+                                                    next2HasOutgoing = true;
+                                                    next2OutgoingRiver = next2Index;
+                                                    maxE = next2E;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    //有出水口则保存起来
+                                    if (next2HasOutgoing)
+                                    {
+                                        //当前单元的出水口，正是相邻单元的入水口
+                                        if (!riverIn.Contains(nextNeighborIndex) && riverIn[next2OutgoingRiver] == int.MinValue)
+                                        {
+                                            riverIn[next2OutgoingRiver] = nextNeighborIndex;
+                                            if (!riverSources.Contains(next2OutgoingRiver))
+                                            {
+                                                riverSources.Add(next2OutgoingRiver);
+                                            }
+                                        }
+                                    }
+
+                                    if (riverSources.Contains(neighborIndex))
+                                    {
+                                        //出口海拔必然低于河源
+                                        if (nextElevation < neighborElevation)
+                                        {
+                                            //为了源远流长，选择与自身海拔相近的单元
+                                            if (nextElevation > maxElevation)
+                                            {
+                                                nextHasOutgoingRiver = true;
+                                                maxElevation = nextElevation;
+                                                nextOutgoingRiver = nextNeighborIndex;
+                                            }
+                                        }
+                                    }
+                                    if (next2OutgoingRiver == neighborIndex && !nextHasOutgoingRiver)
+                                    {
+                                        for (int l = k - 1; l >= 0; l--)
+                                        {
+                                            int prevIndex = neighborIndexs[neighborIndex, l];
+                                            if (prevIndex != int.MinValue && riverIn[prevIndex] == int.MinValue)
+                                            {
+                                                int prevE = Elevations[prevIndex];
+                                                if (prevE > maxElevation && prevE < Elevations[neighborIndex])
+                                                {
+                                                    nextHasOutgoingRiver = true;
+                                                    nextOutgoingRiver = prevIndex;
+                                                    maxElevation = prevE;
+                                                }
+                                            }
                                         }
                                     }
                                 }
-                                //判断入水口，但凡入水口都保存在数组中了
-                                if (riverIn.Contains(neighborIndexs[i, j]))
+
+                            }
+                            //有出水口则保存起来
+                            if (nextHasOutgoingRiver)
+                            {
+                                //当前单元的出水口，正是相邻单元的入水口
+                                if (!riverIn.Contains(neighborIndex) && riverIn[nextOutgoingRiver] == int.MinValue)
                                 {
-                                    //方向校正，当前单元的入水方向即是相邻单元的出水方向
-                                    if (neighborIndexs[i, j] == riverIn[i])
+                                    riverIn[nextOutgoingRiver] = neighborIndex;
+                                    if (!riverSources.Contains(nextOutgoingRiver))
                                     {
-                                        incomingRiver = riverIn[i];
-                                        hasIncomingRiver = true;
+                                        riverSources.Add(nextOutgoingRiver);
                                     }
                                 }
                             }
-                        }
-                        //有出水口则保存起来
-                        if (hasOutgoingRiver)
-                        {
-                            //当前单元的出水口，正是相邻单元的入水口
-                            riverIn[outgoingRiver] = i;
-                            riverSources.Add(outgoingRiver);
-                        }
-                        else
-                        {//出水口没有，进水口也没有，则闭源
-                            hasRiver = hasIncomingRiver;
+                            if (riverSources.Contains(i))
+                            {
+                                //下游的海拔必然低于河源
+                                if (neighborElevation < Elevations[i] && riverIn[neighborIndex] == i)
+                                {
+                                    //为了源远流长，选择与自身海拔相近的单元
+                                    if (neighborElevation > lastElevation)
+                                    {
+                                        hasOutgoingRiver = true;
+                                        outgoingRiver = neighborIndex;
+                                        lastElevation = neighborElevation;
+                                    }
+                                }
+
+                                if (nextOutgoingRiver == i && !hasOutgoingRiver)
+                                {
+                                    for (int k = j - 1; k >= 0; k--)
+                                    {
+                                        int prevIndex = neighborIndexs[i, k];
+                                        if (prevIndex != int.MinValue && riverIn[prevIndex] == int.MinValue)
+                                        {
+                                            int prevE = Elevations[prevIndex];
+                                            if (prevE > lastElevation && prevE < Elevations[i])
+                                            {
+                                                hasOutgoingRiver = true;
+                                                outgoingRiver = prevIndex;
+                                                lastElevation = prevE;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (!hasOutgoingRiver && j == 5)
+                                {
+                                    for (int k = 4; k >= 0; k--)
+                                    {
+                                        int prevIndex = neighborIndexs[i, k];
+                                        if (prevIndex != int.MinValue && riverIn[prevIndex] == int.MinValue)
+                                        {
+                                            int prevE = Elevations[prevIndex];
+                                            if (prevE < Elevations[i])
+                                            {
+                                                hasOutgoingRiver = true;
+                                                outgoingRiver = prevIndex;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            //判断入水口，但凡入水口都保存在数组中了
+                            if (riverIn.Contains(neighborIndex))
+                            {
+                                //方向校正，当前单元的入水方向即是相邻单元的出水方向
+                                if (neighborIndex == riverIn[i])
+                                {
+                                    incomingRiver = neighborIndex;
+                                    hasIncomingRiver = true;
+                                }
+                            }
                         }
                     }
+                    //有出水口则保存起来
+                    if (hasOutgoingRiver)
+                    {
+                        //当前单元的出水口，正是相邻单元的入水口
+                        if (!riverIn.Contains(i) && riverIn[outgoingRiver] == int.MinValue)
+                        {
+                            riverIn[outgoingRiver] = i;
+                            if (!riverSources.Contains(outgoingRiver))
+                            {
+                                riverSources.Add(outgoingRiver);
+                            }
+                        }
+                    }
+                    else
+                    {//出水口没有，进水口也没有，则闭源
+                        hasRiver = hasIncomingRiver;
+                    }
+                    
                     //if (hasRiver)//Todo:优化河流系统
                     //{
                     //    CommandBuffer.AddComponent<RiverRenderTag>(index, instance);
@@ -318,43 +458,45 @@ public class CellSpawnSystem : JobComponentSystem {
                         }
                     }
                     //河流尽头积水
-                    if (!isUnderWater)
-                    {
-                        //有进无出，则积水
-                        if (hasIncomingRiver && !hasOutgoingRiver)
-                        {
-                            isUnderWater = true;
-                            waterLevel = Elevations[i] + HexMetrics.WaterLevelOffset;
-                        }
-                    }
+                    //if (!isUnderWater)
+                    //{
+                    //    //有进无出，则积水
+                    //    if (hasIncomingRiver && !hasOutgoingRiver)
+                    //    {
+                    //        isUnderWater = true;
+                    //        waterLevel = Elevations[i] + HexMetrics.WaterLevelOffset;
+                    //    }
+                    //}
 
                     #endregion
+
+                    #region SetComponent设置每个六边形单元的数据
 
                     //5.设置每个六边形单元的数据
                     CommandBuffer.SetComponent(index, instance, new Cell
                     {
-                        Index=i,
+                        Index = i,
                         Color = color,
-                        Position= positions[i],
-                        Elevation=Elevations[i],
-                        HasRiver=hasRiver,
-                        HasRoad=hasRoad,
-                        WaterLevel=waterLevel,
-                        IsUnderWater=isUnderWater
+                        Position = positions[i],
+                        Elevation = Elevations[i],
+                        HasRiver = hasRiver,
+                        HasRoad = hasRoad,
+                        WaterLevel = waterLevel,
+                        IsUnderWater = isUnderWater
                     });
 
                     CommandBuffer.SetComponent(index, instance, new River
                     {
-                        HasIncomingRiver=hasIncomingRiver,
-                        HasOutgoingRiver=hasOutgoingRiver,
-                        IncomingRiver=incomingRiver,
-                        OutgoingRiver=outgoingRiver
+                        HasIncomingRiver = hasIncomingRiver,
+                        HasOutgoingRiver = hasOutgoingRiver,
+                        IncomingRiver = incomingRiver,
+                        OutgoingRiver = outgoingRiver
                     });
 
                     CommandBuffer.SetComponent(index, instance, new Neighbors
                     {
                         NEColor = neighborIndexs[i, 0] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 0]],
-                        EColor = neighborIndexs[i,1] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 1]],
+                        EColor = neighborIndexs[i, 1] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 1]],
                         SEColor = neighborIndexs[i, 2] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 2]],
                         SWColor = neighborIndexs[i, 3] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 3]],
                         WColor = neighborIndexs[i, 4] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 4]],
@@ -377,12 +519,12 @@ public class CellSpawnSystem : JobComponentSystem {
                         SWPosition = neighborIndexs[i, 3] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 3]],
                         WPosition = neighborIndexs[i, 4] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 4]],
                         NWPosition = neighborIndexs[i, 5] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 5]],
-                        NEIsUnderWater= neighborIsUnderWater[0],
-                        EIsUnderWater= neighborIsUnderWater[1],
-                        SEIsUnderWater= neighborIsUnderWater[2],
-                        SWIsUnderWater= neighborIsUnderWater[3],
-                        WIsUnderWater= neighborIsUnderWater[4],
-                        NWIsUnderWater= neighborIsUnderWater[5]
+                        NEIsUnderWater = neighborIsUnderWater[0],
+                        EIsUnderWater = neighborIsUnderWater[1],
+                        SEIsUnderWater = neighborIsUnderWater[2],
+                        SWIsUnderWater = neighborIsUnderWater[3],
+                        WIsUnderWater = neighborIsUnderWater[4],
+                        NWIsUnderWater = neighborIsUnderWater[5]
                     });
 
                     CommandBuffer.SetComponent(index, instance, new RoadBools
@@ -398,28 +540,146 @@ public class CellSpawnSystem : JobComponentSystem {
                     int chunkZ = z / HexMetrics.ChunkSizeZ;
                     int localX = x - chunkX * HexMetrics.ChunkSizeX;
                     int localZ = z - chunkZ * HexMetrics.ChunkSizeZ;
-                    CommandBuffer.SetComponent(index,instance,new ChunkData
+                    CommandBuffer.SetComponent(index, instance, new ChunkData
                     {
-                        ChunkId= chunkX + chunkZ * createrData.ChunkCountX,
-                        ChunkIndex= localX + localZ * HexMetrics.ChunkSizeX,
-                        CellIndex=i
+                        ChunkId = chunkX + chunkZ * createrData.ChunkCountX,
+                        ChunkIndex = localX + localZ * HexMetrics.ChunkSizeX,
+                        CellIndex = i
                     });
                     //6.添加新数据标签NewDataTag组件，激活CellSystem来处理新的数据
-                    CommandBuffer.AddComponent<NewDataTag>(index,instance);
+                    CommandBuffer.AddComponent<NewDataTag>(index, instance);
                     i++;
+
+                    #endregion
+
                 }
             }
 
+            #region Dispose回收内存
+
             //7.摧毁使用完的预设，节约内存资源
             CommandBuffer.DestroyEntity(index, hexCellPrefab);
-            CommandBuffer.RemoveComponent<NewDataTag>(index,entity);
+            CommandBuffer.RemoveComponent<NewDataTag>(index, entity);
             Colors.Dispose();
             Elevations.Dispose();
             riverSources.Dispose();
             riverIn.Dispose();
             positions.Dispose();
+
+            #endregion
+
         }
 
+
+        #region 在Job中调用递归报错StackOverflowException: The requested operation caused a stack overflow.
+
+        //FindRiverSoureRecursion(i,2, neighborIndexs, Elevations, ref riverSources, ref riverIn);
+        //for (int j = 0; j < 6; j++)
+        //{
+        //    //相邻单元的索引
+        //    int neighborIndex = neighborIndexs[i, j];
+        //    //如果是最小值，说明没有相邻单元
+        //    if (neighborIndex != int.MinValue)
+        //    {
+        //        //获取相邻单元的海拔
+        //        int neighborElevation = Elevations[neighborIndex];
+        //        //出水口的海拔必须低于源头的海拔，水往低处流
+        //        if (neighborElevation < Elevations[i])
+        //        {
+        //            //寻找接近源头的出水口，尽量使水流平缓
+        //            if (neighborElevation > lastElevation)
+        //            {
+        //                hasOutgoingRiver = true;
+        //                outgoingRiver = neighborIndex;
+        //                lastElevation = neighborElevation;
+        //            }
+        //        }
+
+        //        //判断入水口，但凡入水口都保存在数组中了
+        //        if (riverIn.Contains(neighborIndex))
+        //        {
+        //            //方向校正，当前单元的入水方向即是相邻单元的出水方向
+        //            if (neighborIndex == riverIn[i])
+        //            {
+        //                incomingRiver = neighborIndex;
+        //                hasIncomingRiver = true;
+        //            }
+        //        }
+        //    }
+        //}
+
+        /// <summary>
+        /// 递归寻找河源StackOverflowException: The requested operation caused a stack overflow.
+        /// </summary>
+        //void FindRiverSoureRecursion(int currIndex,int deep,int[,] neighborIndexs, NativeArray<int> Elevations,ref NativeList<int> riverSources,ref NativeArray<int> riverIn)
+        //{
+        //    //如果当前单元就是源头
+        //    if (riverSources.Contains(currIndex))
+        //    {
+        //        //与源头最接近的最高海拔
+        //        int maxElevation = int.MinValue;
+        //        //当前单元是否有出水口
+        //        bool hasOutgoingRiver = false;
+        //        //出水口索引
+        //        int outgoingRiver = int.MinValue;
+        //        //从六个方向寻找河床
+        //        for (int j = 0; j < 6; j++)
+        //        {
+        //            //相邻单元的索引
+        //            int neighborIndex = neighborIndexs[currIndex, j];
+        //            //如果是最小值，说明没有相邻单元 && 如果已经有入水口，说明出水口已经被占用
+        //            if (neighborIndex != int.MinValue && riverIn[neighborIndex]==int.MinValue)
+        //            {
+        //                //获取相邻单元的海拔
+        //                int neighborElevation = Elevations[neighborIndex];
+        //                //出水口的海拔必须低于源头的海拔，水往低处流
+        //                if (neighborElevation< Elevations[currIndex])
+        //                {
+        //                    //寻找接近源头的出水口，尽量使水流平缓
+        //                    if (neighborElevation>maxElevation)
+        //                    {
+        //                        hasOutgoingRiver = true;
+        //                        outgoingRiver = neighborIndex;
+        //                        maxElevation = neighborElevation;
+        //                    }
+        //                }
+
+        //            }
+        //        }
+
+        //        //有出水口则保存起来
+        //        if (hasOutgoingRiver)
+        //        {
+        //            //当前单元的出水口，正是相邻单元的入水口
+        //            if (!riverIn.Contains(currIndex))
+        //            {
+        //                riverIn[outgoingRiver] = currIndex;
+        //                //有水流入，则说明自身也成为水源了
+        //                if (!riverSources.Contains(outgoingRiver))
+        //                {
+        //                    riverSources.Add(outgoingRiver);
+        //                }
+        //            }
+        //        }
+        //    }
+        //    else//当前单元不是水源，则递归寻找水源
+        //    {
+        //        //从六个方向寻找水源
+        //        for (int j = 0; j < 6; j++)
+        //        {
+        //            //相邻单元的索引
+        //            int nextIndex = neighborIndexs[currIndex, j];
+        //            //如果是最小值，说明没有相邻单元
+        //            if (nextIndex != int.MinValue && deep>0)
+        //            {
+        //                //递归寻找源头
+        //                FindRiverSoureRecursion(nextIndex,deep--, neighborIndexs, Elevations, ref riverSources, ref riverIn);
+        //            }
+        //        }
+        //    }
+
+        //}
+        #endregion
     }
 
     /// <summary>
