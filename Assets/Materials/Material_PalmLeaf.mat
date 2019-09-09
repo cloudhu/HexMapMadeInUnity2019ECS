@@ -5,15 +5,14 @@ Material:
   serializedVersion: 6
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: River
-  m_Shader: {fileID: 4800000, guid: a0ef7d673b2144bc3851ebb74a34f888, type: 3}
+  m_PrefabInternal: {fileID: 0}
+  m_Name: Material_PalmLeaf
+  m_Shader: {fileID: 4800000, guid: b0de36573bf09fe44a094517228ba9f5, type: 3}
   m_ShaderKeywords: 
-  m_LightmapFlags: 5
+  m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 4000
   stringTagMap: {}
   disabledShaderPasses: []
   m_SavedProperties:
@@ -40,7 +39,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 38701cdeb1fb9427cbb585f917aa59cb, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -55,19 +54,39 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _SpecGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Floats:
+    - Vector1_2357C2DE: 217.02
+    - Vector1_5F0A6670: 2
+    - Vector1_A76B1E8F: 0.59
+    - Vector1_B5EDB4D7: 0.16
+    - _AlphaClip: 0
+    - _Blend: 0
     - _BumpScale: 1
+    - _Cull: 2
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
-    - _Glossiness: 0.5
+    - _GlossMapScale: 1
+    - _Glossiness: 0
+    - _GlossyReflections: 1
     - _Metallic: 0
-    - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
+    - _SmoothnessTextureChannel: 0
+    - _SpecularHighlights: 1
     - _SrcBlend: 1
+    - _Surface: 0
     - _UVSec: 0
+    - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - _Color: {r: 0.25, g: 0.41034478, b: 1, a: 0.291}
-    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - Color_2D8D128D: {r: 0, g: 0.43396226, b: 0, a: 0}
+    - Color_CE97F0F: {r: 0.40719473, g: 1, b: 0.13679245, a: 0}
+    - Vector2_F70DCD58: {r: -2.07, g: -0.44, b: 0, a: 0}
+    - _Color: {r: 0.11764707, g: 0.44705886, b: 0.043137256, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 0}
+    - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}

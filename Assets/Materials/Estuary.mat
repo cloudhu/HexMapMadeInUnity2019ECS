@@ -8,7 +8,8 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Estuary
-  m_Shader: {fileID: 4800000, guid: 2e44ff6aadac34b18ab4e065d493f0b8, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 96227c49706102f4ab1e3b76190b1325,
+    type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 5
   m_EnableInstancingVariants: 1
@@ -19,6 +20,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - Texture2D_5E75E702:
+        m_Texture: {fileID: 2800000, guid: 38701cdeb1fb9427cbb585f917aa59cb, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _BumpMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -55,7 +60,14 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _Texture2DAsset_504BB37F_Out_0:
+        m_Texture: {fileID: 2800000, guid: 38701cdeb1fb9427cbb585f917aa59cb, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Floats:
+    - Vector1_4B645F7C: 0
+    - Vector1_B8195447: 0.5
+    - Vector1_FA671128: 0.015
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
@@ -69,5 +81,6 @@ Material:
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:
+    - Color_FAD8CFD0: {r: 0, g: 0, b: 1, a: 0.1686275}
     - _Color: {r: 0.25, g: 0.41034478, b: 1, a: 0.291}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}

@@ -482,7 +482,13 @@ public class CellSpawnSystem : JobComponentSystem {
                         HasRiver = hasRiver,
                         HasRoad = hasRoad,
                         WaterLevel = waterLevel,
-                        IsUnderWater = isUnderWater
+                        IsUnderWater = isUnderWater,
+                        GreenLvl=random.NextInt(0,3),
+                        FarmLv1 = random.NextInt(0, 3),
+                        CityLvl = random.NextInt(0, 3),
+                        PalmTree =createrData.PalmTree,
+                        Grass=createrData.Grass,
+                        PalmTrees=createrData.PalmTrees
                     });
 
                     CommandBuffer.SetComponent(index, instance, new River

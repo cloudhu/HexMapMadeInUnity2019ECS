@@ -5,6 +5,76 @@
 /// </summary>
 public static class HexMetrics
 {
+    #region 随机散列表
+    public const int hashGridSize = 256;
+
+    static HexHash[] hashGrid;
+
+    /// <summary>
+    /// 初始化哈希表
+    /// </summary>
+    /// <param name="seed">随机种子</param>
+    public static void InitializeHashGrid(int seed)
+    {
+        hashGrid = new HexHash[hashGridSize * hashGridSize];
+        Random.State currentState = Random.state;
+        Random.InitState(seed);
+        for (int i = 0; i < hashGrid.Length; i++)
+        {
+            hashGrid[i] = HexHash.Create();
+        }
+        Random.state = currentState;
+    }
+
+    public const float hashGridScale = 0.25f;
+
+    /// <summary>
+    /// 哈希表采样
+    /// </summary>
+    /// <param name="position">位置</param>
+    /// <returns>哈希</returns>
+    public static HexHash SampleHashGrid(Vector3 position)
+    {
+        int x = (int)(position.x * hashGridScale) % hashGridSize;
+        if (x < 0)
+        {
+            x += hashGridSize;
+        }
+        int z = (int)(position.z * hashGridScale) % hashGridSize;
+        if (z < 0)
+        {
+            z += hashGridSize;
+        }
+        return hashGrid[x + z * hashGridSize];
+    }
+
+    /// <summary>
+    /// 地貌特征阈值
+    /// 具体来说就是，在城市等级为3时，
+    /// 大楼的哈希值范围为0-0.4，
+    /// 双层建筑为0.4-0.6，
+    /// 小平房为0.6-0.8，
+    /// 如果从高到低来检测，
+    /// 等级3的阈值组就是（0.4,0.6,0.8）。
+    /// 以此类推等级2就变成（0,0.4,0.6）,
+    /// 等级1为(0,0,0.4)
+    /// </summary>
+    static float[][] featureThresholds = {
+        new float[] {0.0f, 0.0f, 0.4f},
+        new float[] {0.0f, 0.4f, 0.6f},
+        new float[] {0.4f, 0.6f, 0.8f}
+    };
+
+    /// <summary>
+    /// 获取地貌阈值
+    /// </summary>
+    /// <param name="level"></param>
+    /// <returns></returns>
+    public static float[] GetFeatureThresholds(int level)
+    {
+        return featureThresholds[level];
+    }
+    #endregion
 
     #region River河流 Water
 
@@ -504,4 +574,20 @@ public static class HexMetrics
         return t * t * t * (t * (t * 6f - 15f) + 10f);
     }
     #endregion
+}
+
+public struct HexHash {
+
+    public float a, b, c, d, e;
+
+    public static HexHash Create()
+    {
+        HexHash hash;
+        hash.a = Random.value * 0.999f;
+        hash.b = Random.value * 0.999f;
+        hash.c = Random.value * 0.999f;
+        hash.d = Random.value * 0.999f;
+        hash.e = Random.value * 0.999f;
+        return hash;
+    }
 }

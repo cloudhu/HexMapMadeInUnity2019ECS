@@ -6,7 +6,10 @@ using UnityEngine;
 /// </summary>
 public class HexGrid : MonoBehaviour
 {
-
+    /// <summary>
+    /// 随机种子
+    /// </summary>
+    public int Seed;
     /// <summary>
     /// 地图块的数量
     /// </summary>
@@ -15,7 +18,7 @@ public class HexGrid : MonoBehaviour
     /// <summary>
     /// 噪声采样纹理图
     /// </summary>
-    public Texture2D noiseSource;
+    public Texture2D NoiseSource;
 
     /// <summary>
     /// 地图块预设
@@ -42,19 +45,25 @@ public class HexGrid : MonoBehaviour
     {
         cellCountX = chunkCountX * HexMetrics.ChunkSizeX;
         cellCountZ = chunkCountZ * HexMetrics.ChunkSizeZ;
-        HexMetrics.NoiseSource = noiseSource;
+        HexMetrics.NoiseSource = NoiseSource;
+        HexMetrics.InitializeHashGrid(Seed);
         CreateChunks();
+
     }
 
     void OnEnable()
     {
-        HexMetrics.NoiseSource = noiseSource;
+        if (!HexMetrics.NoiseSource)
+        {
+            HexMetrics.NoiseSource = NoiseSource;
+            HexMetrics.InitializeHashGrid(Seed);
+        }
     }
 
     // Start is called before the first frame update
     void Start()
     {
-        MainWorld.Instance.SetupMap(cellCountX, cellCountZ,chunkCountX);
+        MainWorld.Instance.SetupMap(cellCountX, cellCountZ, chunkCountX);
     }
 
     #endregion

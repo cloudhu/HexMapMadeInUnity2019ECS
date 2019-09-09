@@ -2,6 +2,8 @@
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 
 /// <summary>
@@ -106,6 +108,55 @@ public class CellSystem : JobComponentSystem {
             neighborIsUnderWater[3] = neighbors.SWIsUnderWater;
             neighborIsUnderWater[4] = neighbors.WIsUnderWater;
             neighborIsUnderWater[5] = neighbors.NWIsUnderWater;
+            //植物数组
+            Entity[][] entities = new Entity[3][];
+            entities[0] = new Entity[3];
+            entities[1] = new Entity[3];
+            entities[2] = new Entity[3];
+            entities[0][0] = cellData.PalmTrees;
+            entities[0][1] = cellData.PalmTrees;
+            entities[0][2] = cellData.PalmTrees;
+            entities[1][0] = cellData.PalmTree;
+            entities[1][1] = cellData.PalmTree;
+            entities[1][2] = cellData.PalmTree;
+            entities[2][0] = cellData.Grass;
+            entities[2][1] = cellData.Grass;
+            entities[2][2] = cellData.Grass;
+            //植物数组
+            Entity[][] farmEntities = new Entity[3][];
+            farmEntities[0] = new Entity[3];
+            farmEntities[1] = new Entity[3];
+            farmEntities[2] = new Entity[3];
+            farmEntities[0][0] = cellData.PalmTrees;
+            farmEntities[0][1] = cellData.PalmTrees;
+            farmEntities[0][2] = cellData.PalmTrees;
+            farmEntities[1][0] = cellData.PalmTree;
+            farmEntities[1][1] = cellData.PalmTree;
+            farmEntities[1][2] = cellData.PalmTree;
+            farmEntities[2][0] = cellData.Grass;
+            farmEntities[2][1] = cellData.Grass;
+            farmEntities[2][2] = cellData.Grass;
+            //植物数组
+            Entity[][] cityEntities = new Entity[3][];
+            cityEntities[0] = new Entity[3];
+            cityEntities[1] = new Entity[3];
+            cityEntities[2] = new Entity[3];
+            cityEntities[0][0] = cellData.Grass;
+            cityEntities[0][1] = cellData.Grass;
+            cityEntities[0][2] = cellData.Grass;
+            cityEntities[1][0] = cellData.PalmTree;
+            cityEntities[1][1] = cellData.PalmTree;
+            cityEntities[1][2] = cellData.PalmTree;
+            cityEntities[2][0] = cellData.PalmTrees;
+            cityEntities[2][1] = cellData.PalmTrees;
+            cityEntities[2][2] = cellData.PalmTrees;
+
+            //没有水/河/路，添加随机地貌
+            if (!cellData.IsUnderWater && !cellData.HasRiver && !cellData.HasRoad)
+            {
+                AddFeature(entities, farmEntities, cityEntities, currCellCenter, index, cellData.GreenLvl, cellData.FarmLv1, cellData.CityLvl);
+            }
+
             #endregion
 
             //添加六边形单元六个方向的顶点、三角和颜色
@@ -241,6 +292,10 @@ public class CellSystem : JobComponentSystem {
                         {
                             TriangulateRoadSegment(m.v2, m.v3, m.v4, e.v2, e.v3, e.v4, ref roadBuffers, ref roadUvs);
                         }
+                        else if (!cellData.IsUnderWater)
+                        {
+                            AddFeature(entities, farmEntities, cityEntities, (currCellCenter + e.v1 + e.v5) * (1f / 3f), index,cellData.GreenLvl, cellData.FarmLv1, cellData.CityLvl);
+                        }
                         TriangulateEdgeStrip(m, currCellColor, e, currCellColor, ref colorBuffer, ref vertexBuffer);
                         TriangulateEdgeFan(center, m, currCellColor, ref colorBuffer, ref vertexBuffer);
 
@@ -361,6 +416,10 @@ public class CellSystem : JobComponentSystem {
                         Vector2 interpolators = GetRoadInterpolators(roads[j], roads[prev], roads[next]);
 
                         TriangulateRoad(currCellCenter, Vector3.Lerp(currCellCenter, e.v1, interpolators.x), Vector3.Lerp(currCellCenter, e.v5, interpolators.y), e, ref roadBuffers, ref roadUvs, roads[j]);
+                    }
+                    else if (!cellData.IsUnderWater)
+                    {
+                        AddFeature(entities, farmEntities, cityEntities, (currCellCenter + e.v1 + e.v5) * (1f / 3f), index,cellData.GreenLvl, cellData.FarmLv1, cellData.CityLvl);
                     }
                 }
 
@@ -611,6 +670,99 @@ public class CellSystem : JobComponentSystem {
             //4.turn off cell system by remove NewDataTag
             CommandBuffer.RemoveComponent<NewDataTag>(index,entity);
         }
+
+        #region HexFeatureManager地貌特征管理 
+
+        /// <summary>
+        /// 添加地貌特征物
+        /// </summary>
+        /// <param name="position">位置</param>
+        /// <param name="jobIndex">任务索引</param>
+        void AddFeature(Entity[][] platEntities, Entity[][] farmEntities, Entity[][] cityEntities, Vector3 position,int jobIndex,int greenLvl,int farmLvl,int cityLvl)
+        {
+            HexHash hash = HexMetrics.SampleHashGrid(position);
+            Entity entity=Entity.Null;
+            Entity entityA = Entity.Null;
+            //找出绿色植物的预设实体
+            if (greenLvl > 0)
+            {
+                float[] thresholds = HexMetrics.GetFeatureThresholds(greenLvl - 1);
+                for (int i = 0; i < thresholds.Length; i++)
+                {
+                    if (hash.a < thresholds[i])
+                    {
+                        entity= platEntities[i][(int)(hash.d * platEntities[i].Length)];
+                    }
+                }
+            }
+            //找出农场的预设实体
+            if (farmLvl>0)
+            {
+                float[] thresholdsFarm = HexMetrics.GetFeatureThresholds(farmLvl - 1);
+                for (int i = 0; i < thresholdsFarm.Length; i++)
+                {
+                    if (hash.b < thresholdsFarm[i])
+                    {
+                        entityA = farmEntities[i][(int)(hash.d * farmEntities[i].Length)];
+                    }
+                }
+            }
+            //对农场和绿化的哈希进行比较，找出随机预设
+            float usedHash = hash.a;
+            if (entity != Entity.Null)
+            {
+                if (entityA!=Entity.Null && hash.b < hash.a)
+                {
+                    entity = entityA;
+                    usedHash = hash.b;
+                }
+            }
+            else if (entityA!=Entity.Null)
+            {
+                entity = entityA;
+                usedHash = hash.b;
+            }
+            //找出城市建筑
+            if (cityLvl > 0)
+            {
+                float[] thresholdsCity = HexMetrics.GetFeatureThresholds(cityLvl - 1);
+                for (int i = 0; i < thresholdsCity.Length; i++)
+                {
+                    if (hash.c < thresholdsCity[i])
+                    {
+                        entityA = cityEntities[i][(int)(hash.d * cityEntities[i].Length)];
+                    }
+                }
+            }
+
+            if (entity != Entity.Null)
+            {
+                if (entityA != Entity.Null && hash.c < usedHash)
+                {
+                    entity = entityA;
+                }
+            }
+            else if (entityA != Entity.Null)
+            {
+                entity = entityA;
+            }
+            else
+            {
+                return;
+            }
+
+            Entity instance =CommandBuffer.Instantiate(jobIndex, entity);
+            //position.y += position.y * 0.01f;
+            CommandBuffer.SetComponent(jobIndex, instance, new Translation {
+                Value = new float3(position)
+            });
+            CommandBuffer.SetComponent(jobIndex, instance, new Rotation
+            {
+                Value = quaternion.Euler(0f, 360f * hash.e, 0f)
+            });
+        }
+
+        #endregion
 
         #region Water水体
 

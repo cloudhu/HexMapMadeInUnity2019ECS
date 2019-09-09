@@ -618,9 +618,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a5944fd37712d34a999cdf1dd09b804, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Seed: 1208905299
   chunkCountX: 3
   chunkCountZ: 3
-  noiseSource: {fileID: 2800000, guid: 38701cdeb1fb9427cbb585f917aa59cb, type: 3}
+  NoiseSource: {fileID: 2800000, guid: 38701cdeb1fb9427cbb585f917aa59cb, type: 3}
   chunkPrefab: {fileID: 3032814105676310406, guid: 95afdcc78bd176643959207dac339bf6,
     type: 3}
 --- !u!4 &359018409
@@ -2296,6 +2297,68 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1329396868}
   m_CullTransparentMesh: 0
+--- !u!1 &1357559459
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1357559461}
+  - component: {fileID: 1357559460}
+  - component: {fileID: 1357559462}
+  m_Layer: 0
+  m_Name: HexMapEntity
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1357559460
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1357559459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea7d7495833204790ba1d3a8755397f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ConversionMode: 0
+--- !u!4 &1357559461
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1357559459}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 6
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1357559462
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1357559459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 297ed26abccf51345ba65bb713a2efa8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  PalmTree: {fileID: 7506582613642413694, guid: 8807041ba600cac4a90affd2a3d9b7eb,
+    type: 3}
+  Grass: {fileID: 4004837336732132274, guid: 9b21aff35682aa049b7e5c7624ea49c1, type: 3}
+  PalmTrees: {fileID: 2991308604209879352, guid: d154330cb67875148b8582410aa15a33,
+    type: 3}
 --- !u!1 &1379982438
 GameObject:
   m_ObjectHideFlags: 0

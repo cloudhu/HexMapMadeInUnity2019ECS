@@ -19,6 +19,15 @@ public struct Data   : IComponentData
     /// X方向的地图块数量
     /// </summary>
     public int ChunkCountX;
+
+    public Entity PalmTree;
+
+    public Entity Grass;
+
+    /// <summary>
+    /// 树草组合
+    /// </summary>
+    public Entity PalmTrees;
 }
 
 /// <summary>
@@ -121,6 +130,30 @@ public struct Cell : IComponentData
     /// 是否被水淹没
     /// </summary>
     public bool IsUnderWater;
+
+    /// <summary>
+    /// 绿化等级
+    /// </summary>
+    public int GreenLvl;
+
+    public int FarmLv1;
+
+    public int CityLvl;
+
+    /// <summary>
+    /// 树草组合
+    /// </summary>
+    public Entity PalmTrees;
+
+    /// <summary>
+    /// 棕榈树预设
+    /// </summary>
+    public Entity PalmTree;
+
+    /// <summary>
+    /// 草丛预设
+    /// </summary>
+    public Entity Grass;
 }
 
 /// <summary>

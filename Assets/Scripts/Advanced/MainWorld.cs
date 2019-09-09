@@ -8,8 +8,7 @@ using UnityEngine;
 /// <summary>
 /// 主世界
 /// </summary>
-public class MainWorld : MonoBehaviour
-{
+public class MainWorld : MonoBehaviour {
     public HexGrid HexGrid;
     //public Material RiverMaterial;
     #region Private Var
@@ -77,14 +76,15 @@ public class MainWorld : MonoBehaviour
         //1.get the entity Manager
         m_EntityManager = m_HexMapWorld.EntityManager;
         //2.Create Builder Entity;
-        EntityArchetype builderArchetype = m_EntityManager.CreateArchetype(typeof(Data));
-        m_Builder = m_EntityManager.CreateEntity(builderArchetype);
+        //EntityArchetype builderArchetype = m_EntityManager.CreateArchetype(typeof(Data));
+        //m_Builder = m_EntityManager.CreateEntity(builderArchetype);
         //3.Setup Map;  Todo:get map data from server and SetupMap,now we just use default data
         //Called from OOP HexGrid to separate it from ECS 
         m_RefreshQueue = new Queue<int>();
         //River Entity
         //EntityArchetype riverArchetype = m_EntityManager.CreateArchetype(typeof(RenderMesh));
         //m_River = m_EntityManager.CreateEntity(riverArchetype);
+        FindBuilderEntity();
         //m_EntityManager.SetSharedComponentData(m_River,new RenderMesh
         //{
         //    mesh=new Mesh(),
@@ -145,20 +145,27 @@ public class MainWorld : MonoBehaviour
     /// <param name="cellCountZ">地图Z方向的单元数量</param>
     public void SetupMap(int cellCountX, int cellCountZ,int chunkCountX)
     {
-        //Store the cell count for use
-        m_TotalCellCount = cellCountX * cellCountZ;
+        if (FindBuilderEntity())
+        {
+            //Store the cell count for use
+            m_TotalCellCount = cellCountX * cellCountZ;
 
-        this.m_CellCountX = cellCountX;
-        this.m_CellCountZ = cellCountZ;
-        m_EntityManager.SetComponentData(m_Builder, new Data
-        {
-            CellCountX = cellCountX,
-            CellCountZ = cellCountZ,
-            ChunkCountX=chunkCountX
-        });
-        if (!m_EntityManager.HasComponent<NewDataTag>(m_Builder))
-        {
-            m_EntityManager.AddComponent<NewDataTag>(m_Builder);
+            this.m_CellCountX = cellCountX;
+            this.m_CellCountZ = cellCountZ;
+            Data data = m_EntityManager.GetComponentData<Data>(m_Builder);
+            m_EntityManager.SetComponentData(m_Builder,new Data
+            {
+                CellCountX=cellCountX,
+                CellCountZ=cellCountZ,
+                ChunkCountX=chunkCountX,
+                PalmTree=data.PalmTree,
+                Grass=data.Grass,
+                PalmTrees=data.PalmTrees
+            });
+            if (!m_EntityManager.HasComponent<NewDataTag>(m_Builder))
+            {
+                m_EntityManager.AddComponent<NewDataTag>(m_Builder);
+            }
         }
     }
 
@@ -236,6 +243,26 @@ public class MainWorld : MonoBehaviour
     public EntityManager GetEntityManager()
     {
         return m_EntityManager;
+    }
+
+    bool FindBuilderEntity()
+    {
+        if (m_EntityManager.Exists(m_Builder))
+        {
+            return true;
+        }
+        NativeArray<Entity> entities = m_EntityManager.GetAllEntities();
+        for (int i = 0; i < entities.Length; i++)
+        {
+            Entity entity = entities[i];
+            if (m_EntityManager.HasComponent<Data>(entity))
+            {
+                m_Builder = entity;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     //public Entity GetRiver()
