@@ -1,0 +1,230 @@
+fileFormatVersion: 2
+guid: 866438c2e013c5f4fb39abbe8cf8d22e
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: big
+    100002: joint1
+    100004: joint2
+    100006: joint5
+    100008: joint6
+    100010: polySurface28
+    100012: polySurface29
+    100014: polySurface30
+    100016: polySurface31
+    100018: polySurface32
+    100020: Small
+    100022: //RootNode
+    100024: joint3
+    100026: joint7
+    100028: polySurface37
+    100030: polySurface38
+    100032: propeller_001
+    100034: propeller_002
+    100036: polySurface48
+    100038: polySurface53
+    400000: big
+    400002: joint1
+    400004: joint2
+    400006: joint5
+    400008: joint6
+    400010: polySurface28
+    400012: polySurface29
+    400014: polySurface30
+    400016: polySurface31
+    400018: polySurface32
+    400020: Small
+    400022: //RootNode
+    400024: joint3
+    400026: joint7
+    400028: polySurface37
+    400030: polySurface38
+    400032: propeller_001
+    400034: propeller_002
+    400036: polySurface48
+    400038: polySurface53
+    2300000: polySurface28
+    2300002: polySurface29
+    2300004: polySurface30
+    2300006: polySurface31
+    2300008: polySurface32
+    2300010: polySurface37
+    2300012: polySurface38
+    2300014: polySurface48
+    2300016: polySurface53
+    3300000: polySurface28
+    3300002: polySurface29
+    3300004: polySurface30
+    3300006: polySurface31
+    3300008: polySurface32
+    3300010: polySurface37
+    3300012: polySurface38
+    3300014: polySurface48
+    3300016: polySurface53
+    4300000: pCylinder1
+    4300002: pCylinder4
+    4300004: pCylinder5
+    4300006: nurbsToPoly12
+    4300008: nurbsToPoly11
+    4300010: nurbsToPoly13
+    4300012: nurbsToPoly14
+    4300014: polySurface24
+    4300016: polySurface4
+    4300018: polySurface23
+    4300020: polySurface25
+    4300022: polySurface26
+    4300024: polySurface21
+    4300026: polySurface22
+    4300028: polySurface1
+    4300030: polySurface20
+    4300032: polySurface28
+    4300034: polySurface12
+    4300036: polySurface14
+    4300038: pCube1
+    4300040: nurbsToPoly1
+    4300042: polySurface17
+    4300044: polySurface18
+    4300046: nurbsToPoly2
+    4300048: nurbsToPoly3
+    4300050: nurbsToPoly7
+    4300052: nurbsToPoly9
+    4300054: pCube2
+    4300056: polySurface19
+    4300058: nurbsToPoly10
+    4300060: nurbsToPoly15
+    4300062: nurbsToPoly16
+    4300064: nurbsToPoly17
+    4300066: polySurface27
+    4300068: pCube4
+    4300070: nurbsToPoly18
+    4300072: polySurface32
+    4300074: polySurface31
+    4300076: polySurface30
+    4300078: polySurface29
+    4300080: polySurface37
+    4300082: polySurface38
+    4300084: polySurface48
+    4300086: polySurface53
+    6400000: polySurface28
+    6400002: polySurface29
+    6400004: polySurface30
+    6400006: polySurface31
+    6400008: polySurface32
+    6400010: polySurface37
+    6400012: polySurface38
+    6400014: polySurface48
+    6400016: polySurface53
+    7400000: NR_obj_001
+    11100000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 2
+    extraExposedTransformPaths: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: NR_obj_001
+      takeName: NR_obj_001
+      firstFrame: 1
+      lastFrame: 300
+      wrapMode: 2
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: joint1
+        weight: 1
+      - path: joint1/joint2
+        weight: 1
+      - path: joint1/joint2/joint3
+        weight: 1
+      - path: joint1/joint2/joint3/propeller_002
+        weight: 1
+      - path: joint1/joint2/joint3/propeller_002/joint5
+        weight: 1
+      - path: joint1/joint2/joint3/propeller_002/polySurface30
+        weight: 1
+      - path: joint1/joint2/propeller_001
+        weight: 1
+      - path: joint1/joint2/propeller_001/joint7
+        weight: 1
+      - path: joint1/joint2/propeller_001/polySurface37
+        weight: 1
+      - path: joint1/polySurface38
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 1
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

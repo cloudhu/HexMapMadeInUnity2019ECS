@@ -20,14 +20,140 @@ public struct Data   : IComponentData
     /// </summary>
     public int ChunkCountX;
 
+    #region Plants
+
     public Entity PalmTree;
-
     public Entity Grass;
+    public Entity Stumb;
+    public Entity Pine_002_L;
+    public Entity Pine_002_M2;
+    public Entity Pine_002_M3;
+    public Entity Pine_002_M;
+    public Entity Pine_002_S2;
+    public Entity Pine_002_U;
+    public Entity Pine_002_U2;
+    public Entity Pine_002_XL;
+    public Entity Pine_002_XXL;
+    public Entity Pine_004_01;
+    public Entity Pine_004_02;
+    public Entity Pine_004_03;
+    public Entity Pine_004_04;
+    public Entity Pine_004_05;
+    public Entity Pine_004_06;
+    public Entity Pine_004_Clump01A;
+    public Entity Pine_004_Clump01B;
+    public Entity Pine_004_Clump02A;
+    public Entity Pine_004_Clump02B;
+    public Entity Pine_004_Clump02C;
+    public Entity Pine_005_01;
+    public Entity Pine_005_02;
+    public Entity Pine_006_01;
+    public Entity Pine_006_02;
+    public Entity Pine_006_03;
+    public Entity Pine_006_04;
+    public Entity Pine_007_01;
+    public Entity Pine_007_RootStump;
+    public Entity PineDead_02;
+    public Entity PineDead_03;
+    public Entity TreeDead_01;
+    public Entity Broadleaf_Shrub_01_Var1_Prefab;
+    public Entity Broadleaf_Shrub_01_Var2_Prefab;
+    public Entity Broadleaf_Shrub_01_Var3_Prefab;
+    public Entity Broadleaf_Shrub_01_Var4_Prefab;
+    public Entity Broadleaf_Shrub_01_Var5_Prefab;
+    public Entity Broadleaf_Shrub_01_Var6_Prefab;
+    public Entity Bush_Twig_01_Var3_Prefab;
+    public Entity Bush_Twig_01_Var4_Prefab;
+    public Entity Clover_01_Var1_Prefab;
+    public Entity Clover_01_Var2_Prefab;
+    public Entity Clover_01_Var3_Prefab;
+    public Entity Clover_01_Var4_Prefab;
+    public Entity Fern_var01_Prefab;
+    public Entity Fern_var02_Prefab;
+    public Entity Fern_var03_Prefab;
+    public Entity GreenBush_Var01_Prefab;
+    public Entity Juniper_Bush_01_Var1;
+    public Entity Juniper_Bush_01_Var2;
+    public Entity Juniper_Bush_01_Var3;
+    public Entity Juniper_Bush_01_Var4;
+    public Entity Juniper_Bush_01_Var5;
+    public Entity Meadow_Grass_01_Var1;
+    public Entity Meadow_Grass_01_Var2;
+    public Entity Meadow_Grass_01_Var3;
+    public Entity Meadow_Grass_01_Var4;
+    public Entity Meadow_Grass_01_Var5;
+    public Entity Meadow_Grass_01_Var6;
+    public Entity PineGroundScatter01_Var1_Prefab;
+    public Entity PineGroundScatter01_Var2_Prefab;
+    public Entity RedBush_Var1_Prefab;
+    public Entity Bush_b1_4x4x4_PF;
+    public Entity Bush_b1_6x8x6_PF;
+    public Entity Bush_qilgP2_6x6x4_PF;
+    public Entity Bush_qilgY2_2x2x4_PF;
+    public Entity GrassGreen_qheqG2_01;
+    public Entity GrassGreen_qheqG2_02;
+    public Entity GrassGreen_qheqG2_03;
+    public Entity GrassGreen_qheqG2_04;
+    public Entity PH_Plant_Perennials_a2_1x1x2_A_Prefab;
+    public Entity PH_Plant_Perennials_a2_1x1x2_B_Prefab;
+    public Entity PH_Plant_Perennials_a2_1x1x2_C_Prefab;
+    public Entity PH_Plant_Perennials_a2_1x1x2_Prefab;
+    public Entity PH_Plant_Perennials_a4_1x1x0_PF;
+    public Entity Rock_Granite_rcCwC_Prefab;
+    public Entity Rock_Granite_reFto_brighter;
+    public Entity Aset_rock_granite_M_rgAsy;
+    public Entity Rock_Sandstone_plras;
+    public Entity Wood_Branch_pjxuR_Prefab;
+    public Entity Wood_branch_S_pcyeE_Prefab;
+    public Entity Wood_log_M_qdtdP_Prefab;
+    public Entity Wood_Log_qdhxa_Prefab;
+    public Entity wood_log_M_rfgxx_Prefab;
+    public Entity Aset_wood_log_M_rfixH_prefab;
+    public Entity Wood_Log_rhfdj;
+    public Entity Wood_Root_rkswd_Prefab;
+    public Entity Rock_Passagecave_A;
+    public Entity FlatRock_01;
+    public Entity Rock_06;
+    public Entity Rock_06_B;
+    public Entity Rock_31;
+    public Entity Rock_31_B;
+    public Entity Rock_31_Darker;
+    public Entity RockSlussen_01;
+    public Entity SmallCliff_01_partA;
+    public Entity SmallCliff_A;
+    public Entity SmallCliff_A_Brown;
+    public Entity Cliff_01_Curved_A_Prefab;
+    public Entity Cliff_01_Prefab;
+    public Entity HE_bark_strukture_A02_Prefab;
+    public Entity HE_bark_strukture_A05_Prefab;
+    public Entity HE_Portal_Modul_A_Prefab;
+    public Entity HE_Portal_Modul_C_Prefab;
+    public Entity HE_Portal_Modul_D_Prefab;
+    public Entity sticks_debris_00_prefab;
+    public Entity Tree_type_003;
+    public Entity Tree_type_004;
+    public Entity Tree_type_005;
+    #endregion
 
-    /// <summary>
-    /// 树草组合
-    /// </summary>
-    public Entity PalmTrees;
+    #region Buildings
+    public Entity P_OBJ_Bench_01;
+    public Entity P_OBJ_flower;
+    public Entity P_OBJ_fountain_001;
+    public Entity P_OBJ_gear_shop;
+    public Entity P_OBJ_house_001;
+    public Entity P_OBJ_house_002;
+    public Entity P_OBJ_item_shop;
+    public Entity P_OBJ_pillar_001;
+    public Entity P_OBJ_pillar_002;
+    public Entity P_OBJ_pillar_003;
+    public Entity P_OBJ_sailboat_01;
+    public Entity P_OBJ_sailboat_dock_001;
+    public Entity P_OBJ_streetlight_001;
+    public Entity P_OBJ_streetlight_002;
+    public Entity P_OBJ_streetlight_003;
+    public Entity P_OBJ_windmill_01;
+    public Entity P_OBJ_windmill_02;
+    #endregion
 }
 
 /// <summary>
@@ -140,20 +266,140 @@ public struct Cell : IComponentData
 
     public int CityLvl;
 
-    /// <summary>
-    /// 树草组合
-    /// </summary>
-    public Entity PalmTrees;
+    #region Plants
 
-    /// <summary>
-    /// 棕榈树预设
-    /// </summary>
     public Entity PalmTree;
-
-    /// <summary>
-    /// 草丛预设
-    /// </summary>
     public Entity Grass;
+    public Entity Stumb;
+    public Entity Pine_002_L;
+    public Entity Pine_002_M2;
+    public Entity Pine_002_M3;
+    public Entity Pine_002_M;
+    public Entity Pine_002_S2;
+    public Entity Pine_002_U;
+    public Entity Pine_002_U2;
+    public Entity Pine_002_XL;
+    public Entity Pine_002_XXL;
+    public Entity Pine_004_01;
+    public Entity Pine_004_02;
+    public Entity Pine_004_03;
+    public Entity Pine_004_04;
+    public Entity Pine_004_05;
+    public Entity Pine_004_06;
+    public Entity Pine_004_Clump01A;
+    public Entity Pine_004_Clump01B;
+    public Entity Pine_004_Clump02A;
+    public Entity Pine_004_Clump02B;
+    public Entity Pine_004_Clump02C;
+    public Entity Pine_005_01;
+    public Entity Pine_005_02;
+    public Entity Pine_006_01;
+    public Entity Pine_006_02;
+    public Entity Pine_006_03;
+    public Entity Pine_006_04;
+    public Entity Pine_007_01;
+    public Entity Pine_007_RootStump;
+    public Entity PineDead_02;
+    public Entity PineDead_03;
+    public Entity TreeDead_01;
+    public Entity Broadleaf_Shrub_01_Var1_Prefab;
+    public Entity Broadleaf_Shrub_01_Var2_Prefab;
+    public Entity Broadleaf_Shrub_01_Var3_Prefab;
+    public Entity Broadleaf_Shrub_01_Var4_Prefab;
+    public Entity Broadleaf_Shrub_01_Var5_Prefab;
+    public Entity Broadleaf_Shrub_01_Var6_Prefab;
+    public Entity Bush_Twig_01_Var3_Prefab;
+    public Entity Bush_Twig_01_Var4_Prefab;
+    public Entity Clover_01_Var1_Prefab;
+    public Entity Clover_01_Var2_Prefab;
+    public Entity Clover_01_Var3_Prefab;
+    public Entity Clover_01_Var4_Prefab;
+    public Entity Fern_var01_Prefab;
+    public Entity Fern_var02_Prefab;
+    public Entity Fern_var03_Prefab;
+    public Entity GreenBush_Var01_Prefab;
+    public Entity Juniper_Bush_01_Var1;
+    public Entity Juniper_Bush_01_Var2;
+    public Entity Juniper_Bush_01_Var3;
+    public Entity Juniper_Bush_01_Var4;
+    public Entity Juniper_Bush_01_Var5;
+    public Entity Meadow_Grass_01_Var1;
+    public Entity Meadow_Grass_01_Var2;
+    public Entity Meadow_Grass_01_Var3;
+    public Entity Meadow_Grass_01_Var4;
+    public Entity Meadow_Grass_01_Var5;
+    public Entity Meadow_Grass_01_Var6;
+    public Entity PineGroundScatter01_Var1_Prefab;
+    public Entity PineGroundScatter01_Var2_Prefab;
+    public Entity RedBush_Var1_Prefab;
+    public Entity Bush_b1_4x4x4_PF;
+    public Entity Bush_b1_6x8x6_PF;
+    public Entity Bush_qilgP2_6x6x4_PF;
+    public Entity Bush_qilgY2_2x2x4_PF;
+    public Entity GrassGreen_qheqG2_01;
+    public Entity GrassGreen_qheqG2_02;
+    public Entity GrassGreen_qheqG2_03;
+    public Entity GrassGreen_qheqG2_04;
+    public Entity PH_Plant_Perennials_a2_1x1x2_A_Prefab;
+    public Entity PH_Plant_Perennials_a2_1x1x2_B_Prefab;
+    public Entity PH_Plant_Perennials_a2_1x1x2_C_Prefab;
+    public Entity PH_Plant_Perennials_a2_1x1x2_Prefab;
+    public Entity PH_Plant_Perennials_a4_1x1x0_PF;
+    public Entity Rock_Granite_rcCwC_Prefab;
+    public Entity Rock_Granite_reFto_brighter;
+    public Entity Aset_rock_granite_M_rgAsy;
+    public Entity Rock_Sandstone_plras;
+    public Entity Wood_Branch_pjxuR_Prefab;
+    public Entity Wood_branch_S_pcyeE_Prefab;
+    public Entity Wood_log_M_qdtdP_Prefab;
+    public Entity Wood_Log_qdhxa_Prefab;
+    public Entity wood_log_M_rfgxx_Prefab;
+    public Entity Aset_wood_log_M_rfixH_prefab;
+    public Entity Wood_Log_rhfdj;
+    public Entity Wood_Root_rkswd_Prefab;
+    public Entity Rock_Passagecave_A;
+    public Entity FlatRock_01;
+    public Entity Rock_06;
+    public Entity Rock_06_B;
+    public Entity Rock_31;
+    public Entity Rock_31_B;
+    public Entity Rock_31_Darker;
+    public Entity RockSlussen_01;
+    public Entity SmallCliff_01_partA;
+    public Entity SmallCliff_A;
+    public Entity SmallCliff_A_Brown;
+    public Entity Cliff_01_Curved_A_Prefab;
+    public Entity Cliff_01_Prefab;
+    public Entity HE_bark_strukture_A02_Prefab;
+    public Entity HE_bark_strukture_A05_Prefab;
+    public Entity HE_Portal_Modul_A_Prefab;
+    public Entity HE_Portal_Modul_C_Prefab;
+    public Entity HE_Portal_Modul_D_Prefab;
+    public Entity sticks_debris_00_prefab;
+    public Entity Tree_type_003;
+    public Entity Tree_type_004;
+    public Entity Tree_type_005;
+    #endregion
+
+    #region Buildings
+    public Entity P_OBJ_Bench_01;
+    public Entity P_OBJ_flower;
+    public Entity P_OBJ_fountain_001;
+    public Entity P_OBJ_gear_shop;
+    public Entity P_OBJ_house_001;
+    public Entity P_OBJ_house_002;
+    public Entity P_OBJ_item_shop;
+    public Entity P_OBJ_pillar_001;
+    public Entity P_OBJ_pillar_002;
+    public Entity P_OBJ_pillar_003;
+    public Entity P_OBJ_sailboat_01;
+    public Entity P_OBJ_sailboat_dock_001;
+    public Entity P_OBJ_streetlight_001;
+    public Entity P_OBJ_streetlight_002;
+    public Entity P_OBJ_streetlight_003;
+    public Entity P_OBJ_windmill_01;
+    public Entity P_OBJ_windmill_02;
+    #endregion
 }
 
 /// <summary>
@@ -368,6 +614,15 @@ public struct DebugBuffer : IBufferElementData {
     public static implicit operator int(DebugBuffer e) { return e.Value; }
     public static implicit operator DebugBuffer(int e) { return new DebugBuffer { Value = e }; }
 
-    // Actual value each buffer element will store. Estuary
+    // Actual value each buffer element will store. 
     public int Value;
+}
+
+public struct PrefabBuffer : IBufferElementData {
+    // These implicit conversions are optional, but can help reduce typing.
+    public static implicit operator Entity(PrefabBuffer e) { return e.Value; }
+    public static implicit operator PrefabBuffer(Entity e) { return new PrefabBuffer { Value = e }; }
+
+    // Actual value each buffer element will store. 
+    public Entity Value;
 }

@@ -1,0 +1,162 @@
+fileFormatVersion: 2
+guid: 5fcdfe7b8627da64c86c65e01b2048af
+ModelImporter:
+  serializedVersion: 22
+  fileIDToRecycleName:
+    100000: Amber
+    100002: //RootNode
+    100004: Stump_trunk
+    100006: Splinters_cap
+    100008: Splinters
+    100010: Object001
+    100012: Splinters_cap_LOD0
+    100014: Splinters_cap_LOD1
+    100016: Splinters_hardalpha
+    100018: Stump_trunk_LOD0
+    100020: Stump_trunk_LOD1
+    100022: Stump_trunk_LOD2
+    100024: Stump_trunk_LOD3
+    100026: Stump_trunk_LOD4
+    400000: Amber
+    400002: //RootNode
+    400004: Stump_trunk
+    400006: Splinters_cap
+    400008: Splinters
+    400010: Object001
+    400012: Splinters_cap_LOD0
+    400014: Splinters_cap_LOD1
+    400016: Splinters_hardalpha
+    400018: Stump_trunk_LOD0
+    400020: Stump_trunk_LOD1
+    400022: Stump_trunk_LOD2
+    400024: Stump_trunk_LOD3
+    400026: Stump_trunk_LOD4
+    2300000: Amber
+    2300002: Stump_trunk
+    2300004: Splinters_cap
+    2300006: Splinters
+    2300008: Object001
+    2300010: //RootNode
+    2300012: Splinters_cap_LOD0
+    2300014: Splinters_cap_LOD1
+    2300016: Splinters_hardalpha
+    2300018: Stump_trunk_LOD0
+    2300020: Stump_trunk_LOD1
+    2300022: Stump_trunk_LOD2
+    2300024: Stump_trunk_LOD3
+    2300026: Stump_trunk_LOD4
+    3300000: Amber
+    3300002: Stump_trunk
+    3300004: Splinters_cap
+    3300006: Splinters
+    3300008: Object001
+    3300010: //RootNode
+    3300012: Splinters_cap_LOD0
+    3300014: Splinters_cap_LOD1
+    3300016: Splinters_hardalpha
+    3300018: Stump_trunk_LOD0
+    3300020: Stump_trunk_LOD1
+    3300022: Stump_trunk_LOD2
+    3300024: Stump_trunk_LOD3
+    3300026: Stump_trunk_LOD4
+    4300000: Stump_trunk
+    4300002: Amber
+    4300004: Splinters_cap
+    4300006: Splinters
+    4300008: Object001
+    4300010: Stump
+    4300012: Stump_trunk_LOD0
+    4300014: Stump_trunk_LOD1
+    4300016: Stump_trunk_LOD2
+    4300018: Stump_trunk_LOD3
+    4300020: Stump_trunk_LOD4
+    4300022: Splinters_cap_LOD0
+    4300024: Splinters_cap_LOD1
+    4300026: Splinters_hardalpha
+    20500000: //RootNode
+  externalObjects: {}
+  materials:
+    importMaterials: 0
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 0
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages:
+    - 0.25
+    - 0.125
+    - 0.0625
+    - 0.03125
+    - 0.01
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importVisibility: 1
+    importBlendShapes: 0
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+  importAnimation: 0
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: model_processed_v01
+  assetBundleName: 
+  assetBundleVariant: 

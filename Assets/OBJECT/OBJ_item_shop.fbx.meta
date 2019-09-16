@@ -1,0 +1,160 @@
+fileFormatVersion: 2
+guid: 9aacd3c8390af1e48993e6638636b237
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: joint1
+    100004: joint10
+    100006: joint11
+    100008: joint12
+    100010: joint13
+    100012: joint14
+    100014: joint15
+    100016: joint2
+    100018: joint3
+    100020: joint4
+    100022: joint5
+    100024: joint5 1
+    100026: joint5 10
+    100028: joint5 11
+    100030: joint5 2
+    100032: joint5 3
+    100034: joint5 4
+    100036: joint5 5
+    100038: joint5 6
+    100040: joint5 7
+    100042: joint5 8
+    100044: joint5 9
+    100046: joint6
+    100048: joint7
+    100050: joint8
+    100052: joint9
+    100054: polySurface175
+    100056: polySurface181
+    100058: polySurface200
+    100060: polySurface203
+    100062: polySurface206
+    100064: polySurface213
+    100066: w
+    400000: //RootNode
+    400002: joint1
+    400004: joint10
+    400006: joint11
+    400008: joint12
+    400010: joint13
+    400012: joint14
+    400014: joint15
+    400016: joint2
+    400018: joint3
+    400020: joint4
+    400022: joint5
+    400024: joint5 1
+    400026: joint5 10
+    400028: joint5 11
+    400030: joint5 2
+    400032: joint5 3
+    400034: joint5 4
+    400036: joint5 5
+    400038: joint5 6
+    400040: joint5 7
+    400042: joint5 8
+    400044: joint5 9
+    400046: joint6
+    400048: joint7
+    400050: joint8
+    400052: joint9
+    400054: polySurface175
+    400056: polySurface181
+    400058: polySurface200
+    400060: polySurface203
+    400062: polySurface206
+    400064: polySurface213
+    400066: w
+    2300000: polySurface200
+    2300002: polySurface203
+    2300004: polySurface206
+    3300000: polySurface200
+    3300002: polySurface203
+    3300004: polySurface206
+    4300000: polySurface175
+    4300002: polySurface181
+    4300004: REF_01
+    4300006: REF_02
+    4300008: polySurface199
+    4300010: polySurface200
+    4300012: polySurface201
+    4300014: polySurface202
+    4300016: polySurface203
+    4300018: polySurface206
+    6400000: polySurface200
+    6400002: polySurface203
+    6400004: polySurface206
+    7400000: item_shop_new
+    11100000: //RootNode
+    13700000: polySurface175
+    13700002: polySurface181
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 2
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 0
+  tangentSpace:
+    normalSmoothAngle: 180
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 1
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

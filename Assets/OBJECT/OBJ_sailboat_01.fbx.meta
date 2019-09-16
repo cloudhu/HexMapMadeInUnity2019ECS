@@ -1,0 +1,471 @@
+fileFormatVersion: 2
+guid: 49c2fc814d446d94ea12ca4d6bfa4be2
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: boat_center_01
+    100002: boat_center_02
+    100004: bumper_2
+    100006: center
+    100008: flag_D
+    100010: joint11
+    100012: joint12
+    100014: joint13
+    100016: joint16
+    100018: joint17
+    100020: joint18
+    100022: joint19
+    100024: joint2
+    100026: joint20
+    100028: joint22
+    100030: joint23
+    100032: joint24
+    100034: joint25
+    100036: joint26
+    100038: joint27
+    100040: joint29
+    100042: joint3
+    100044: joint30
+    100046: joint31
+    100048: joint32
+    100050: joint34
+    100052: joint35
+    100054: joint36
+    100056: joint37
+    100058: joint39
+    100060: joint4
+    100062: joint40
+    100064: joint41
+    100066: joint42
+    100068: joint43
+    100070: joint44
+    100072: joint45
+    100074: joint46
+    100076: joint47
+    100078: joint48
+    100080: joint49
+    100082: joint50
+    100084: joint51
+    100086: joint52
+    100088: joint53
+    100090: joint54
+    100092: joint55
+    100094: joint58
+    100096: joint6
+    100098: joint7
+    100100: joint8
+    100102: nurbsToPoly6
+    100104: polySurface54
+    100106: polySurface90
+    100108: rudder
+    100110: sail
+    100112: sail_b1
+    100114: sail_close_2
+    100116: //RootNode
+    100118: w
+    100120: w1
+    100122: boat_center_01 1
+    100124: boat_center_02 1
+    100126: bumper_2 1
+    100128: center1
+    100130: flag_D 1
+    100132: joint11 1
+    100134: joint12 1
+    100136: joint13 1
+    100138: joint16 1
+    100140: joint17 1
+    100142: joint18 1
+    100144: joint19 1
+    100146: joint2 1
+    100148: joint20 1
+    100150: joint22 1
+    100152: joint23 1
+    100154: joint24 1
+    100156: joint25 1
+    100158: joint26 1
+    100160: joint27 1
+    100162: joint29 1
+    100164: joint3 1
+    100166: joint30 1
+    100168: joint31 1
+    100170: joint32 1
+    100172: joint34 1
+    100174: joint35 1
+    100176: joint36 1
+    100178: joint37 1
+    100180: joint39 1
+    100182: joint4 1
+    100184: joint40 1
+    100186: joint41 1
+    100188: joint42 1
+    100190: joint43 1
+    100192: joint44 1
+    100194: joint45 1
+    100196: joint46 1
+    100198: joint47 1
+    100200: joint48 1
+    100202: joint49 1
+    100204: joint50 1
+    100206: joint51 1
+    100208: joint52 1
+    100210: joint53 1
+    100212: joint54 1
+    100214: joint55 1
+    100216: joint58 1
+    100218: joint6 1
+    100220: joint7 1
+    100222: joint8 1
+    100224: polySurface54 1
+    100226: rudder 1
+    100228: sail1
+    100230: sail_close_2 1
+    100232: w 1
+    100234: w1 1
+    100236: polySurface91
+    400000: boat_center_01
+    400002: boat_center_02
+    400004: bumper_2
+    400006: center
+    400008: flag_D
+    400010: joint11
+    400012: joint12
+    400014: joint13
+    400016: joint16
+    400018: joint17
+    400020: joint18
+    400022: joint19
+    400024: joint2
+    400026: joint20
+    400028: joint22
+    400030: joint23
+    400032: joint24
+    400034: joint25
+    400036: joint26
+    400038: joint27
+    400040: joint29
+    400042: joint3
+    400044: joint30
+    400046: joint31
+    400048: joint32
+    400050: joint34
+    400052: joint35
+    400054: joint36
+    400056: joint37
+    400058: joint39
+    400060: joint4
+    400062: joint40
+    400064: joint41
+    400066: joint42
+    400068: joint43
+    400070: joint44
+    400072: joint45
+    400074: joint46
+    400076: joint47
+    400078: joint48
+    400080: joint49
+    400082: joint50
+    400084: joint51
+    400086: joint52
+    400088: joint53
+    400090: joint54
+    400092: joint55
+    400094: joint58
+    400096: joint6
+    400098: joint7
+    400100: joint8
+    400102: nurbsToPoly6
+    400104: polySurface54
+    400106: polySurface90
+    400108: rudder
+    400110: sail
+    400112: sail_b1
+    400114: sail_close_2
+    400116: //RootNode
+    400118: w
+    400120: w1
+    400122: boat_center_01 1
+    400124: boat_center_02 1
+    400126: bumper_2 1
+    400128: center1
+    400130: flag_D 1
+    400132: joint11 1
+    400134: joint12 1
+    400136: joint13 1
+    400138: joint16 1
+    400140: joint17 1
+    400142: joint18 1
+    400144: joint19 1
+    400146: joint2 1
+    400148: joint20 1
+    400150: joint22 1
+    400152: joint23 1
+    400154: joint24 1
+    400156: joint25 1
+    400158: joint26 1
+    400160: joint27 1
+    400162: joint29 1
+    400164: joint3 1
+    400166: joint30 1
+    400168: joint31 1
+    400170: joint32 1
+    400172: joint34 1
+    400174: joint35 1
+    400176: joint36 1
+    400178: joint37 1
+    400180: joint39 1
+    400182: joint4 1
+    400184: joint40 1
+    400186: joint41 1
+    400188: joint42 1
+    400190: joint43 1
+    400192: joint44 1
+    400194: joint45 1
+    400196: joint46 1
+    400198: joint47 1
+    400200: joint48 1
+    400202: joint49 1
+    400204: joint50 1
+    400206: joint51 1
+    400208: joint52 1
+    400210: joint53 1
+    400212: joint54 1
+    400214: joint55 1
+    400216: joint58 1
+    400218: joint6 1
+    400220: joint7 1
+    400222: joint8 1
+    400224: polySurface54 1
+    400226: rudder 1
+    400228: sail1
+    400230: sail_close_2 1
+    400232: w 1
+    400234: w1 1
+    400236: polySurface91
+    2300000: boat_center_01
+    2300002: boat_center_02
+    2300004: bumper_2
+    2300006: polySurface54
+    2300008: sail_close_2
+    2300010: boat_center_01 1
+    2300012: boat_center_02 1
+    2300014: bumper_2 1
+    2300016: polySurface54 1
+    2300018: sail_close_2 1
+    3300000: boat_center_01
+    3300002: boat_center_02
+    3300004: bumper_2
+    3300006: polySurface54
+    3300008: sail_close_2
+    3300010: boat_center_01 1
+    3300012: boat_center_02 1
+    3300014: bumper_2 1
+    3300016: polySurface54 1
+    3300018: sail_close_2 1
+    4300000: nurbsToPoly3
+    4300002: polySurface17
+    4300004: polySurface19
+    4300006: nurbsToPoly4
+    4300008: polySurface21
+    4300010: polySurface22
+    4300012: polySurface23
+    4300014: pCube4
+    4300016: pCylinder1
+    4300018: pCylinder2
+    4300020: pCube7
+    4300022: pCube9
+    4300024: polySurface24
+    4300026: nurbsToPoly5
+    4300028: nurbsToPoly6
+    4300030: nurbsToPoly7
+    4300032: nurbsToPoly8
+    4300034: polySurface26
+    4300036: nurbsToPoly9
+    4300038: nurbsToPoly10
+    4300040: nurbsToPoly11
+    4300042: nurbsToPoly12
+    4300044: nurbsToPoly13
+    4300046: nurbsToPoly14
+    4300048: nurbsToPoly15
+    4300050: nurbsToPoly16
+    4300052: polySurface27
+    4300054: nurbsToPoly17
+    4300056: nurbsToPoly18
+    4300058: nurbsToPoly19
+    4300060: nurbsToPoly20
+    4300062: nurbsToPoly21
+    4300064: nurbsToPoly22
+    4300066: nurbsToPoly23
+    4300068: nurbsToPoly24
+    4300070: nurbsToPoly25
+    4300072: nurbsToPoly26
+    4300074: nurbsToPoly27
+    4300076: nurbsToPoly28
+    4300078: pCube10
+    4300080: pCube11
+    4300082: pCube12
+    4300084: polySurface29
+    4300086: polySurface31
+    4300088: polySurface33
+    4300090: pCube13
+    4300092: pCube14
+    4300094: pCube15
+    4300096: pCube16
+    4300098: polySurface47
+    4300100: polySurface48
+    4300102: polySurface52
+    4300104: polySurface54
+    4300106: polySurface55
+    4300108: polySurface56
+    4300110: bumper_2
+    4300112: polySurface68
+    4300114: sail
+    4300116: sail_close_2
+    4300118: polySurface78
+    4300120: polySurface79
+    4300122: polySurface84
+    4300124: sail_b1
+    4300126: boat_center_01
+    4300128: boat_center_02
+    4300130: polySurface90
+    4300132: sail1
+    4300134: polySurface54
+    4300136: sail_close_2
+    4300138: boat_center_01
+    4300140: bumper_2
+    4300142: boat_center_02
+    4300144: polySurface91
+    6400000: boat_center_01
+    6400002: boat_center_02
+    6400004: bumper_2
+    6400006: polySurface54
+    6400008: sail_close_2
+    6400010: boat_center_01 1
+    6400012: boat_center_02 1
+    6400014: bumper_2 1
+    6400016: polySurface54 1
+    6400018: sail_close_2 1
+    7400000: move
+    7400002: idle
+    11100000: //RootNode
+    13700000: nurbsToPoly6
+    13700002: polySurface90
+    13700004: sail
+    13700006: sail_b1
+    13700008: sail1
+    13700010: polySurface91
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 2
+    extraExposedTransformPaths: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: move
+      takeName: 
+      firstFrame: 1
+      lastFrame: 39
+      wrapMode: 2
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+    - serializedVersion: 16
+      name: idle
+      takeName: 
+      firstFrame: 40
+      lastFrame: 41
+      wrapMode: 8
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 10
+    meshCompression: 0
+    addColliders: 1
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 1
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

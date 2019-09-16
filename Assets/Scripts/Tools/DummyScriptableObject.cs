@@ -1,0 +1,1 @@
+﻿public class DummyScriptableObject : UnityEngine.ScriptableObject { }
