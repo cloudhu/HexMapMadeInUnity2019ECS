@@ -20,7 +20,7 @@ public class CellSystem : JobComponentSystem {
         m_EntityCommandBufferSystem = World.GetOrCreateSystem<BeginInitializationEntityCommandBufferSystem>();
         var query = new EntityQueryDesc
         {
-            All = new ComponentType[] { ComponentType.ReadOnly<Cell>(), ComponentType.ReadOnly<NewDataTag>(),ComponentType.ReadOnly<Neighbors>(), ComponentType.ReadOnly<River>(), ComponentType.ReadOnly<RoadBools>()},
+            All = new ComponentType[] { ComponentType.ReadOnly<Cell>(), ComponentType.ReadOnly<NewDataTag>(),ComponentType.ReadOnly<Neighbors>(), ComponentType.ReadOnly<River>(), ComponentType.ReadOnly<Prefabs>()},
             None= new ComponentType[] { ComponentType.ReadOnly<UpdateData>() }
         };
         m_CellGroup = GetEntityQuery(query);
@@ -30,30 +30,32 @@ public class CellSystem : JobComponentSystem {
     /// 计算六边形单元的顶点和颜色
     /// </summary>
     //[BurstCompile]//Unity2019.1.14f1会报错，Unity2019.1.12f1则不会
-    struct CalculateJob : IJobForEachWithEntity<Cell,NewDataTag,Neighbors,River,RoadBools> {
+    struct CalculateJob : IJobForEachWithEntity<Cell,NewDataTag,Neighbors,River,Prefabs> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
         [BurstCompile]
-        public void Execute(Entity entity, int index,[ReadOnly] ref Cell cellData,[ReadOnly]ref NewDataTag tag, [ReadOnly]ref Neighbors neighbors,[ReadOnly] ref River river,[ReadOnly] ref RoadBools roadBools)
+        public void Execute(Entity entity, int index,[ReadOnly] ref Cell cellData,[ReadOnly]ref NewDataTag tag, [ReadOnly]ref Neighbors neighbors,[ReadOnly] ref River river,[ReadOnly] ref Prefabs prefabs)
         {
             #region InitData初始化数据
 
-            //0.添加动态缓存
+            //0.添加动态缓存DynamicBuffer
             DynamicBuffer<ColorBuffer> colorBuffer = CommandBuffer.AddBuffer<ColorBuffer>(index, entity);
             DynamicBuffer<VertexBuffer> vertexBuffer = CommandBuffer.AddBuffer<VertexBuffer>(index, entity);
-            //用于河流的动态缓存
+            //用于河流的动态缓存 River
             DynamicBuffer<UvBuffer> riverUvBuffer = CommandBuffer.AddBuffer<UvBuffer>(index, entity);
             DynamicBuffer<RiverBuffer> riverBuffers = CommandBuffer.AddBuffer<RiverBuffer>(index, entity);
 
-            //用于道路的动态缓存
+            //用于道路的动态缓存 Road
             DynamicBuffer<RoadBuffer> roadBuffers = CommandBuffer.AddBuffer<RoadBuffer>(index, entity);
             DynamicBuffer<RoadUvBuffer> roadUvs= CommandBuffer.AddBuffer<RoadUvBuffer>(index, entity);
-            //水体
+            //水体Water
             DynamicBuffer<WaterBuffer> waterBuffers = CommandBuffer.AddBuffer<WaterBuffer>(index, entity);
             DynamicBuffer<WaterShoreBuffer> shoreBuffers = CommandBuffer.AddBuffer<WaterShoreBuffer>(index, entity);
             DynamicBuffer<ShoreUvBuffer> shoreUvs = CommandBuffer.AddBuffer<ShoreUvBuffer>(index, entity);
             DynamicBuffer<EstuaryBuffer> estuaryBuffers = CommandBuffer.AddBuffer<EstuaryBuffer>(index, entity);
             DynamicBuffer<EstuaryUvBuffer> estuaryUvs = CommandBuffer.AddBuffer<EstuaryUvBuffer>(index, entity);
             DynamicBuffer<EstuaryUvsBuffer> estuaryUvs2 = CommandBuffer.AddBuffer<EstuaryUvsBuffer>(index, entity);
+            //Wall墙体
+            DynamicBuffer<WallBuffer> wallBuffers = CommandBuffer.AddBuffer<WallBuffer>(index, entity);
             //1.获取当前单元的中心位置
             Vector3 currCellCenter = cellData.Position;
             //缓存当前单元的颜色
@@ -61,45 +63,45 @@ public class CellSystem : JobComponentSystem {
             //当前单元的海拔
             int elevation = cellData.Elevation;
             ////保存需要混合的颜色，使用数组[]是为了方便循环
-            Color[] blendColors = new Color[6];
-            blendColors[0] = neighbors.NEColor;
-            blendColors[1] = neighbors.EColor;
-            blendColors[2] = neighbors.SEColor;
-            blendColors[3] = neighbors.SWColor;
-            blendColors[4] = neighbors.WColor;
-            blendColors[5] = neighbors.NWColor;
+            Color[] neighborColors = new Color[6];
+            neighborColors[0] = neighbors.NEColor;
+            neighborColors[1] = neighbors.EColor;
+            neighborColors[2] = neighbors.SEColor;
+            neighborColors[3] = neighbors.SWColor;
+            neighborColors[4] = neighbors.WColor;
+            neighborColors[5] = neighbors.NWColor;
             //6个方向相邻单元的索引
-            int[] directionIndex = new int[6];
-            directionIndex[0] = neighbors.NEIndex;
-            directionIndex[1] = neighbors.EIndex;
-            directionIndex[2] = neighbors.SEIndex;
-            directionIndex[3] = neighbors.SWIndex;
-            directionIndex[4] = neighbors.WIndex;
-            directionIndex[5] = neighbors.NWIndex;
+            int[] neighborIndex = new int[6];
+            neighborIndex[0] = neighbors.NEIndex;
+            neighborIndex[1] = neighbors.EIndex;
+            neighborIndex[2] = neighbors.SEIndex;
+            neighborIndex[3] = neighbors.SWIndex;
+            neighborIndex[4] = neighbors.WIndex;
+            neighborIndex[5] = neighbors.NWIndex;
             //6个方向相邻单元的海拔
-            int[] elevations = new int[6];
-            elevations[0] = neighbors.NEElevation;
-            elevations[1] = neighbors.EElevation;
-            elevations[2] = neighbors.SEElevation;
-            elevations[3] = neighbors.SWElevation;
-            elevations[4] = neighbors.WElevation;
-            elevations[5] = neighbors.NWElevation;
+            int[] neighborElevations = new int[6];
+            neighborElevations[0] = neighbors.NEElevation;
+            neighborElevations[1] = neighbors.EElevation;
+            neighborElevations[2] = neighbors.SEElevation;
+            neighborElevations[3] = neighbors.SWElevation;
+            neighborElevations[4] = neighbors.WElevation;
+            neighborElevations[5] = neighbors.NWElevation;
             //6个方向上的道路
-            bool[] roads = new bool[6];
-            roads[0] = roadBools.NEHasRoad;
-            roads[1] = roadBools.EHasRoad;
-            roads[2] = roadBools.SEHasRoad;
-            roads[3] = roadBools.SWHasRoad;
-            roads[4] = roadBools.WHasRoad;
-            roads[5] = roadBools.NWHasRoad;
+            bool[] neighborHasRoad = new bool[6];
+            neighborHasRoad[0] = neighbors.NEHasRoad;
+            neighborHasRoad[1] = neighbors.EHasRoad;
+            neighborHasRoad[2] = neighbors.SEHasRoad;
+            neighborHasRoad[3] = neighbors.SWHasRoad;
+            neighborHasRoad[4] = neighbors.WHasRoad;
+            neighborHasRoad[5] = neighbors.NWHasRoad;
             //6个方向的邻居位置
-            Vector3[] positions = new Vector3[6];
-            positions[0] = neighbors.NEPosition;
-            positions[1] = neighbors.EPosition;
-            positions[2] = neighbors.SEPosition;
-            positions[3] = neighbors.SWPosition;
-            positions[4] = neighbors.WPosition;
-            positions[5] = neighbors.NWPosition;
+            Vector3[] neighborPositions = new Vector3[6];
+            neighborPositions[0] = neighbors.NEPosition;
+            neighborPositions[1] = neighbors.EPosition;
+            neighborPositions[2] = neighbors.SEPosition;
+            neighborPositions[3] = neighbors.SWPosition;
+            neighborPositions[4] = neighbors.WPosition;
+            neighborPositions[5] = neighbors.NWPosition;
             //6个方向是否在水下
             bool[] neighborIsUnderWater = new bool[6];
             neighborIsUnderWater[0] = neighbors.NEIsUnderWater;
@@ -108,152 +110,160 @@ public class CellSystem : JobComponentSystem {
             neighborIsUnderWater[3] = neighbors.SWIsUnderWater;
             neighborIsUnderWater[4] = neighbors.WIsUnderWater;
             neighborIsUnderWater[5] = neighbors.NWIsUnderWater;
+            //HasWall
+            bool[] neighborHasWall = new bool[6];
+            neighborHasWall[0] = neighbors.NEHasWall;
+            neighborHasWall[1] = neighbors.EHasWall;
+            neighborHasWall[2] = neighbors.SEHasWall;
+            neighborHasWall[3] = neighbors.SWHasWall;
+            neighborHasWall[4] = neighbors.WHasWall;
+            neighborHasWall[5] = neighbors.NWHasWall;
             //植物数组
-            Entity[][] entities = new Entity[3][];
-            entities[0] = new Entity[14];
-            entities[1] = new Entity[14];
-            entities[2] = new Entity[14];
-            entities[0][0] = cellData.PalmTree;
-            entities[0][1] = cellData.Grass;
-            entities[0][2] = cellData.Stumb;
-            entities[0][3] = cellData.Pine_002_L;
-            entities[0][4] = cellData.Pine_002_M2;
-            entities[0][5] = cellData.Pine_002_M3;
-            entities[0][6] = cellData.Pine_002_M;
-            entities[0][7] = cellData.Pine_002_S2;
-            entities[0][8] = cellData.Pine_002_U2;
-            entities[0][9] = cellData.Pine_002_U;
-            entities[0][10] = cellData.Pine_002_XL;
-            entities[0][11] = cellData.Pine_002_XXL;
-            entities[0][12] = cellData.Pine_004_01;
-            entities[0][13] = cellData.Pine_004_02;
-            entities[1][0] = cellData.Pine_004_03;
-            entities[1][1] = cellData.Pine_004_04;
-            entities[1][2] = cellData.Pine_004_05;
-            entities[1][3] = cellData.Pine_004_06;
-            entities[1][4] = cellData.Pine_004_Clump01A;
-            entities[1][5] = cellData.Pine_004_Clump01B;
-            entities[1][6] = cellData.Pine_004_Clump02A;
-            entities[1][7] = cellData.Pine_004_Clump02B;
-            entities[1][8] = cellData.Pine_004_Clump02C;
-            entities[1][9] = cellData.Pine_005_01;
-            entities[1][10] = cellData.Pine_005_02;
-            entities[1][11] = cellData.Pine_006_01;
-            entities[1][12] = cellData.Pine_006_02;
-            entities[1][13] = cellData.Pine_006_03;
-            entities[2][0] = cellData.Pine_006_04;
-            entities[2][1] = cellData.Pine_007_01;
-            entities[2][2] = cellData.Pine_007_RootStump;
-            entities[2][3] = cellData.PineDead_02;
-            entities[2][4] = cellData.PineDead_03;
-            entities[2][5] = cellData.TreeDead_01;
-            entities[2][6] = cellData.Broadleaf_Shrub_01_Var1_Prefab;
-            entities[2][7] = cellData.Broadleaf_Shrub_01_Var2_Prefab;
-            entities[2][8] = cellData.Broadleaf_Shrub_01_Var3_Prefab;
-            entities[2][9] = cellData.Broadleaf_Shrub_01_Var4_Prefab;
-            entities[2][10] = cellData.Broadleaf_Shrub_01_Var5_Prefab;
-            entities[2][11] = cellData.Broadleaf_Shrub_01_Var6_Prefab;
-            entities[2][12] = cellData.Bush_Twig_01_Var3_Prefab;
-            entities[2][13] = cellData.Bush_Twig_01_Var4_Prefab;
+            Entity[][] plantEntities = new Entity[3][];
+            plantEntities[0] = new Entity[14];
+            plantEntities[1] = new Entity[14];
+            plantEntities[2] = new Entity[14];
+            plantEntities[0][0] = prefabs.PalmTree;
+            plantEntities[0][1] = prefabs.Grass;
+            plantEntities[0][2] = prefabs.Stumb;
+            plantEntities[0][3] = prefabs.Pine_002_L;
+            plantEntities[0][4] = prefabs.Pine_002_M2;
+            plantEntities[0][5] = prefabs.Pine_002_M3;
+            plantEntities[0][6] = prefabs.Pine_002_M;
+            plantEntities[0][7] = prefabs.Pine_002_S2;
+            plantEntities[0][8] = prefabs.Pine_002_U2;
+            plantEntities[0][9] = prefabs.Pine_002_U;
+            plantEntities[0][10] = prefabs.Pine_002_XL;
+            plantEntities[0][11] = prefabs.Pine_002_XXL;
+            plantEntities[0][12] = prefabs.Pine_004_01;
+            plantEntities[0][13] = prefabs.Pine_004_02;
+            plantEntities[1][0] = prefabs.Pine_004_03;
+            plantEntities[1][1] = prefabs.Pine_004_04;
+            plantEntities[1][2] = prefabs.Pine_004_05;
+            plantEntities[1][3] = prefabs.Pine_004_06;
+            plantEntities[1][4] = prefabs.Pine_004_Clump01A;
+            plantEntities[1][5] = prefabs.Pine_004_Clump01B;
+            plantEntities[1][6] = prefabs.Pine_004_Clump02A;
+            plantEntities[1][7] = prefabs.Pine_004_Clump02B;
+            plantEntities[1][8] = prefabs.Pine_004_Clump02C;
+            plantEntities[1][9] = prefabs.Pine_005_01;
+            plantEntities[1][10] = prefabs.Pine_005_02;
+            plantEntities[1][11] = prefabs.Pine_006_01;
+            plantEntities[1][12] = prefabs.Pine_006_02;
+            plantEntities[1][13] = prefabs.Pine_006_03;
+            plantEntities[2][0] = prefabs.Pine_006_04;
+            plantEntities[2][1] = prefabs.Pine_007_01;
+            plantEntities[2][2] = prefabs.Pine_007_RootStump;
+            plantEntities[2][3] = prefabs.PineDead_02;
+            plantEntities[2][4] = prefabs.PineDead_03;
+            plantEntities[2][5] = prefabs.TreeDead_01;
+            plantEntities[2][6] = prefabs.Broadleaf_Shrub_01_Var1_Prefab;
+            plantEntities[2][7] = prefabs.Broadleaf_Shrub_01_Var2_Prefab;
+            plantEntities[2][8] = prefabs.Broadleaf_Shrub_01_Var3_Prefab;
+            plantEntities[2][9] = prefabs.Broadleaf_Shrub_01_Var4_Prefab;
+            plantEntities[2][10] = prefabs.Broadleaf_Shrub_01_Var5_Prefab;
+            plantEntities[2][11] = prefabs.Broadleaf_Shrub_01_Var6_Prefab;
+            plantEntities[2][12] = prefabs.Bush_Twig_01_Var3_Prefab;
+            plantEntities[2][13] = prefabs.Bush_Twig_01_Var4_Prefab;
             //农场数组
             Entity[][] farmEntities = new Entity[3][];
             farmEntities[0] = new Entity[14];
             farmEntities[1] = new Entity[14];
             farmEntities[2] = new Entity[14];
-            farmEntities[0][0] = cellData.Clover_01_Var1_Prefab;
-            farmEntities[0][1] = cellData.Clover_01_Var2_Prefab;
-            farmEntities[0][2] = cellData.Clover_01_Var3_Prefab; 
-            farmEntities[0][3] = cellData.Clover_01_Var4_Prefab;
-            farmEntities[0][4] = cellData.Fern_var01_Prefab;
-            farmEntities[0][5] = cellData.Fern_var02_Prefab;
-            farmEntities[0][6] = cellData.Fern_var03_Prefab;
-            farmEntities[0][7] = cellData.GreenBush_Var01_Prefab;
-            farmEntities[0][8] = cellData.Juniper_Bush_01_Var1;
-            farmEntities[0][9] = cellData.Juniper_Bush_01_Var2;
-            farmEntities[0][10] = cellData.Juniper_Bush_01_Var3;
-            farmEntities[0][11] = cellData.Juniper_Bush_01_Var4;
-            farmEntities[0][12] = cellData.Juniper_Bush_01_Var5;
-            farmEntities[0][13] = cellData.Meadow_Grass_01_Var1;
-            farmEntities[1][0] = cellData.Meadow_Grass_01_Var2;
-            farmEntities[1][1] = cellData.Meadow_Grass_01_Var3;
-            farmEntities[1][2] = cellData.Meadow_Grass_01_Var4;
-            farmEntities[1][3] = cellData.Meadow_Grass_01_Var5;
-            farmEntities[1][4] = cellData.Meadow_Grass_01_Var6;
-            farmEntities[1][5] = cellData.PineGroundScatter01_Var1_Prefab;
-            farmEntities[1][6] = cellData.PineGroundScatter01_Var2_Prefab;
-            farmEntities[1][7] = cellData.RedBush_Var1_Prefab;
-            farmEntities[1][8] = cellData.Bush_b1_4x4x4_PF;
-            farmEntities[1][9] = cellData.Bush_b1_6x8x6_PF;
-            farmEntities[1][10] = cellData.Bush_qilgP2_6x6x4_PF;
-            farmEntities[1][11] = cellData.Bush_qilgY2_2x2x4_PF;
-            farmEntities[1][12] = cellData.GrassGreen_qheqG2_01;
-            farmEntities[1][13] = cellData.GrassGreen_qheqG2_02;
-            farmEntities[2][0] = cellData.GrassGreen_qheqG2_03;
-            farmEntities[2][1] = cellData.GrassGreen_qheqG2_04;
-            farmEntities[2][2] = cellData.PH_Plant_Perennials_a2_1x1x2_A_Prefab;
-            farmEntities[2][3] = cellData.PH_Plant_Perennials_a2_1x1x2_B_Prefab;
-            farmEntities[2][4] = cellData.PH_Plant_Perennials_a2_1x1x2_C_Prefab;
-            farmEntities[2][5] = cellData.PH_Plant_Perennials_a2_1x1x2_Prefab;
-            farmEntities[2][6] = cellData.PH_Plant_Perennials_a4_1x1x0_PF;
-            farmEntities[2][7] = cellData.Rock_Granite_rcCwC_Prefab;
-            farmEntities[2][8] = cellData.Rock_Granite_reFto_brighter;
-            farmEntities[2][9] = cellData.Aset_rock_granite_M_rgAsy;
-            farmEntities[2][10] = cellData.Rock_Sandstone_plras;
-            farmEntities[2][11] = cellData.Wood_Branch_pjxuR_Prefab;
-            farmEntities[2][12] = cellData.Wood_branch_S_pcyeE_Prefab;
-            farmEntities[2][13] = cellData.Wood_log_M_qdtdP_Prefab;
+            farmEntities[0][0] = prefabs.Clover_01_Var1_Prefab;
+            farmEntities[0][1] = prefabs.Clover_01_Var2_Prefab;
+            farmEntities[0][2] = prefabs.Clover_01_Var3_Prefab;
+            farmEntities[0][3] = prefabs.Clover_01_Var4_Prefab;
+            farmEntities[0][4] = prefabs.Fern_var01_Prefab;
+            farmEntities[0][5] = prefabs.Fern_var02_Prefab;
+            farmEntities[0][6] = prefabs.Fern_var03_Prefab;
+            farmEntities[0][7] = prefabs.GreenBush_Var01_Prefab;
+            farmEntities[0][8] = prefabs.Juniper_Bush_01_Var1;
+            farmEntities[0][9] = prefabs.Juniper_Bush_01_Var2;
+            farmEntities[0][10] = prefabs.Juniper_Bush_01_Var3;
+            farmEntities[0][11] = prefabs.Juniper_Bush_01_Var4;
+            farmEntities[0][12] = prefabs.Juniper_Bush_01_Var5;
+            farmEntities[0][13] = prefabs.Meadow_Grass_01_Var1;
+            farmEntities[1][0] = prefabs.Meadow_Grass_01_Var2;
+            farmEntities[1][1] = prefabs.Meadow_Grass_01_Var3;
+            farmEntities[1][2] = prefabs.Meadow_Grass_01_Var4;
+            farmEntities[1][3] = prefabs.Meadow_Grass_01_Var5;
+            farmEntities[1][4] = prefabs.Meadow_Grass_01_Var6;
+            farmEntities[1][5] = prefabs.PineGroundScatter01_Var1_Prefab;
+            farmEntities[1][6] = prefabs.PineGroundScatter01_Var2_Prefab;
+            farmEntities[1][7] = prefabs.RedBush_Var1_Prefab;
+            farmEntities[1][8] = prefabs.Bush_b1_4x4x4_PF;
+            farmEntities[1][9] = prefabs.Bush_b1_6x8x6_PF;
+            farmEntities[1][10] = prefabs.Bush_qilgP2_6x6x4_PF;
+            farmEntities[1][11] = prefabs.Bush_qilgY2_2x2x4_PF;
+            farmEntities[1][12] = prefabs.GrassGreen_qheqG2_01;
+            farmEntities[1][13] = prefabs.GrassGreen_qheqG2_02;
+            farmEntities[2][0] = prefabs.GrassGreen_qheqG2_03;
+            farmEntities[2][1] = prefabs.GrassGreen_qheqG2_04;
+            farmEntities[2][2] = prefabs.PH_Plant_Perennials_a2_1x1x2_A_Prefab;
+            farmEntities[2][3] = prefabs.PH_Plant_Perennials_a2_1x1x2_B_Prefab;
+            farmEntities[2][4] = prefabs.PH_Plant_Perennials_a2_1x1x2_C_Prefab;
+            farmEntities[2][5] = prefabs.PH_Plant_Perennials_a2_1x1x2_Prefab;
+            farmEntities[2][6] = prefabs.PH_Plant_Perennials_a4_1x1x0_PF;
+            farmEntities[2][7] = prefabs.Rock_Granite_rcCwC_Prefab;
+            farmEntities[2][8] = prefabs.Rock_Granite_reFto_brighter;
+            farmEntities[2][9] = prefabs.Aset_rock_granite_M_rgAsy;
+            farmEntities[2][10] = prefabs.Rock_Sandstone_plras;
+            farmEntities[2][11] = prefabs.Wood_Branch_pjxuR_Prefab;
+            farmEntities[2][12] = prefabs.Wood_branch_S_pcyeE_Prefab;
+            farmEntities[2][13] = prefabs.Wood_log_M_qdtdP_Prefab;
             //建筑数组
             Entity[][] cityEntities = new Entity[3][];
             cityEntities[0] = new Entity[14];
             cityEntities[1] = new Entity[14];
             cityEntities[2] = new Entity[14];
-            cityEntities[0][0] = cellData.Wood_Log_qdhxa_Prefab;
-            cityEntities[0][1] = cellData.Wood_Log_rhfdj;
-            cityEntities[0][2] = cellData.Wood_Root_rkswd_Prefab;
-            cityEntities[0][3] = cellData.Rock_Passagecave_A;
-            cityEntities[0][4] = cellData.FlatRock_01;
-            cityEntities[0][5] = cellData.Rock_06;
-            cityEntities[0][6] = cellData.Rock_06_B;
-            cityEntities[0][7] = cellData.Rock_31;
-            cityEntities[0][8] = cellData.Rock_31_B;
-            cityEntities[0][9] = cellData.Rock_31_Darker;
-            cityEntities[0][10] = cellData.RockSlussen_01;
-            cityEntities[0][11] = cellData.SmallCliff_01_partA;
-            cityEntities[0][12] = cellData.SmallCliff_A;
-            cityEntities[0][13] = cellData.SmallCliff_A_Brown;
-            cityEntities[1][0] = cellData.Cliff_01_Curved_A_Prefab;
-            cityEntities[1][1] = cellData.Cliff_01_Prefab;
-            cityEntities[1][2] = cellData.HE_bark_strukture_A02_Prefab;
-            cityEntities[1][3] = cellData.HE_bark_strukture_A05_Prefab;
-            cityEntities[1][4] = cellData.HE_Portal_Modul_A_Prefab;
-            cityEntities[1][5] = cellData.HE_Portal_Modul_C_Prefab;
-            cityEntities[1][6] = cellData.HE_Portal_Modul_D_Prefab;
-            cityEntities[1][7] = cellData.Tree_type_003;
-            cityEntities[1][8] = cellData.Tree_type_004;
-            cityEntities[1][9] = cellData.Tree_type_005;
-            cityEntities[1][10] = cellData.P_OBJ_Bench_01;
-            cityEntities[1][11] = cellData.P_OBJ_flower;
-            cityEntities[1][12] = cellData.P_OBJ_gear_shop;
-            cityEntities[1][13] = cellData.P_OBJ_fountain_001;
-            cityEntities[2][0] = cellData.P_OBJ_house_001;
-            cityEntities[2][1] = cellData.P_OBJ_house_002;
-            cityEntities[2][2] = cellData.P_OBJ_item_shop;
-            cityEntities[2][3] = cellData.P_OBJ_pillar_001;
-            cityEntities[2][4] = cellData.P_OBJ_pillar_002;
-            cityEntities[2][5] = cellData.P_OBJ_pillar_003;
-            cityEntities[2][6] = cellData.P_OBJ_sailboat_01;
-            cityEntities[2][7] = cellData.P_OBJ_sailboat_dock_001;
-            cityEntities[2][8] = cellData.P_OBJ_streetlight_001;
-            cityEntities[2][9] = cellData.P_OBJ_streetlight_002;
-            cityEntities[2][10] = cellData.P_OBJ_streetlight_003;
-            cityEntities[2][11] = cellData.P_OBJ_windmill_01;
-            cityEntities[2][12] = cellData.P_OBJ_windmill_02;
-            cityEntities[2][13] = cellData.sticks_debris_00_prefab;
+            cityEntities[0][0] = prefabs.Wood_Log_qdhxa_Prefab;
+            cityEntities[0][1] = prefabs.Wood_Log_rhfdj;
+            cityEntities[0][2] = prefabs.Wood_Root_rkswd_Prefab;
+            cityEntities[0][3] = prefabs.Rock_Passagecave_A;
+            cityEntities[0][4] = prefabs.FlatRock_01;
+            cityEntities[0][5] = prefabs.Rock_06;
+            cityEntities[0][6] = prefabs.Rock_06_B;
+            cityEntities[0][7] = prefabs.Rock_31;
+            cityEntities[0][8] = prefabs.Rock_31_B;
+            cityEntities[0][9] = prefabs.Rock_31_Darker;
+            cityEntities[0][10] = prefabs.RockSlussen_01;
+            cityEntities[0][11] = prefabs.SmallCliff_01_partA;
+            cityEntities[0][12] = prefabs.SmallCliff_A;
+            cityEntities[0][13] = prefabs.SmallCliff_A_Brown;
+            cityEntities[1][0] = prefabs.Cliff_01_Curved_A_Prefab;
+            cityEntities[1][1] = prefabs.Cliff_01_Prefab;
+            cityEntities[1][2] = prefabs.HE_bark_strukture_A02_Prefab;
+            cityEntities[1][3] = prefabs.HE_bark_strukture_A05_Prefab;
+            cityEntities[1][4] = prefabs.HE_Portal_Modul_A_Prefab;
+            cityEntities[1][5] = prefabs.HE_Portal_Modul_C_Prefab;
+            cityEntities[1][6] = prefabs.HE_Portal_Modul_D_Prefab;
+            cityEntities[1][7] = prefabs.Tree_type_003;
+            cityEntities[1][8] = prefabs.Tree_type_004;
+            cityEntities[1][9] = prefabs.Tree_type_005;
+            cityEntities[1][10] = prefabs.P_OBJ_Bench_01;
+            cityEntities[1][11] = prefabs.P_OBJ_flower;
+            cityEntities[1][12] = prefabs.P_OBJ_gear_shop;
+            cityEntities[1][13] = prefabs.P_OBJ_fountain_001;
+            cityEntities[2][0] = prefabs.P_OBJ_house_001;
+            cityEntities[2][1] = prefabs.P_OBJ_house_002;
+            cityEntities[2][2] = prefabs.P_OBJ_item_shop;
+            cityEntities[2][3] = prefabs.P_OBJ_pillar_001;
+            cityEntities[2][4] = prefabs.P_OBJ_pillar_002;
+            cityEntities[2][5] = prefabs.P_OBJ_pillar_003;
+            cityEntities[2][6] = prefabs.P_OBJ_sailboat_01;
+            cityEntities[2][7] = prefabs.P_OBJ_sailboat_dock_001;
+            cityEntities[2][8] = prefabs.P_OBJ_streetlight_001;
+            cityEntities[2][9] = prefabs.P_OBJ_streetlight_002;
+            cityEntities[2][10] = prefabs.P_OBJ_streetlight_003;
+            cityEntities[2][11] = prefabs.P_OBJ_windmill_01;
+            cityEntities[2][12] = prefabs.P_OBJ_windmill_02;
+            cityEntities[2][13] = prefabs.sticks_debris_00_prefab;
 
             //没有水/河/路，添加随机地貌
             if (!cellData.IsUnderWater && !cellData.HasRiver && !cellData.HasRoad)
             {
-                AddFeature(entities, farmEntities, cityEntities, currCellCenter, index, cellData.GreenLvl, cellData.FarmLv1, cellData.CityLvl);
+                AddFeature(plantEntities, farmEntities, cityEntities, currCellCenter, index, cellData.GreenLvl, cellData.FarmLv1, cellData.CityLvl,entity);
             }
 
             #endregion
@@ -270,9 +280,9 @@ public class CellSystem : JobComponentSystem {
                 int next2 = (j + 2) <= 5 ? (j + 2) : (j - 4);
                 int prev2 = (j - 2) >= 0 ? (j - 2) : (j + 4);
                 //是否有河流通过
-                bool hasRiverThroughEdge = HasRiverThroughEdge(river, directionIndex[j]);
+                bool hasRiverThroughEdge = HasRiverThroughEdge(river, neighborIndex[j]);
                 float RiverSurfaceY = (elevation + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep;
-                bool hasRoad = roads[j];
+                bool hasRoad = neighborHasRoad[j];
                 #region River 河流
 
                 //如果有河流通过，则降低海拔来创造河道
@@ -314,22 +324,22 @@ public class CellSystem : JobComponentSystem {
                             //TriangulateWithRiver 三角化河段
                             Vector3 centerL, centerR;
                             //获取当前方向的相反方向，并判断是否有河流经过
-                            if (HasRiverThroughEdge(river, directionIndex[OppositeDirection(j)]))
+                            if (HasRiverThroughEdge(river, neighborIndex[OppositeDirection(j)]))
                             {
                                 centerL = currCellCenter + HexMetrics.GetFirstSolidCorner(prev) * 0.25f;
                                 centerR = currCellCenter + HexMetrics.GetSecondSolidCorner(next) * 0.25f;
                             }
-                            else if (HasRiverThroughEdge(river, directionIndex[next]))
+                            else if (HasRiverThroughEdge(river, neighborIndex[next]))
                             {
                                 centerL = currCellCenter;
                                 centerR = Vector3.Lerp(currCellCenter, e.v5, 2f / 3f);
                             }
-                            else if (HasRiverThroughEdge(river, directionIndex[prev]))
+                            else if (HasRiverThroughEdge(river, neighborIndex[prev]))
                             {
                                 centerL = Vector3.Lerp(currCellCenter, e.v1, 2f / 3f);
                                 centerR = currCellCenter;
                             }
-                            else if (HasRiverThroughEdge(river, directionIndex[next2]))
+                            else if (HasRiverThroughEdge(river, neighborIndex[next2]))
                             {
                                 centerL = currCellCenter;
                                 centerR = currCellCenter + HexMetrics.GetSolidEdgeMiddle(next) * (0.5f * HexMetrics.InnerToOuter);
@@ -355,7 +365,7 @@ public class CellSystem : JobComponentSystem {
                             //隐藏处于水下的河流
                             if (!cellData.IsUnderWater)
                             {
-                                bool reversed = river.IncomingRiver == directionIndex[j];
+                                bool reversed = river.IncomingRiver == neighborIndex[j];
                                 TriangulateRiverQuad(centerL, centerR, m.v2, m.v4, RiverSurfaceY, RiverSurfaceY, 0.4f, ref riverUvBuffer, ref riverBuffers, reversed);
                                 TriangulateRiverQuad(m.v2, m.v4, e.v2, e.v4, RiverSurfaceY, RiverSurfaceY, 0.6f, ref riverUvBuffer, ref riverBuffers, reversed);
                             }
@@ -365,8 +375,8 @@ public class CellSystem : JobComponentSystem {
                     {
                         #region TriangulateAdjacentToRiver三角化河岸
 
-                        bool prevHasRiverThrougEdge = HasRiverThroughEdge(river, directionIndex[prev]);
-                        bool nextHasRiverThrougEdge = HasRiverThroughEdge(river, directionIndex[next]);
+                        bool prevHasRiverThrougEdge = HasRiverThroughEdge(river, neighborIndex[prev]);
+                        bool nextHasRiverThrougEdge = HasRiverThroughEdge(river, neighborIndex[next]);
                         Vector3 center = currCellCenter;
                         if (nextHasRiverThrougEdge)
                         {
@@ -374,12 +384,12 @@ public class CellSystem : JobComponentSystem {
                             {
                                 center += HexMetrics.GetSolidEdgeMiddle(j) * (HexMetrics.InnerToOuter * 0.5f);
                             }
-                            else if (HasRiverThroughEdge(river, directionIndex[prev2]))
+                            else if (HasRiverThroughEdge(river, neighborIndex[prev2]))
                             {
                                 center += HexMetrics.GetFirstSolidCorner(j) * 0.25f;
                             }
                         }
-                        else if (prevHasRiverThrougEdge && HasRiverThroughEdge(river, directionIndex[next2]))
+                        else if (prevHasRiverThrougEdge && HasRiverThroughEdge(river, neighborIndex[next2]))
                         {
                             center += HexMetrics.GetSecondSolidCorner(j) * 0.25f;
                         }
@@ -393,7 +403,7 @@ public class CellSystem : JobComponentSystem {
                         }
                         else if (!cellData.IsUnderWater)
                         {
-                            AddFeature(entities, farmEntities, cityEntities, (currCellCenter + e.v1 + e.v5) * (1f / 3f), index,cellData.GreenLvl, cellData.FarmLv1, cellData.CityLvl);
+                            AddFeature(plantEntities, farmEntities, cityEntities, (currCellCenter + e.v1 + e.v5) * (1f / 3f), index,cellData.GreenLvl, cellData.FarmLv1, cellData.CityLvl,entity);
                         }
                         TriangulateEdgeStrip(m, currCellColor, e, currCellColor, ref colorBuffer, ref vertexBuffer);
                         TriangulateEdgeFan(center, m, currCellColor, ref colorBuffer, ref vertexBuffer);
@@ -402,19 +412,19 @@ public class CellSystem : JobComponentSystem {
 
                         if (hasRoad)
                         {
-                            Vector2 interpolators = GetRoadInterpolators(roads[j], roads[prev], roads[next]);
+                            Vector2 interpolators = GetRoadInterpolators(neighborHasRoad[j], neighborHasRoad[prev], neighborHasRoad[next]);
                             Vector3 roadCenter = center;
                             int outgoingDirection = river.OutgoingRiver;
                             int incomingDirection = river.IncomingRiver;
 
                             for (int i = 0; i < 6; i++)
                             {
-                                if (incomingDirection == directionIndex[i])
+                                if (incomingDirection == neighborIndex[i])
                                 {
                                     incomingDirection = i;
                                 }
 
-                                if (outgoingDirection == directionIndex[i])
+                                if (outgoingDirection == neighborIndex[i])
                                 {
                                     outgoingDirection = i;
                                 }
@@ -432,7 +442,7 @@ public class CellSystem : JobComponentSystem {
                                     Vector3 corner = Vector3.zero;
                                     if (prevHasRiverThrougEdge)
                                     {
-                                        if (!roads[j] && !roads[next])
+                                        if (!neighborHasRoad[j] && !neighborHasRoad[next])
                                         {
                                             continue;
                                         }
@@ -440,7 +450,7 @@ public class CellSystem : JobComponentSystem {
                                     }
                                     else
                                     {
-                                        if (!roads[j] && !roads[prev])
+                                        if (!neighborHasRoad[j] && !neighborHasRoad[prev])
                                         {
                                             continue;
                                         }
@@ -482,7 +492,7 @@ public class CellSystem : JobComponentSystem {
                                     {
                                         middle = j;
                                     }
-                                    if (!roads[middle] && !roads[(middle - 1 < 0 ? 5 : middle - 1)] && !roads[(middle + 1 > 5 ? 0 : middle + 1)])
+                                    if (!neighborHasRoad[middle] && !neighborHasRoad[(middle - 1 < 0 ? 5 : middle - 1)] && !neighborHasRoad[(middle + 1 > 5 ? 0 : middle + 1)])
                                     {
                                         continue;
                                     }
@@ -490,7 +500,7 @@ public class CellSystem : JobComponentSystem {
                                 }
                                 Vector3 mL = Vector3.Lerp(roadCenter, e.v1, interpolators.x);
                                 Vector3 mR = Vector3.Lerp(roadCenter, e.v5, interpolators.y);
-                                TriangulateRoad(roadCenter, mL, mR, e, ref roadBuffers, ref roadUvs, roads[j]);
+                                TriangulateRoad(roadCenter, mL, mR, e, ref roadBuffers, ref roadUvs, neighborHasRoad[j]);
                                 if (prevHasRiverThrougEdge)
                                 {
                                     TriangulateRoadEdge(roadCenter, center, mL, ref roadBuffers, ref roadUvs);
@@ -512,13 +522,13 @@ public class CellSystem : JobComponentSystem {
                     TriangulateEdgeFan(currCellCenter, e, currCellColor, ref colorBuffer, ref vertexBuffer);
                     if (hasRoad)
                     {
-                        Vector2 interpolators = GetRoadInterpolators(roads[j], roads[prev], roads[next]);
+                        Vector2 interpolators = GetRoadInterpolators(neighborHasRoad[j], neighborHasRoad[prev], neighborHasRoad[next]);
 
-                        TriangulateRoad(currCellCenter, Vector3.Lerp(currCellCenter, e.v1, interpolators.x), Vector3.Lerp(currCellCenter, e.v5, interpolators.y), e, ref roadBuffers, ref roadUvs, roads[j]);
+                        TriangulateRoad(currCellCenter, Vector3.Lerp(currCellCenter, e.v1, interpolators.x), Vector3.Lerp(currCellCenter, e.v5, interpolators.y), e, ref roadBuffers, ref roadUvs, neighborHasRoad[j]);
                     }
                     else if (!cellData.IsUnderWater)
                     {
-                        AddFeature(entities, farmEntities, cityEntities, (currCellCenter + e.v1 + e.v5) * (1f / 3f), index,cellData.GreenLvl, cellData.FarmLv1, cellData.CityLvl);
+                        AddFeature(plantEntities, farmEntities, cityEntities, (currCellCenter + e.v1 + e.v5) * (1f / 3f), index,cellData.GreenLvl, cellData.FarmLv1, cellData.CityLvl,entity);
                     }
                 }
 
@@ -527,29 +537,24 @@ public class CellSystem : JobComponentSystem {
                 //Connection Between 2 cells
                 #region  Bridge=桥=》TriangulateConnection三角化桥连接
                 //桥只连接前三个方向相邻的单元，从而避免重复连接
-                if (j <= 2)
+                if (j <= 2 && neighborIndex[j] != int.MinValue)
                 {
-                    if (directionIndex[j] == int.MinValue)
-                    {//如果没有相邻的单元，则跳过循环
-                        continue;
-                    }
-
                     //添加外围桥接区域的顶点
                     Vector3 bridge = (HexMetrics.GetBridge(j));
 
-                    bridge.y = (elevations[j] - elevation) * HexMetrics.ElevationStep;
+                    bridge.y = (neighborElevations[j] - elevation) * HexMetrics.ElevationStep;
                     EdgeVertices e2 = new EdgeVertices(e.v1 + bridge, e.v5 + bridge);
                     if (hasRiverThroughEdge)
                     {
-                        float neighborRiverSurfaceY = (elevations[j] + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep;
-                        e2.v3.y = (elevations[j] + HexMetrics.StreamBedElevationOffset) * HexMetrics.ElevationStep;
+                        float neighborRiverSurfaceY = (neighborElevations[j] + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep;
+                        e2.v3.y = (neighborElevations[j] + HexMetrics.StreamBedElevationOffset) * HexMetrics.ElevationStep;
                         if (!cellData.IsUnderWater)
                         {
                             if (!neighborIsUnderWater[j])
                             {
-                                TriangulateRiverQuad(e.v2, e.v4, e2.v2, e2.v4, RiverSurfaceY, neighborRiverSurfaceY, 0.8f, ref riverUvBuffer, ref riverBuffers, river.HasIncomingRiver && river.IncomingRiver == directionIndex[j]);
+                                TriangulateRiverQuad(e.v2, e.v4, e2.v2, e2.v4, RiverSurfaceY, neighborRiverSurfaceY, 0.8f, ref riverUvBuffer, ref riverBuffers, river.HasIncomingRiver && river.IncomingRiver == neighborIndex[j]);
                             }
-                            else if (elevation > elevations[j]+HexMetrics.WaterLevelOffset)
+                            else if (elevation > neighborElevations[j]+HexMetrics.WaterLevelOffset)
                             {
                                 //TriangulateWaterfallInWater三角化瀑布
                                 Vector3 v1 = e.v2;
@@ -558,7 +563,7 @@ public class CellSystem : JobComponentSystem {
                                 Vector3 v4 = e2.v4;
                                 v1.y = v2.y = RiverSurfaceY;
                                 v3.y = v4.y = neighborRiverSurfaceY;
-                                float waterY= (elevations[j]+ HexMetrics.WaterLevelOffset + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep;
+                                float waterY= (neighborElevations[j]+ HexMetrics.WaterLevelOffset + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep;
                                 float t = (waterY - neighborRiverSurfaceY) / (RiverSurfaceY - neighborRiverSurfaceY);
                                 v3 = Vector3.Lerp(v3, v1, t);
                                 v4 = Vector3.Lerp(v4, v2, t);
@@ -566,7 +571,7 @@ public class CellSystem : JobComponentSystem {
                                 AddQuadUV(0f, 1f, 0.8f, 1f,ref riverUvBuffer);
                             }
                         }
-                        else if (!neighborIsUnderWater[j] && elevation > elevations[j] + HexMetrics.WaterLevelOffset)
+                        else if (!neighborIsUnderWater[j] && elevation > neighborElevations[j] + HexMetrics.WaterLevelOffset)
                         {
                             //TriangulateWaterfallInWater三角化瀑布
                             Vector3 v1 = e2.v4;
@@ -586,52 +591,59 @@ public class CellSystem : JobComponentSystem {
                     }
                     #region 桥面
                     //判断当前单元与相邻单元的海拔高低差，如果是斜坡，则添加阶梯，平面和峭壁则无需阶梯
-                    if (HexMetrics.GetEdgeType(elevation, elevations[j]) == HexMetrics.HexEdgeType.Slope)
+                    if (HexMetrics.GetEdgeType(elevation, neighborElevations[j]) == HexMetrics.HexEdgeType.Slope)
                     {
-                        TriangulateEdgeTerraces(e, e2, currCellColor, blendColors[j], ref colorBuffer, ref vertexBuffer, roads[j], ref roadBuffers, ref roadUvs);
+                        TriangulateEdgeTerraces(e, e2, currCellColor, neighborColors[j], ref colorBuffer, ref vertexBuffer, neighborHasRoad[j], ref roadBuffers, ref roadUvs);
                     }
                     else
                     {
-                        Color bridgeColor = (currCellColor + blendColors[j]) * 0.5f;
-                        if (roads[j])
+                        Color bridgeColor = (currCellColor + neighborColors[j]) * 0.5f;
+                        if (neighborHasRoad[j])
                         {
                             TriangulateRoadSegment(e.v2, e.v3, e.v4, e2.v2, e2.v3, e2.v4, ref roadBuffers, ref roadUvs);
                         }
-                        TriangulateEdgeStrip(e, currCellColor, e2, blendColors[j], ref colorBuffer, ref vertexBuffer);
+                        TriangulateEdgeStrip(e, currCellColor, e2, neighborColors[j], ref colorBuffer, ref vertexBuffer);
                     }
 
                     #endregion
 
+                    //添加墙体
+                    if (cellData.HasWall && neighborHasWall[j])
+                    {
+                        AddWall(e, e2, ref wallBuffers, hasRiverThroughEdge, neighborHasRoad[j]);
+                    }
                     #region 桥洞
-
-                    //添加外圈区域三向颜色混合
-
-                    if (j <= 1 && directionIndex[next] != int.MinValue)
+             
+                    if (j <= 1 && neighborIndex[next] != int.MinValue)
                     {
                         //下一个相邻单元的海拔
-                        int nextElevation = elevations[next];
+                        int nextElevation = neighborElevations[next];
                         Vector3 vertex5 = e.v5 + HexMetrics.GetBridge(next);
                         vertex5.y = nextElevation * HexMetrics.ElevationStep;
                         //判断相邻的三个六边形单元的高低关系，按照最低（Bottom），左（Left），右（Right）的顺序进行三角化处理
-                        if (elevation <= elevations[j])
+                        if (elevation <= neighborElevations[j])
                         {
                             if (elevation <= nextElevation)
                             {
                                 //当前单元海拔最低
-                                TriangulateCorner(e.v5, currCellColor, e2.v5, blendColors[j], vertex5, blendColors[next], ref colorBuffer, ref vertexBuffer, elevation, elevations[j], nextElevation);
+                                TriangulateCorner(e.v5, currCellColor, e2.v5, neighborColors[j], vertex5, neighborColors[next], ref colorBuffer, ref vertexBuffer, elevation, neighborElevations[j], nextElevation);
+                                AddWall(e.v5,cellData.HasWall,e2.v5,neighborHasWall[j],vertex5,neighborHasWall[next],ref wallBuffers);
                             }
                             else
                             {
-                                TriangulateCorner(vertex5, blendColors[next], e.v5, currCellColor, e2.v5, blendColors[j], ref colorBuffer, ref vertexBuffer, nextElevation, elevation, elevations[j]);
+                                TriangulateCorner(vertex5, neighborColors[next], e.v5, currCellColor, e2.v5, neighborColors[j], ref colorBuffer, ref vertexBuffer, nextElevation, elevation, neighborElevations[j]);
+                                AddWall(vertex5, neighborHasWall[next], e.v5, cellData.HasWall, e2.v5, neighborHasWall[j], ref wallBuffers);
                             }
                         }
-                        else if (elevations[j] <= nextElevation)
+                        else if (neighborElevations[j] <= nextElevation)
                         {
-                            TriangulateCorner(e2.v5, blendColors[j], vertex5, blendColors[next], e.v5, currCellColor, ref colorBuffer, ref vertexBuffer, elevations[j], nextElevation, elevation);
+                            TriangulateCorner(e2.v5, neighborColors[j], vertex5, neighborColors[next], e.v5, currCellColor, ref colorBuffer, ref vertexBuffer, neighborElevations[j], nextElevation, elevation);
+                            AddWall(e2.v5, neighborHasWall[j], vertex5, neighborHasWall[next], e.v5, cellData.HasWall, ref wallBuffers);
                         }
                         else
                         {
-                            TriangulateCorner(vertex5, blendColors[next], e.v5, currCellColor, e2.v5, blendColors[j], ref colorBuffer, ref vertexBuffer, nextElevation, elevation, elevations[j]);
+                            TriangulateCorner(vertex5, neighborColors[next], e.v5, currCellColor, e2.v5, neighborColors[j], ref colorBuffer, ref vertexBuffer, nextElevation, elevation, neighborElevations[j]);
+                            AddWall( vertex5, neighborHasWall[next], e.v5, cellData.HasWall, e2.v5, neighborHasWall[j], ref wallBuffers);
                         }
 
                     }
@@ -649,7 +661,7 @@ public class CellSystem : JobComponentSystem {
                     currCellCenter = cellData.Position;
                     float WaterSurfaceY = (cellData.WaterLevel + HexMetrics.WaterSurfaceElevationOffset) * HexMetrics.ElevationStep; ;
                     currCellCenter.y = WaterSurfaceY;
-                    if (directionIndex[j] != int.MinValue && elevations[j] > cellData.WaterLevel)
+                    if (neighborIndex[j] != int.MinValue && neighborElevations[j] > cellData.WaterLevel)
                     {
                         #region TriangulateWaterShore三角化水岸
 
@@ -662,7 +674,7 @@ public class CellSystem : JobComponentSystem {
                         AddTriangle(currCellCenter, e1.v3, e1.v4, ref waterBuffers);
                         AddTriangle(currCellCenter, e1.v4, e1.v5, ref waterBuffers);
 
-                        Vector3 center2 = positions[j];
+                        Vector3 center2 = neighborPositions[j];
                         center2.y = currCellCenter.y;
                         EdgeVertices e2 = new EdgeVertices(
                             center2 + HexMetrics.GetSecondSolidCorner(OppositeDirection(j)),
@@ -685,7 +697,7 @@ public class CellSystem : JobComponentSystem {
                             AddTriangleUV(new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(1f, 1f), ref estuaryUvs);
                             AddQuadUV(new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f), ref estuaryUvs);
 
-                            if (river.HasIncomingRiver && river.IncomingRiver == directionIndex[j])
+                            if (river.HasIncomingRiver && river.IncomingRiver == neighborIndex[j])
                             {
                                 AddQuadUV2(new Vector2(1.5f, 1f), new Vector2(0.7f, 1.15f), new Vector2(1f, 0.8f), new Vector2(0.5f, 1.1f), ref estuaryUvs2);
                                 AddTriangleUV2(new Vector2(0.5f, 1.1f), new Vector2(1f, 0.8f), new Vector2(0f, 0.8f), ref estuaryUvs2);
@@ -712,9 +724,9 @@ public class CellSystem : JobComponentSystem {
                             AddQuadUV(0f, 0f, 0f, 1f, ref shoreUvs);
                         }
 
-                        if (directionIndex[next] != int.MinValue)
+                        if (neighborIndex[next] != int.MinValue)
                         {
-                            Vector3 v3 = positions[next] + (elevations[next]>cellData.WaterLevel?
+                            Vector3 v3 = neighborPositions[next] + (neighborElevations[next]>cellData.WaterLevel?
                                              HexMetrics.GetFirstWaterCorner(prev) :
                                              HexMetrics.GetFirstSolidCorner(prev));
                             v3.y = currCellCenter.y;
@@ -722,7 +734,7 @@ public class CellSystem : JobComponentSystem {
                             AddTriangleUV(
                                 new Vector2(0f, 0f),
                                 new Vector2(0f, 1f),
-                                new Vector2(0f, elevations[next] > cellData.WaterLevel ? 0f : 1f), ref shoreUvs
+                                new Vector2(0f, neighborElevations[next] > cellData.WaterLevel ? 0f : 1f), ref shoreUvs
                             );
                         }
 
@@ -737,7 +749,7 @@ public class CellSystem : JobComponentSystem {
 
                         AddTriangle(currCellCenter, c1, c2, ref waterBuffers);
 
-                        if (j <= 2 && directionIndex[j] != int.MinValue)
+                        if (j <= 2 && neighborIndex[j] != int.MinValue)
                         {
                             Vector3 bridge = HexMetrics.GetWaterBridge(j);
                             Vector3 e1 = c1 + bridge;
@@ -748,7 +760,7 @@ public class CellSystem : JobComponentSystem {
                             if (j <= 1)
                             {
 
-                                if (directionIndex[next] != int.MinValue || elevations[next] > cellData.WaterLevel)
+                                if (neighborIndex[next] != int.MinValue || neighborElevations[next] > cellData.WaterLevel)
                                 {
                                     continue;
                                 }
@@ -767,8 +779,141 @@ public class CellSystem : JobComponentSystem {
 
             }
             //4.turn off cell system by remove NewDataTag
+            CommandBuffer.RemoveComponent<Prefab>(index, entity);
             CommandBuffer.RemoveComponent<NewDataTag>(index,entity);
+
+            #region Dispose
+            plantEntities = null;
+            farmEntities = null;
+            cityEntities = null;
+            neighborColors = null;
+            neighborElevations = null;
+            #endregion
         }
+
+        #region Wall
+
+        void AddWall(EdgeVertices near, EdgeVertices far, ref DynamicBuffer<WallBuffer> wallBuffers,
+        bool hasRiver, bool hasRoad)
+        {
+            AddWallSegment(near.v1, far.v1, near.v2, far.v2, ref wallBuffers);
+            if (hasRiver || hasRoad)
+            {
+                AddWallCap(near.v2, far.v2, ref wallBuffers);
+                AddWallCap(far.v4, near.v4, ref wallBuffers);
+            }
+            else
+            {
+                AddWallSegment(near.v2, far.v2, near.v3, far.v3, ref wallBuffers);
+                AddWallSegment(near.v3, far.v3, near.v4, far.v4, ref wallBuffers);
+            }
+            AddWallSegment(near.v4, far.v4, near.v5, far.v5, ref wallBuffers);
+        }
+
+        public void AddWall(Vector3 c1, bool cell1,Vector3 c2, bool cell2,Vector3 c3, bool cell3, ref DynamicBuffer<WallBuffer> wallBuffers)
+        {
+            if (cell1)
+            {
+                if (cell2)
+                {
+                    if (!cell3)
+                    {
+                        AddWallSegment(c3, c1, c2, ref wallBuffers);
+                    }
+                }
+                else if (cell3)
+                {
+                    AddWallSegment(c2, c3, c1, ref wallBuffers);
+                }
+                else
+                {
+                    AddWallSegment(c1, c2, c3, ref wallBuffers);
+                }
+            }
+            else if (cell2)
+            {
+                if (cell3)
+                {
+                    AddWallSegment(c1, c2, c3, ref wallBuffers);
+                }
+                else
+                {
+                    AddWallSegment(c2, c3, c1, ref wallBuffers);
+                }
+            }
+            else if (cell3)
+            {
+                AddWallSegment(c3, c1, c2, ref wallBuffers);
+            }
+            else
+            {
+                AddWallSegment(c1, c2, c3, ref wallBuffers);
+            }
+        }
+
+        void AddWallSegment(Vector3 nearLeft, Vector3 farLeft, Vector3 nearRight, Vector3 farRight, ref DynamicBuffer<WallBuffer> wallBuffers)
+        {
+            Vector3 left = HexMetrics.WallLerp(nearLeft, farLeft);
+            Vector3 right = HexMetrics.WallLerp(nearRight, farRight);
+            Vector3 leftThicknessOffset =
+                HexMetrics.WallThicknessOffset(nearLeft, farLeft);
+            Vector3 rightThicknessOffset =
+                HexMetrics.WallThicknessOffset(nearRight, farRight);
+            float leftTop = left.y + HexMetrics.WallHeight;
+            float rightTop = right.y + HexMetrics.WallHeight;
+
+            Vector3 v1, v2, v3, v4;
+            v1 = v3 = left - leftThicknessOffset;
+            v2 = v4 = right - rightThicknessOffset;
+            v3.y = leftTop;
+            v4.y = rightTop;
+            AddQuad(v1, v2, v3, v4,ref wallBuffers);
+
+            Vector3 t1 = v3, t2 = v4;
+
+            v1 = v3 = left + leftThicknessOffset;
+            v2 = v4 = right + rightThicknessOffset;
+            v3.y = leftTop;
+            v4.y = rightTop;
+            AddQuad(v2, v1, v4, v3,ref wallBuffers);
+
+            AddQuad(t1, t2, v3, v4,ref wallBuffers);
+        }
+
+        void AddWallSegment(Vector3 pivot,Vector3 left,Vector3 right, ref DynamicBuffer<WallBuffer> wallBuffers)
+        {
+            AddWallSegment(pivot, left, pivot, right,ref wallBuffers);
+            AddWallCap(pivot, left, ref wallBuffers);
+            AddWallCap(pivot, right, ref wallBuffers);
+        }
+
+        void AddWallCap(Vector3 near, Vector3 far, ref DynamicBuffer<WallBuffer> wallBuffers)
+        {
+            Vector3 center = HexMetrics.WallLerp(near, far);
+            Vector3 thickness = HexMetrics.WallThicknessOffset(near, far);
+
+            Vector3 v1, v2, v3, v4;
+
+            v1 = v3 = center - thickness;
+            v2 = v4 = center + thickness;
+            v3.y = v4.y = center.y + HexMetrics.WallHeight;
+            AddQuad(v1, v2, v3, v4,ref wallBuffers);
+        }
+
+        //为墙体添加三角
+        void AddTriangle(Vector3 v1, Vector3 v2, Vector3 v3, ref DynamicBuffer<WallBuffer> wallBuffers)
+        {
+            wallBuffers.Add((v1));
+            wallBuffers.Add((v2));
+            wallBuffers.Add((v3));
+        }
+
+        void AddQuad(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, ref DynamicBuffer<WallBuffer> wallBuffers)
+        {
+            AddTriangle(v1, v3, v2, ref wallBuffers);
+            AddTriangle(v2, v3, v4, ref wallBuffers);
+        }
+        #endregion   
 
         #region HexFeatureManager地貌特征管理 
 
@@ -777,7 +922,7 @@ public class CellSystem : JobComponentSystem {
         /// </summary>
         /// <param name="position">位置</param>
         /// <param name="jobIndex">任务索引</param>
-        void AddFeature(Entity[][] platEntities, Entity[][] farmEntities, Entity[][] cityEntities, Vector3 position,int jobIndex,int greenLvl,int farmLvl,int cityLvl)
+        void AddFeature(Entity[][] platEntities, Entity[][] farmEntities, Entity[][] cityEntities, Vector3 position,int jobIndex,int greenLvl,int farmLvl,int cityLvl,Entity parent)
         {
             HexHash hash = HexMetrics.SampleHashGrid(position);
             Entity entity=Entity.Null;
@@ -859,6 +1004,9 @@ public class CellSystem : JobComponentSystem {
             {
                 Value = quaternion.Euler(0f, 360f * hash.e, 0f)
             });
+            //CommandBuffer.AddComponent(jobIndex, instance, new Parent {
+            //    Value = parent
+            //});
         }
 
         #endregion

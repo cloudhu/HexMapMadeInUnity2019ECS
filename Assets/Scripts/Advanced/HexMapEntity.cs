@@ -150,5 +150,4 @@ public class HexMapEntity : MonoBehaviour, IDeclareReferencedPrefabs, IConvertGa
     {
         referencedPrefabs.AddRange(Prefabs);
     }
-
 }

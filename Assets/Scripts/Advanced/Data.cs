@@ -258,6 +258,11 @@ public struct Cell : IComponentData
     public bool IsUnderWater;
 
     /// <summary>
+    /// 当前单元是否有围墙
+    /// </summary>
+    public bool HasWall;
+
+    /// <summary>
     /// 绿化等级
     /// </summary>
     public int GreenLvl;
@@ -265,6 +270,91 @@ public struct Cell : IComponentData
     public int FarmLv1;
 
     public int CityLvl;
+}
+
+/// <summary>
+/// 河流数据
+/// </summary>
+public struct River : IComponentData
+{
+    /// <summary>
+    /// 是否有河流进入
+    /// </summary>
+    public bool HasIncomingRiver;
+
+    /// <summary>
+    /// 是否有河流出
+    /// </summary>
+    public bool HasOutgoingRiver;
+
+    /// <summary>
+    /// 流入方向
+    /// </summary>
+    public int IncomingRiver;
+
+    /// <summary>
+    /// 流出方向
+    /// </summary>
+    public int OutgoingRiver;
+}
+
+public struct Neighbors : IComponentData
+{
+    //六个方向相邻单元的颜色
+    public Color NEColor;
+    public Color EColor;
+    public Color SEColor;
+    public Color SWColor;
+    public Color WColor;
+    public Color NWColor;
+    //六个方向相邻单元的海拔
+    public int NEElevation;
+    public int EElevation;
+    public int SEElevation;
+    public int SWElevation;
+    public int WElevation;
+    public int NWElevation;
+    //索引
+    public int NEIndex;
+    public int EIndex;
+    public int SEIndex;
+    public int SWIndex;
+    public int WIndex;
+    public int NWIndex;
+    //6个方向的位置
+    public Vector3 NEPosition;
+    public Vector3 EPosition;
+    public Vector3 SEPosition;
+    public Vector3 SWPosition;
+    public Vector3 WPosition;
+    public Vector3 NWPosition;
+    //6个方向相邻的单元是否处于水下
+    public bool NEIsUnderWater;
+    public bool EIsUnderWater;
+    public bool SEIsUnderWater;
+    public bool SWIsUnderWater;
+    public bool WIsUnderWater;
+    public bool NWIsUnderWater;
+    //6个方向相邻的单元是否有墙体
+    public bool NEHasWall;
+    public bool EHasWall;
+    public bool SEHasWall;
+    public bool SWHasWall;
+    public bool WHasWall;
+    public bool NWHasWall;
+    // 单元的六个方向是否有道路通过
+    public bool NEHasRoad;
+    public bool EHasRoad;
+    public bool SEHasRoad;
+    public bool SWHasRoad;
+    public bool WHasRoad;
+    public bool NWHasRoad;
+}
+
+/// <summary>
+/// 单元的预设
+/// </summary>
+public struct Prefabs : IComponentData {
 
     #region Plants
 
@@ -403,84 +493,6 @@ public struct Cell : IComponentData
 }
 
 /// <summary>
-/// 河流数据
-/// </summary>
-public struct River : IComponentData
-{
-    /// <summary>
-    /// 是否有河流进入
-    /// </summary>
-    public bool HasIncomingRiver;
-
-    /// <summary>
-    /// 是否有河流出
-    /// </summary>
-    public bool HasOutgoingRiver;
-
-    /// <summary>
-    /// 流入方向
-    /// </summary>
-    public int IncomingRiver;
-
-    /// <summary>
-    /// 流出方向
-    /// </summary>
-    public int OutgoingRiver;
-}
-
-public struct Neighbors : IComponentData
-{
-    //六个方向相邻单元的颜色
-    public Color NEColor;
-    public Color EColor;
-    public Color SEColor;
-    public Color SWColor;
-    public Color WColor;
-    public Color NWColor;
-    //六个方向相邻单元的海拔
-    public int NEElevation;
-    public int EElevation;
-    public int SEElevation;
-    public int SWElevation;
-    public int WElevation;
-    public int NWElevation;
-    //索引
-    public int NEIndex;
-    public int EIndex;
-    public int SEIndex;
-    public int SWIndex;
-    public int WIndex;
-    public int NWIndex;
-    //6个方向的位置
-    public Vector3 NEPosition;
-    public Vector3 EPosition;
-    public Vector3 SEPosition;
-    public Vector3 SWPosition;
-    public Vector3 WPosition;
-    public Vector3 NWPosition;
-    //6个方向相邻的单元是否处于水下
-    public bool NEIsUnderWater;
-    public bool EIsUnderWater;
-    public bool SEIsUnderWater;
-    public bool SWIsUnderWater;
-    public bool WIsUnderWater;
-    public bool NWIsUnderWater;
-}
-
-/// <summary>
-/// 单元的六个方向是否有道路通过
-/// </summary>
-public struct RoadBools : IComponentData {
-
-    public bool NEHasRoad;
-    public bool EHasRoad;
-    public bool SEHasRoad;
-    public bool SWHasRoad;
-    public bool WHasRoad;
-    public bool NWHasRoad;
-}
-
-/// <summary>
 /// 动态缓存：颜色
 /// </summary>
 public struct ColorBuffer : IBufferElementData {
@@ -573,6 +585,9 @@ public struct WaterShoreBuffer : IBufferElementData {
     public Vector3 Value;
 }
 
+/// <summary>
+/// 水岸UV
+/// </summary>
 public struct ShoreUvBuffer : IBufferElementData {
     // These implicit conversions are optional, but can help reduce typing.
     public static implicit operator Vector2(ShoreUvBuffer e) { return e.Value; }
@@ -582,6 +597,9 @@ public struct ShoreUvBuffer : IBufferElementData {
     public Vector2 Value;
 }
 
+/// <summary>
+/// 河口顶点动态缓存
+/// </summary>
 public struct EstuaryBuffer : IBufferElementData {
     // These implicit conversions are optional, but can help reduce typing.
     public static implicit operator Vector3(EstuaryBuffer e) { return e.Value; }
@@ -600,6 +618,9 @@ public struct EstuaryUvBuffer : IBufferElementData {
     public Vector2 Value;
 }
 
+/// <summary>
+/// 河口UV动态缓存
+/// </summary>
 public struct EstuaryUvsBuffer : IBufferElementData {
     // These implicit conversions are optional, but can help reduce typing.
     public static implicit operator Vector2(EstuaryUvsBuffer e) { return e.Value; }
@@ -609,6 +630,9 @@ public struct EstuaryUvsBuffer : IBufferElementData {
     public Vector2 Value;
 }
 
+/// <summary>
+/// 调试动态缓存
+/// </summary>
 public struct DebugBuffer : IBufferElementData {
     // These implicit conversions are optional, but can help reduce typing.
     public static implicit operator int(DebugBuffer e) { return e.Value; }
@@ -618,6 +642,9 @@ public struct DebugBuffer : IBufferElementData {
     public int Value;
 }
 
+/// <summary>
+/// 预设动态缓存
+/// </summary>
 public struct PrefabBuffer : IBufferElementData {
     // These implicit conversions are optional, but can help reduce typing.
     public static implicit operator Entity(PrefabBuffer e) { return e.Value; }
@@ -625,4 +652,16 @@ public struct PrefabBuffer : IBufferElementData {
 
     // Actual value each buffer element will store. 
     public Entity Value;
+}
+
+/// <summary>
+/// 墙体顶点动态缓存
+/// </summary>
+public struct WallBuffer : IBufferElementData {
+    // These implicit conversions are optional, but can help reduce typing.
+    public static implicit operator Vector3(WallBuffer e) { return e.Value; }
+    public static implicit operator WallBuffer(Vector3 e) { return new WallBuffer { Value = e }; }
+
+    // Actual value each buffer element will store.
+    public Vector3 Value;
 }

@@ -5,6 +5,44 @@
 /// </summary>
 public static class HexMetrics
 {
+    #region Wall
+    /// <summary>
+    /// 墙高
+    /// </summary>
+    public const float WallHeight = 3f;
+    /// <summary>
+    /// 墙厚
+    /// </summary>
+    public const float WallThickness = 0.75f;
+
+    /// <summary>
+    /// 墙体海拔偏移
+    /// </summary>
+    public const float WallElevationOffset = VerticalTerraceStepSize;
+
+    /// <summary>
+    /// 墙厚度偏移
+    /// </summary>
+    public static Vector3 WallThicknessOffset(Vector3 near, Vector3 far)
+    {
+        Vector3 offset;
+        offset.x = far.x - near.x;
+        offset.y = 0f;
+        offset.z = far.z - near.z;
+        return offset.normalized * (WallThickness * 0.5f);
+    }
+
+    public static Vector3 WallLerp(Vector3 near, Vector3 far)
+    {
+        near.x += (far.x - near.x) * 0.5f;
+        near.z += (far.z - near.z) * 0.5f;
+        float v =
+            near.y < far.y ? WallElevationOffset : (1f - WallElevationOffset);
+        near.y += (far.y - near.y) * v;
+        return near;
+    }
+    #endregion
+
     #region 随机散列表
     public const int hashGridSize = 256;
 

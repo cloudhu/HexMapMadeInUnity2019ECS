@@ -13,6 +13,7 @@ public class HexGridChunk : MonoBehaviour
     public HexWater Water;
     public WaterShore Shore;
     public Estuary Estuary;
+    public HexWall HexWall;
     private Entity[] cells;
     private int cellCount = 0;
     //地图块和总地图索引配对表
@@ -60,6 +61,7 @@ public class HexGridChunk : MonoBehaviour
         StartCoroutine(Water.Triangulate(cells));
         StartCoroutine(Shore.Triangulate(cells));
         StartCoroutine(Estuary.Triangulate(cells));
+        StartCoroutine(HexWall.Triangulate(cells));
     }
 
     /// <summary>

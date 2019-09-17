@@ -107,7 +107,6 @@ public class MainWorld : MonoBehaviour {
     /// </summary>
     public void RenderMesh()
     {
-        Debug.Log(m_RefreshQueue.Count);
         if(m_RefreshQueue.Count>0)
         {
             HexGrid.Refresh(m_RefreshQueue.Dequeue());
@@ -152,6 +151,10 @@ public class MainWorld : MonoBehaviour {
 
             this.m_CellCountX = cellCountX;
             this.m_CellCountZ = cellCountZ;
+            if (!m_EntityManager.HasComponent<Data>(m_Builder))
+            {
+                m_EntityManager.AddComponent<Data>(m_Builder);
+            }
             Data data = m_EntityManager.GetComponentData<Data>(m_Builder);
             m_EntityManager.SetComponentData(m_Builder,new Data
             {

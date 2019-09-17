@@ -4,7 +4,7 @@ using Unity.Entities;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-public class HexWater : MonoBehaviour {
+public class HexWall : MonoBehaviour {
     Mesh m_Mesh;
 
     void Awake()
@@ -26,22 +26,22 @@ public class HexWater : MonoBehaviour {
             //0.取出实体，如果实体的索引为m_Builder则跳过
             Entity entity = cells[i];
             Cell cell = m_EntityManager.GetComponentData<Cell>(entity);
-            if (cell.IsUnderWater)
+            if (cell.HasWall)
             {
-                DynamicBuffer<WaterBuffer> riverBuffers = m_EntityManager.GetBuffer<WaterBuffer>(entity);
-                if (riverBuffers.Length > 0)
+                DynamicBuffer<WallBuffer> wallBuffers = m_EntityManager.GetBuffer<WallBuffer>(entity);
+                if (wallBuffers.Length > 0)
                 {
-                    for (int j = 0; j < riverBuffers.Length; j++)
+                    for (int j = 0; j < wallBuffers.Length; j++)
                     {
                         Triangles.Add(Vertices.Length);
-                        Vertices.Add(riverBuffers[j]);
+                        Vertices.Add(wallBuffers[j]);
                     }
-                    riverBuffers.Clear();
+                    wallBuffers.Clear();
                 }
             }
         }
 
-        Debug.Log("-------------------------------------HexWater----------------------------------------------------");
+        Debug.Log("-------------------------------------HexWall----------------------------------------------------");
         Debug.Log("Vertices=" + Vertices.Length + "----Triangles=" + Triangles.Length);
 
         if (Vertices.Length > 1)
@@ -56,3 +56,4 @@ public class HexWater : MonoBehaviour {
         Triangles.Dispose();
     }
 }
+

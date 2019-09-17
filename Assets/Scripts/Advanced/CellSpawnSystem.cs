@@ -30,6 +30,9 @@ public class CellSpawnSystem : JobComponentSystem {
     struct SpawnJob : IJobForEachWithEntity<Data,NewDataTag> {
         public EntityCommandBuffer.Concurrent CommandBuffer;
         
+        /// <summary>
+        /// 执行生成六边形单元
+        /// </summary>
         [BurstCompile]
         public void Execute(Entity entity, int index, [ReadOnly]ref Data createrData,[ReadOnly]ref NewDataTag tag)
         {
@@ -39,7 +42,7 @@ public class CellSpawnSystem : JobComponentSystem {
             CommandBuffer.AddComponent<Neighbors>(index, hexCellPrefab);
             CommandBuffer.AddComponent<ChunkData>(index, hexCellPrefab);
             CommandBuffer.AddComponent<River>(index, hexCellPrefab);
-            CommandBuffer.AddComponent<RoadBools>(index, hexCellPrefab);
+            CommandBuffer.AddComponent<Prefabs>(index, hexCellPrefab);
             //用于调试的动态缓存
             //DynamicBuffer<DebugBuffer> debug= CommandBuffer.AddBuffer<DebugBuffer>(index,entity);
             //1.添加颜色数组，这个数组以后从服务器获取，然后传到这里来处理
@@ -59,7 +62,8 @@ public class CellSpawnSystem : JobComponentSystem {
             NativeArray<Vector3> positions = new NativeArray<Vector3>(totalCellCount, Allocator.Temp);
             //二维数组来保存相邻单元的索引
             int[,] neighborIndexs = new int[totalCellCount,6];
-
+            //生成随机数据
+            #region MakeData
             for (int z = 0, i = 0; z < cellCountZ; z++)
             {
                 for (int x = 0; x < cellCountX; x++)
@@ -95,7 +99,7 @@ public class CellSpawnSystem : JobComponentSystem {
                         }
                     }
 
-                    neighborIndexs[i,0] = direction;
+                    neighborIndexs[i, 0] = direction;
                     direction = int.MinValue;
                     //颜色混合1 东：EPosition
                     if (notEnd)
@@ -103,7 +107,7 @@ public class CellSpawnSystem : JobComponentSystem {
                         direction = i + 1;
                     }
 
-                    neighborIndexs[i,1] = direction;
+                    neighborIndexs[i, 1] = direction;
                     direction = int.MinValue;
                     //东南2：SEPosition
                     if (i >= cellCountX)
@@ -120,7 +124,7 @@ public class CellSpawnSystem : JobComponentSystem {
                             }
                         }
                     }
-                    neighborIndexs[i,2] = direction;
+                    neighborIndexs[i, 2] = direction;
                     direction = int.MinValue;
                     //西南3：SWPosition
                     if (i >= cellCountX)
@@ -139,14 +143,14 @@ public class CellSpawnSystem : JobComponentSystem {
                         }
                     }
 
-                    neighborIndexs[i,3] = direction;
+                    neighborIndexs[i, 3] = direction;
                     direction = int.MinValue;
                     //西4：WPosition
                     if (notStart)
                     {
                         direction = i - 1;
                     }
-                    neighborIndexs[i,4] = direction;
+                    neighborIndexs[i, 4] = direction;
                     direction = int.MinValue;
                     //5西北：NWPosition
                     if (notLastRow)
@@ -164,17 +168,18 @@ public class CellSpawnSystem : JobComponentSystem {
                         }
                     }
 
-                    neighborIndexs[i,5] = direction;
+                    neighborIndexs[i, 5] = direction;
 
                     i++;
                 }
             }
+            #endregion
 
+            //实例化六边形并为其添加数据
             for (int z = 0,i=0; z < cellCountZ; z++)
             {
                 for (int x = 0; x < cellCountX; x++)
-                {
-
+                {         
                     //2.实例化
                     var instance = CommandBuffer.Instantiate(index, hexCellPrefab);
 
@@ -384,32 +389,6 @@ public class CellSpawnSystem : JobComponentSystem {
 
                     #endregion
 
-                    #region Road
-
-                    //生成道路数据，用一个临时数组来暂存
-                    bool[] roads = new bool[6];
-                    bool hasRoad = false;
-                    //遍历6个方向，判断是否有道路通过
-                    for (int j = 0; j < 6; j++)
-                    {
-                        roads[j] = false;
-                        //首先确认该方向有相邻的单元
-                        if (neighborIndexs[i, j] != int.MinValue)
-                        {
-                            //计算海拔差值，海拔相差过大的悬崖峭壁就不修路了
-                            int tmpE = Elevations[i] - Elevations[neighborIndexs[i, j]];
-                            tmpE = tmpE > 0 ? tmpE : -tmpE;
-                            //河流通过的地方不修路，后面会造桥
-                            if (tmpE <= 1 && neighborIndexs[i, j] != incomingRiver && neighborIndexs[i, j] != outgoingRiver)
-                            {
-                                roads[j] = true;
-                                hasRoad = true;
-                            }
-                        }
-                    }
-
-                    #endregion
-
                     #region Water
                     
                     //当前单元是否被水淹没？
@@ -470,6 +449,48 @@ public class CellSpawnSystem : JobComponentSystem {
 
                     #endregion
 
+                    #region Road
+
+                    //生成道路数据，用一个临时数组来暂存
+                    bool[] neighborHasRoad = new bool[6];
+                    bool hasRoad = false;
+                    bool hasWall = false;
+                    bool[] neighborHasWalls = new bool[6];
+                    //遍历6个方向，判断是否有道路通过
+                    for (int j = 0; j < 6; j++)
+                    {
+                        neighborHasRoad[j] = false;
+                        neighborHasWalls[j] = false;
+                        //首先确认该方向有相邻的单元
+                        if (neighborIndexs[i, j] != int.MinValue)
+                        {
+                            //计算海拔差值，海拔相差过大的悬崖峭壁就不修路了
+                            int tmpE = Elevations[i] - Elevations[neighborIndexs[i, j]];
+                            tmpE = tmpE > 0 ? tmpE : -tmpE;
+                            //河流通过的地方不修路，后面会造桥
+                            if (tmpE <= 1)
+                            {
+                                if (!isUnderWater)
+                                {
+                                    hasWall = true;
+                                }
+
+                                if (!neighborIsUnderWater[j])
+                                {
+                                    neighborHasWalls[j] = true;
+                                }
+
+                                if (neighborIndexs[i, j] != incomingRiver && neighborIndexs[i, j] != outgoingRiver)
+                                {
+                                    neighborHasRoad[j] = true;
+                                    hasRoad = true;
+                                }
+                            }
+                        }
+                    }
+
+                    #endregion
+
                     #region SetComponent设置每个六边形单元的数据
 
                     //5.设置每个六边形单元的数据
@@ -486,8 +507,67 @@ public class CellSpawnSystem : JobComponentSystem {
                         GreenLvl=random.NextInt(0,3),
                         FarmLv1 = random.NextInt(0, 3),
                         CityLvl = random.NextInt(0, 3),
-                        PalmTree =createrData.PalmTree,
-                        Grass=createrData.Grass,
+                        HasWall=hasWall
+                    });
+
+                    CommandBuffer.SetComponent(index, instance, new River
+                    {
+                        HasIncomingRiver = hasIncomingRiver,
+                        HasOutgoingRiver = hasOutgoingRiver,
+                        IncomingRiver = incomingRiver,
+                        OutgoingRiver = outgoingRiver
+                    });
+
+                    CommandBuffer.SetComponent(index, instance, new Neighbors
+                    {
+                        NEColor = neighborIndexs[i, 0] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 0]],
+                        EColor = neighborIndexs[i, 1] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 1]],
+                        SEColor = neighborIndexs[i, 2] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 2]],
+                        SWColor = neighborIndexs[i, 3] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 3]],
+                        WColor = neighborIndexs[i, 4] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 4]],
+                        NWColor = neighborIndexs[i, 5] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 5]],
+                        NEElevation = neighborIndexs[i, 0] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 0]],
+                        EElevation = neighborIndexs[i, 1] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 1]],
+                        SEElevation = neighborIndexs[i, 2] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 2]],
+                        SWElevation = neighborIndexs[i, 3] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 3]],
+                        WElevation = neighborIndexs[i, 4] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 4]],
+                        NWElevation = neighborIndexs[i, 5] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 5]],
+                        NEIndex = neighborIndexs[i, 0],
+                        EIndex = neighborIndexs[i, 1],
+                        SEIndex = neighborIndexs[i, 2],
+                        SWIndex = neighborIndexs[i, 3],
+                        WIndex = neighborIndexs[i, 4],
+                        NWIndex = neighborIndexs[i, 5],
+                        NEPosition = neighborIndexs[i, 0] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 0]],
+                        EPosition = neighborIndexs[i, 1] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 1]],
+                        SEPosition = neighborIndexs[i, 2] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 2]],
+                        SWPosition = neighborIndexs[i, 3] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 3]],
+                        WPosition = neighborIndexs[i, 4] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 4]],
+                        NWPosition = neighborIndexs[i, 5] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 5]],
+                        NEIsUnderWater = neighborIsUnderWater[0],
+                        EIsUnderWater = neighborIsUnderWater[1],
+                        SEIsUnderWater = neighborIsUnderWater[2],
+                        SWIsUnderWater = neighborIsUnderWater[3],
+                        WIsUnderWater = neighborIsUnderWater[4],
+                        NWIsUnderWater = neighborIsUnderWater[5],
+                        NEHasWall=neighborHasWalls[0],
+                        EHasWall=neighborHasWalls[1],
+                        SEHasWall=neighborHasWalls[2],
+                        SWHasWall=neighborHasWalls[3],
+                        WHasWall=neighborHasWalls[4],
+                        NWHasWall=neighborHasWalls[5],
+                        NEHasRoad = neighborHasRoad[0],
+                        EHasRoad = neighborHasRoad[1],
+                        SEHasRoad = neighborHasRoad[2],
+                        SWHasRoad = neighborHasRoad[3],
+                        WHasRoad = neighborHasRoad[4],
+                        NWHasRoad = neighborHasRoad[5]
+                    });
+
+                    CommandBuffer.SetComponent(index, instance, new Prefabs
+                    {
+                        PalmTree = createrData.PalmTree,
+                        Grass = createrData.Grass,
                         Pine_002_L = createrData.Pine_002_L,
                         Pine_002_M2 = createrData.Pine_002_M2,
                         Pine_002_M3 = createrData.Pine_002_M3,
@@ -615,57 +695,6 @@ public class CellSpawnSystem : JobComponentSystem {
                         P_OBJ_windmill_02 = createrData.P_OBJ_windmill_02
                     });
 
-                    CommandBuffer.SetComponent(index, instance, new River
-                    {
-                        HasIncomingRiver = hasIncomingRiver,
-                        HasOutgoingRiver = hasOutgoingRiver,
-                        IncomingRiver = incomingRiver,
-                        OutgoingRiver = outgoingRiver
-                    });
-
-                    CommandBuffer.SetComponent(index, instance, new Neighbors
-                    {
-                        NEColor = neighborIndexs[i, 0] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 0]],
-                        EColor = neighborIndexs[i, 1] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 1]],
-                        SEColor = neighborIndexs[i, 2] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 2]],
-                        SWColor = neighborIndexs[i, 3] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 3]],
-                        WColor = neighborIndexs[i, 4] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 4]],
-                        NWColor = neighborIndexs[i, 5] == int.MinValue ? Color.clear : Colors[neighborIndexs[i, 5]],
-                        NEElevation = neighborIndexs[i, 0] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 0]],
-                        EElevation = neighborIndexs[i, 1] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 1]],
-                        SEElevation = neighborIndexs[i, 2] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 2]],
-                        SWElevation = neighborIndexs[i, 3] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 3]],
-                        WElevation = neighborIndexs[i, 4] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 4]],
-                        NWElevation = neighborIndexs[i, 5] == int.MinValue ? int.MinValue : Elevations[neighborIndexs[i, 5]],
-                        NEIndex = neighborIndexs[i, 0],
-                        EIndex = neighborIndexs[i, 1],
-                        SEIndex = neighborIndexs[i, 2],
-                        SWIndex = neighborIndexs[i, 3],
-                        WIndex = neighborIndexs[i, 4],
-                        NWIndex = neighborIndexs[i, 5],
-                        NEPosition = neighborIndexs[i, 0] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 0]],
-                        EPosition = neighborIndexs[i, 1] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 1]],
-                        SEPosition = neighborIndexs[i, 2] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 2]],
-                        SWPosition = neighborIndexs[i, 3] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 3]],
-                        WPosition = neighborIndexs[i, 4] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 4]],
-                        NWPosition = neighborIndexs[i, 5] == int.MinValue ? Vector3.left : positions[neighborIndexs[i, 5]],
-                        NEIsUnderWater = neighborIsUnderWater[0],
-                        EIsUnderWater = neighborIsUnderWater[1],
-                        SEIsUnderWater = neighborIsUnderWater[2],
-                        SWIsUnderWater = neighborIsUnderWater[3],
-                        WIsUnderWater = neighborIsUnderWater[4],
-                        NWIsUnderWater = neighborIsUnderWater[5]
-                    });
-
-                    CommandBuffer.SetComponent(index, instance, new RoadBools
-                    {
-                        NEHasRoad = roads[0],
-                        EHasRoad = roads[1],
-                        SEHasRoad = roads[2],
-                        SWHasRoad = roads[3],
-                        WHasRoad = roads[4],
-                        NWHasRoad = roads[5]
-                    });
                     int chunkX = x / HexMetrics.ChunkSizeX;
                     int chunkZ = z / HexMetrics.ChunkSizeZ;
                     int localX = x - chunkX * HexMetrics.ChunkSizeX;
@@ -690,6 +719,7 @@ public class CellSpawnSystem : JobComponentSystem {
             //7.摧毁使用完的预设，节约内存资源
             CommandBuffer.DestroyEntity(index, hexCellPrefab);
             CommandBuffer.RemoveComponent<NewDataTag>(index, entity);
+            CommandBuffer.RemoveComponent<Data>(index, entity);
             Colors.Dispose();
             Elevations.Dispose();
             riverSources.Dispose();
